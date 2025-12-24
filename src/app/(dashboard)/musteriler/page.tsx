@@ -180,3 +180,237 @@ export default function MusterilerPage() {
         }}>
           <SheetTrigger asChild>
             <Button onClick={handleNewCustomer}>
+              <Plus className="h-4 w-4 mr-2" />
+              Yeni Müşteri
+            </Button>
+          </SheetTrigger>
+          <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle>
+                {editingCustomer ? 'Müşteri Düzenle' : 'Yeni Müşteri Ekle'}
+              </SheetTitle>
+              <SheetDescription>
+                Müşteri brief bilgilerini girin. AI içerik üretirken bu bilgileri kullanacak.
+              </SheetDescription>
+            </SheetHeader>
+            
+            <div className="mt-6">
+              <CustomerBriefForm
+                customer={editingCustomer}
+                onSave={handleSaveCustomer}
+                onCancel={() => {
+                  setSheetOpen(false)
+                  setEditingCustomer(null)
+                }}
+                isLoading={formLoading}
+              />
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Müşteri ara..."
+          className="pl-9"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+
+      {/* Recent Customers */}
+      {recentCustomers.length > 0 && !searchQuery && (
+        <div>
+          <h2 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Son Kullanılanlar
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {recentCustomers.map((recent) => {
+              const customer = customers.find(c => c.id === recent.id)
+              if (!customer) return null
+              
+              return (
+                <Card 
+                  key={recent.id} 
+                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => handleSelectCustomer(customer)}
+                >
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-sm font-medium">
+                          {customer.name}
+                        </CardTitle>
+                      </div>
+                    </div>
+                    <CardDescription className="text-xs">
+                      {getSectorLabel(customer.sector || '')} • {formatRelativeTime(recent.lastUsed)}
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* All Customers */}
+      <div>
+        <h2 className="text-sm font-medium text-muted-foreground mb-3">
+          Tüm Müşteriler ({filteredCustomers.length})
+        </h2>
+        
+        {loading ? (
+          <div className="text-center py-8 text-muted-foreground">
+            Yükleniyor...
+          </div>
+        ) : filteredCustomers.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-8">
+              <Building2 className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+              <p className="text-muted-foreground">
+                {searchQuery ? 'Aramanızla eşleşen müşteri bulunamadı.' : 'Henüz müşteri eklenmemiş.'}
+              </p>
+              {!searchQuery && (
+                <Button className="mt-4" onClick={handleNewCustomer}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  İlk Müşteriyi Ekle
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {filteredCustomers.map((customer) => {
+              const completion = calculateBriefCompletion(customer)
+              
+              return (
+                <Card key={customer.id} className="hover:shadow-sm transition-shadow">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <CardTitle className="text-base truncate">{customer.name}</CardTitle>
+                        </div>
+                        
+                        {/* Badges */}
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {customer.sector && (
+                            <Badge variant="secondary">
+                              {getSectorLabel(customer.sector)}
+                            </Badge>
+                          )}
+                          {customer.brand_voice && (
+                            <Badge variant="outline">
+                              {getBrandVoiceLabel(customer.brand_voice)}
+                            </Badge>
+                          )}
+                          {customer.business_type && (
+                            <Badge variant="outline">
+                              {customer.business_type}
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Info Row */}
+                        <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground">
+                          {customer.website_url && (
+                            <span className="flex items-center gap-1">
+                              <Globe className="h-3 w-3" />
+                              {new URL(customer.website_url).hostname}
+                            </span>
+                          )}
+                          {customer.target_audience && (
+                            <span className="flex items-center gap-1 truncate max-w-48">
+                              <Users className="h-3 w-3" />
+                              {customer.target_audience}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Completion Bar */}
+                        <div className="flex items-center gap-2 mt-3">
+                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden max-w-32">
+                            <div 
+                              className={`h-full rounded-full transition-all ${
+                                completion < 30 ? 'bg-red-500' :
+                                completion < 60 ? 'bg-yellow-500' :
+                                completion < 90 ? 'bg-blue-500' : 'bg-green-500'
+                              }`}
+                              style={{ width: `${completion}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            Brief %{completion}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleEditCustomer(customer)
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setCustomerToDelete(customer)
+                            setDeleteDialogOpen(true)
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleSelectCustomer(customer)}
+                        >
+                          Seç
+                          <ArrowRight className="h-4 w-4 ml-1" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                </Card>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Müşteriyi Sil</DialogTitle>
+            <DialogDescription>
+              &quot;{customerToDelete?.name}&quot; müşterisini silmek istediğinize emin misiniz? 
+              Bu işlem geri alınamaz ve bu müşteriye ait tüm içerikler de silinecektir.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              İptal
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteCustomer}>
+              Sil
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
