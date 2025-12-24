@@ -103,7 +103,7 @@ export default function MusterilerPage() {
           .update({
             ...cleanedData,
             updated_at: new Date().toISOString()
-          })
+          } as any)
           .eq('id', editingCustomer.id)
 
         if (error) throw error
@@ -112,9 +112,9 @@ export default function MusterilerPage() {
         const { error } = await supabase
           .from('customers')
           .insert({
-            ...cleanedData,
-            user_id: user.id
-          })
+  ...cleanedData,
+  user_id: user.id
+} as any)
 
         if (error) throw error
       }
