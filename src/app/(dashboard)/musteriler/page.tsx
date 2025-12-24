@@ -100,11 +100,10 @@ export default function MusterilerPage() {
         // Update
         const { error } = await supabase
           .from('customers')
-          // @ts-ignore
           .update({
             ...cleanedData,
             updated_at: new Date().toISOString()
-          } as any)
+          })
           .eq('id', editingCustomer.id)
 
         if (error) throw error
@@ -112,11 +111,10 @@ export default function MusterilerPage() {
         // Create
         const { error } = await supabase
           .from('customers')
-          // @ts-ignore
           .insert({
             ...cleanedData,
             user_id: user.id
-          } as any)
+          })
 
         if (error) throw error
       }
