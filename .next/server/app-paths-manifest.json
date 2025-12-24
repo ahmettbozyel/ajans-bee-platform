@@ -1,0 +1,15 @@
+{
+  "/(auth)/login/page": "app/(auth)/login/page.js",
+  "/(auth)/register/page": "app/(auth)/register/page.js",
+  "/(dashboard)/dashboard/page": "app/(dashboard)/dashboard/page.js",
+  "/(dashboard)/gecmis/page": "app/(dashboard)/gecmis/page.js",
+  "/(dashboard)/gorseller/page": "app/(dashboard)/gorseller/page.js",
+  "/(dashboard)/icerik-uret/page": "app/(dashboard)/icerik-uret/page.js",
+  "/(dashboard)/musteriler/page": "app/(dashboard)/musteriler/page.js",
+  "/(dashboard)/page": "app/(dashboard)/page.js",
+  "/_global-error/page": "app/_global-error/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/auth/signout/route": "app/api/auth/signout/route.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/page": "app/page.js"
+}

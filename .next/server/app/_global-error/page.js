@@ -1,0 +1,11 @@
+var R=require("../../chunks/ssr/[turbopack]_runtime.js")("server/app/_global-error/page.js")
+R.c("server/chunks/ssr/[root-of-the-server]__e968ab9c._.js")
+R.c("server/chunks/ssr/Downloads_ajans-bee-platform-main_9ddd917f._.js")
+R.c("server/chunks/ssr/81759_next_dist_c81fbad0._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__60e8ecb5._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__68ec7b28._.js")
+R.c("server/chunks/ssr/81759_cc45cb44._.js")
+R.c("server/chunks/ssr/Downloads_ajans-bee-platform-main_src_app_e4448984._.js")
+R.c("server/chunks/ssr/c0287__next-internal_server_app__global-error_page_actions_a0f75311.js")
+R.m(39433)
+module.exports=R.m(39433).exports
