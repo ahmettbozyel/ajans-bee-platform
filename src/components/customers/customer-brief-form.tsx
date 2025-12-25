@@ -197,7 +197,7 @@ function AIResearchProgress({ state }: AIResearchProgressProps) {
       </div>
       
       <div className="flex justify-between text-xs text-muted-foreground">
-        <span>İlerleme: {state.progress}%</span>
+        <span>İlerleme: {Math.round(state.progress)}%</span>
         <span>Tahmini: {Math.max(0, Math.ceil((100 - state.progress) / 10) * 15)} saniye</span>
       </div>
     </div>
@@ -664,6 +664,7 @@ interface CustomerBriefFormProps {
 
 export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: CustomerBriefFormProps) {
   const supabase = createClient()
+  
   // Open sections state
   const [openSections, setOpenSections] = useState<string[]>(['temel'])
   
@@ -704,7 +705,6 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
     do_not_do: [],
     must_emphasize: [],
     special_events: [],
-    // Faz 2 alanları
     brand_values: [],
     buying_motivations: [],
     content_pillars: [],
@@ -715,7 +715,6 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
     brand_fonts: {},
     brand_assets: {},
     integrations: {},
-    // AI Research alanları
     pain_points: [],
     hook_sentences: [],
     cta_standards: [],
@@ -753,7 +752,6 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
         do_not_do: customer.do_not_do || [],
         must_emphasize: customer.must_emphasize || [],
         special_events: customer.special_events || [],
-        // Faz 2 alanları
         brand_values: customer.brand_values || [],
         buying_motivations: customer.buying_motivations || [],
         content_pillars: customer.content_pillars || [],
@@ -764,7 +762,6 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
         brand_fonts: customer.brand_fonts || {},
         brand_assets: customer.brand_assets || {},
         integrations: customer.integrations || {},
-        // AI Research alanları
         pain_points: customer.pain_points || [],
         hook_sentences: customer.hook_sentences || [],
         cta_standards: customer.cta_standards || [],
@@ -787,225 +784,88 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
   const completion = calculateBriefCompletion(formData)
 
   // AI Research handler - Async Polling Pattern
-const handleAIResearch = async () => {
-  if (!customer?.id) {
-    setAIResearch(prev => ({ ...prev, error: 'Müşteri kaydedilmeli' }))
-    return
-  }
-
-  if (!formData.website_url) {
-    setAIResearch(prev => ({ ...prev, error: 'Website URL gerekli' }))
-    return
-  }
-
-  const initialResearchDate = customer.ai_research_date
-
-  setAIResearch({
-    isLoading: true,
-    progress: 10,
-    status: 'researching',
-    error: null,
-    filledFields: []
-  })
-
-  // 1. n8n'e istek at (fire and forget)
-  fetch(AI_RESEARCH_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      customer_id: customer.id,
-      company_name: formData.name,
-      website_url: formData.website_url,
-      sector: formData.sector || 'diger'
-    })
-  }).catch(() => {})
-
-  // 2. Polling - her 10sn Supabase kontrol
-  const maxAttempts = 36
-  let attempts = 0
-
-  const pollInterval = setInterval(async () => {
-    attempts++
-    
-    const progressValue = Math.min(10 + (attempts * 2.5), 95)
-    let statusValue: 'researching' | 'analyzing' | 'completing' = 'researching'
-    if (progressValue > 30) statusValue = 'analyzing'
-    if (progressValue > 60) statusValue = 'completing'
-    
-    setAIResearch(prev => ({ ...prev, progress: progressValue, status: statusValue }))
-
-    const { data: updated } = await supabase
-      .from('customers')
-      .select('*')
-      .eq('id', customer.id)
-      .single()
-
-    if (updated?.ai_research_date && updated.ai_research_date !== initialResearchDate) {
-      clearInterval(pollInterval)
-      
-      const filledFields: string[] = []
-      const updates: Partial<typeof formData> = {}
-      
-      if (updated.brand_description) { updates.brand_description = updated.brand_description; filledFields.push('brand_description') }
-      if (updated.mission) { updates.mission = updated.mission; filledFields.push('mission') }
-      if (updated.vision) { updates.vision = updated.vision; filledFields.push('vision') }
-      if (updated.usp) { updates.usp = updated.usp; filledFields.push('usp') }
-      if (updated.target_audience) { updates.target_audience = updated.target_audience; filledFields.push('target_audience') }
-      if (updated.pain_points?.length) { updates.pain_points = updated.pain_points; filledFields.push('pain_points') }
-      if (updated.hook_sentences?.length) { updates.hook_sentences = updated.hook_sentences; filledFields.push('hook_sentences') }
-      if (updated.cta_standards?.length) { updates.cta_standards = updated.cta_standards; filledFields.push('cta_standards') }
-      if (updated.forbidden_words?.length) { updates.forbidden_words = updated.forbidden_words; filledFields.push('forbidden_words') }
-      if (updated.seasonal_calendar?.length) { updates.seasonal_calendar = updated.seasonal_calendar; filledFields.push('seasonal_calendar') }
-      if (updated.competitors?.length) { updates.competitors = updated.competitors; filledFields.push('competitors') }
-      if (updated.content_pillars?.length) { updates.content_pillars = updated.content_pillars; filledFields.push('content_pillars') }
-
-      setFormData(prev => ({ ...prev, ...updates }))
-      setAIResearch({ isLoading: false, progress: 100, status: 'done', error: null, filledFields })
+  const handleAIResearch = async () => {
+    if (!customer?.id) {
+      setAIResearch(prev => ({ ...prev, error: 'Müşteri kaydedilmeli' }))
       return
     }
-
-    if (attempts >= maxAttempts) {
-      clearInterval(pollInterval)
-      setAIResearch({ isLoading: false, progress: 0, status: 'error', error: 'Zaman aşımı. Sayfayı yenileyin.', filledFields: [] })
-    }
-  }, 10000)
-}
 
     if (!formData.website_url) {
       setAIResearch(prev => ({ ...prev, error: 'Website URL gerekli' }))
       return
     }
 
+    const initialResearchDate = customer.ai_research_date
+
     setAIResearch({
       isLoading: true,
-      progress: 0,
+      progress: 10,
       status: 'researching',
       error: null,
       filledFields: []
     })
 
-    // Progress simulation
-    const progressInterval = setInterval(() => {
-      setAIResearch(prev => {
-        if (prev.progress >= 90) {
-          return prev
-        }
-        
-        const newProgress = prev.progress + Math.random() * 15
-        let newStatus = prev.status
-        
-        if (newProgress > 30 && prev.status === 'researching') {
-          newStatus = 'analyzing'
-        } else if (newProgress > 60 && prev.status === 'analyzing') {
-          newStatus = 'completing'
-        }
-        
-        return {
-          ...prev,
-          progress: Math.min(newProgress, 90),
-          status: newStatus
-        }
+    // 1. n8n'e istek at (fire and forget)
+    fetch(AI_RESEARCH_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customer_id: customer.id,
+        company_name: formData.name,
+        website_url: formData.website_url,
+        sector: formData.sector || 'diger'
       })
-    }, 3000)
+    }).catch(() => {})
 
-    try {
-      const response = await fetch(AI_RESEARCH_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          customer_id: customer.id,
-          company_name: formData.name,
-          website_url: formData.website_url,
-          sector: formData.sector || 'diger'
-        })
-      })
+    // 2. Polling - her 10sn Supabase kontrol
+    const maxAttempts = 36
+    let attempts = 0
 
-      clearInterval(progressInterval)
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
-      }
-
-      const data = await response.json()
+    const pollInterval = setInterval(async () => {
+      attempts++
       
-      // Update form with AI data
-      const filledFields: string[] = []
+      const progressValue = Math.min(10 + (attempts * 2.5), 95)
+      let statusValue: 'researching' | 'analyzing' | 'completing' = 'researching'
+      if (progressValue > 30) statusValue = 'analyzing'
+      if (progressValue > 60) statusValue = 'completing'
       
-      if (data.brand_description && !formData.brand_description) {
-        setFormData(prev => ({ ...prev, brand_description: data.brand_description }))
-        filledFields.push('brand_description')
-      }
-      if (data.mission && !formData.mission) {
-        setFormData(prev => ({ ...prev, mission: data.mission }))
-        filledFields.push('mission')
-      }
-      if (data.vision && !formData.vision) {
-        setFormData(prev => ({ ...prev, vision: data.vision }))
-        filledFields.push('vision')
-      }
-      if (data.usp && !formData.usp) {
-        setFormData(prev => ({ ...prev, usp: data.usp }))
-        filledFields.push('usp')
-      }
-      if (data.target_audience && !formData.target_audience) {
-        setFormData(prev => ({ ...prev, target_audience: data.target_audience }))
-        filledFields.push('target_audience')
-      }
-      if (data.pain_points?.length) {
-        setFormData(prev => ({ ...prev, pain_points: data.pain_points }))
-        filledFields.push('pain_points')
-      }
-      if (data.hook_sentences?.length) {
-        setFormData(prev => ({ ...prev, hook_sentences: data.hook_sentences }))
-        filledFields.push('hook_sentences')
-      }
-      if (data.cta_standards?.length) {
-        setFormData(prev => ({ ...prev, cta_standards: data.cta_standards }))
-        filledFields.push('cta_standards')
-      }
-      if (data.forbidden_words?.length) {
-        setFormData(prev => ({ ...prev, forbidden_words: data.forbidden_words }))
-        filledFields.push('forbidden_words')
-      }
-      if (data.seasonal_calendar?.length) {
-        setFormData(prev => ({ ...prev, seasonal_calendar: data.seasonal_calendar }))
-        filledFields.push('seasonal_calendar')
-      }
-      if (data.competitors?.length) {
-        setFormData(prev => ({ ...prev, competitors: data.competitors }))
-        filledFields.push('competitors')
-      }
-      if (data.content_pillars?.length) {
-        setFormData(prev => ({ ...prev, content_pillars: data.content_pillars }))
-        filledFields.push('content_pillars')
+      setAIResearch(prev => ({ ...prev, progress: progressValue, status: statusValue }))
+
+      const { data: updated } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('id', customer.id)
+        .single()
+
+      if (updated?.ai_research_date && updated.ai_research_date !== initialResearchDate) {
+        clearInterval(pollInterval)
+        
+        const filledFields: string[] = []
+        const updates: Partial<typeof formData> = {}
+        
+        if (updated.brand_description) { updates.brand_description = updated.brand_description; filledFields.push('brand_description') }
+        if (updated.mission) { updates.mission = updated.mission; filledFields.push('mission') }
+        if (updated.vision) { updates.vision = updated.vision; filledFields.push('vision') }
+        if (updated.usp) { updates.usp = updated.usp; filledFields.push('usp') }
+        if (updated.target_audience) { updates.target_audience = updated.target_audience; filledFields.push('target_audience') }
+        if (updated.pain_points?.length) { updates.pain_points = updated.pain_points; filledFields.push('pain_points') }
+        if (updated.hook_sentences?.length) { updates.hook_sentences = updated.hook_sentences; filledFields.push('hook_sentences') }
+        if (updated.cta_standards?.length) { updates.cta_standards = updated.cta_standards; filledFields.push('cta_standards') }
+        if (updated.forbidden_words?.length) { updates.forbidden_words = updated.forbidden_words; filledFields.push('forbidden_words') }
+        if (updated.seasonal_calendar?.length) { updates.seasonal_calendar = updated.seasonal_calendar; filledFields.push('seasonal_calendar') }
+        if (updated.competitors?.length) { updates.competitors = updated.competitors; filledFields.push('competitors') }
+        if (updated.content_pillars?.length) { updates.content_pillars = updated.content_pillars; filledFields.push('content_pillars') }
+
+        setFormData(prev => ({ ...prev, ...updates }))
+        setAIResearch({ isLoading: false, progress: 100, status: 'done', error: null, filledFields })
+        return
       }
 
-      setAIResearch({
-        isLoading: false,
-        progress: 100,
-        status: 'done',
-        error: null,
-        filledFields
-      })
-
-      // Auto-save after AI research
-      setTimeout(() => {
-        onSave(formData)
-      }, 1000)
-
-    } catch (error) {
-      clearInterval(progressInterval)
-      console.error('AI Research error:', error)
-      setAIResearch({
-        isLoading: false,
-        progress: 0,
-        status: 'error',
-        error: error instanceof Error ? error.message : 'Bir hata oluştu',
-        filledFields: []
-      })
-    }
+      if (attempts >= maxAttempts) {
+        clearInterval(pollInterval)
+        setAIResearch({ isLoading: false, progress: 0, status: 'error', error: 'Zaman aşımı. Sayfayı yenileyin.', filledFields: [] })
+      }
+    }, 10000)
   }
 
   // Handle submit
@@ -1025,7 +885,6 @@ const handleAIResearch = async () => {
     rekabet: <Target className="h-4 w-4" />,
     kurallar: <ShieldCheck className="h-4 w-4" />,
     takvim: <Calendar className="h-4 w-4" />,
-    // Faz 2
     degerler: <Heart className="h-4 w-4" />,
     strateji: <Layers className="h-4 w-4" />,
     platform: <Settings className="h-4 w-4" />,
