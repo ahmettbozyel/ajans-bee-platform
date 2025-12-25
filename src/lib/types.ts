@@ -55,6 +55,12 @@ export type Database = {
           brand_assets: Record<string, unknown> | null
           // Faz 2 alanları - Entegrasyonlar
           integrations: Record<string, unknown> | null
+          // AI Research Alanları
+          pain_points: Record<string, unknown>[] | null
+          hook_sentences: Record<string, unknown>[] | null
+          cta_standards: Record<string, unknown>[] | null
+          forbidden_words: Record<string, unknown>[] | null
+          seasonal_calendar: Record<string, unknown>[] | null
         }
         Insert: {
           id?: string
@@ -100,6 +106,11 @@ export type Database = {
           brand_fonts?: Record<string, unknown> | null
           brand_assets?: Record<string, unknown> | null
           integrations?: Record<string, unknown> | null
+          pain_points?: Record<string, unknown>[] | null
+          hook_sentences?: Record<string, unknown>[] | null
+          cta_standards?: Record<string, unknown>[] | null
+          forbidden_words?: Record<string, unknown>[] | null
+          seasonal_calendar?: Record<string, unknown>[] | null
         }
         Update: {
           id?: string
@@ -145,6 +156,11 @@ export type Database = {
           brand_fonts?: Record<string, unknown> | null
           brand_assets?: Record<string, unknown> | null
           integrations?: Record<string, unknown> | null
+          pain_points?: Record<string, unknown>[] | null
+          hook_sentences?: Record<string, unknown>[] | null
+          cta_standards?: Record<string, unknown>[] | null
+          forbidden_words?: Record<string, unknown>[] | null
+          seasonal_calendar?: Record<string, unknown>[] | null
         }
       }
       posts: {
