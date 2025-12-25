@@ -836,9 +836,9 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
         },
         body: JSON.stringify({
           customer_id: customer.id,
-          name: formData.name,
-          website: formData.website_url,
-          sector: formData.sector
+          company_name: formData.name,
+          website_url: formData.website_url,
+          sector: formData.sector || 'diger'
         })
       })
 
