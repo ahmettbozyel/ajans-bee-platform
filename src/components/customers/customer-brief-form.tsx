@@ -6,7 +6,8 @@ import {
   Building2, Phone, Share2, Sparkles, Users, Package, 
   Target, ShieldCheck, Calendar, ChevronDown, ChevronRight,
   Bot, Plus, X, Check, Globe, Instagram, Facebook, Linkedin,
-  Youtube, Twitter, Loader2
+  Youtube, Twitter, Loader2, Heart, Layers, Settings, FileText,
+  BookOpen, Palette, Link
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -25,7 +26,15 @@ import type {
   SpecialEvent,
   BrandVoice,
   BusinessType,
-  PriceSegment
+  PriceSegment,
+  ContentPillar,
+  PlatformRules,
+  ExampleCaptions,
+  WordMapping,
+  BrandColors,
+  BrandFonts,
+  BrandAssets,
+  Integrations
 } from '@/lib/customer-types'
 import { 
   SECTORS, 
@@ -48,9 +57,10 @@ interface SectionProps {
   onToggle: () => void
   completion: number
   children: React.ReactNode
+  badge?: string
 }
 
-function CollapsibleSection({ id, title, icon, isOpen, onToggle, completion, children }: SectionProps) {
+function CollapsibleSection({ id, title, icon, isOpen, onToggle, completion, children, badge }: SectionProps) {
   return (
     <div className="border rounded-lg overflow-hidden bg-card">
       <button
@@ -61,6 +71,9 @@ function CollapsibleSection({ id, title, icon, isOpen, onToggle, completion, chi
         <div className="flex items-center gap-3">
           <div className="text-muted-foreground">{icon}</div>
           <span className="font-medium">{title}</span>
+          {badge && (
+            <Badge variant="secondary" className="text-xs">{badge}</Badge>
+          )}
         </div>
         <div className="flex items-center gap-3">
           {completion > 0 && (
@@ -202,14 +215,6 @@ function CompetitorInput({ value, onChange }: CompetitorInputProps) {
 
   const removeCompetitor = (index: number) => {
     onChange(value.filter((_, i) => i !== index))
-  }
-
-  const updateCompetitorStrength = (index: number, strength: string) => {
-    const updated = [...value]
-    if (!updated[index].strengths.includes(strength)) {
-      updated[index].strengths = [...updated[index].strengths, strength]
-      onChange(updated)
-    }
   }
 
   return (
@@ -389,6 +394,197 @@ function SpecialEventInput({ value, onChange }: SpecialEventInputProps) {
 }
 
 // =====================================================
+// CONTENT PILLAR INPUT COMPONENT
+// =====================================================
+interface ContentPillarInputProps {
+  value: ContentPillar[]
+  onChange: (value: ContentPillar[]) => void
+}
+
+function ContentPillarInput({ value, onChange }: ContentPillarInputProps) {
+  const [newPillar, setNewPillar] = useState({ name: '', description: '' })
+
+  const addPillar = () => {
+    if (newPillar.name.trim()) {
+      onChange([...value, { ...newPillar, example_topics: [] }])
+      setNewPillar({ name: '', description: '' })
+    }
+  }
+
+  const removePillar = (index: number) => {
+    onChange(value.filter((_, i) => i !== index))
+  }
+
+  return (
+    <div className="space-y-3">
+      {value.map((pillar, index) => (
+        <div key={index} className="p-3 border rounded-lg bg-muted/30">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-medium">{pillar.name}</span>
+            <Button type="button" variant="ghost" size="sm" onClick={() => removePillar(index)}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground mb-2">{pillar.description}</p>
+          <TagInput
+            value={pillar.example_topics || []}
+            onChange={(topics) => {
+              const updated = [...value]
+              updated[index].example_topics = topics
+              onChange(updated)
+            }}
+            placeholder="Örnek konular (Enter ile ekle)"
+          />
+        </div>
+      ))}
+      
+      <div className="space-y-2 p-3 border rounded-lg border-dashed">
+        <Input
+          value={newPillar.name}
+          onChange={(e) => setNewPillar({ ...newPillar, name: e.target.value })}
+          placeholder="Sütun adı (örn: Sürdürülebilirlik)"
+        />
+        <Textarea
+          value={newPillar.description}
+          onChange={(e) => setNewPillar({ ...newPillar, description: e.target.value })}
+          placeholder="Açıklama"
+          rows={2}
+        />
+        <Button type="button" variant="outline" onClick={addPillar} className="w-full">
+          <Plus className="h-4 w-4 mr-2" />
+          İçerik Sütunu Ekle
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// =====================================================
+// PLATFORM RULES INPUT COMPONENT
+// =====================================================
+interface PlatformRulesInputProps {
+  value: PlatformRules
+  onChange: (value: PlatformRules) => void
+}
+
+function PlatformRulesInput({ value, onChange }: PlatformRulesInputProps) {
+  const platforms = ['instagram', 'linkedin', 'facebook'] as const
+
+  return (
+    <div className="space-y-4">
+      {platforms.map((platform) => (
+        <div key={platform} className="p-3 border rounded-lg">
+          <h4 className="font-medium capitalize mb-3">{platform}</h4>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Caption Uzunluğu</Label>
+              <Input
+                value={value[platform]?.caption_length || ''}
+                onChange={(e) => onChange({
+                  ...value,
+                  [platform]: { ...value[platform], caption_length: e.target.value }
+                })}
+                placeholder="örn: 150-300 karakter"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Emoji Sayısı</Label>
+              <Input
+                value={value[platform]?.emoji_count || ''}
+                onChange={(e) => onChange({
+                  ...value,
+                  [platform]: { ...value[platform], emoji_count: e.target.value }
+                })}
+                placeholder="örn: 3-5"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Hashtag Sayısı</Label>
+              <Input
+                value={value[platform]?.hashtag_count || ''}
+                onChange={(e) => onChange({
+                  ...value,
+                  [platform]: { ...value[platform], hashtag_count: e.target.value }
+                })}
+                placeholder="örn: 5-10"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">CTA Stili</Label>
+              <Input
+                value={value[platform]?.cta_style || ''}
+                onChange={(e) => onChange({
+                  ...value,
+                  [platform]: { ...value[platform], cta_style: e.target.value }
+                })}
+                placeholder="örn: Soru sor, Link bio'da"
+              />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// =====================================================
+// WORD MAPPING INPUT COMPONENT
+// =====================================================
+interface WordMappingInputProps {
+  value: WordMapping[]
+  onChange: (value: WordMapping[]) => void
+}
+
+function WordMappingInput({ value, onChange }: WordMappingInputProps) {
+  const [newMapping, setNewMapping] = useState({ avoid: '', use_instead: '' })
+
+  const addMapping = () => {
+    if (newMapping.avoid.trim() && newMapping.use_instead.trim()) {
+      onChange([...value, newMapping])
+      setNewMapping({ avoid: '', use_instead: '' })
+    }
+  }
+
+  const removeMapping = (index: number) => {
+    onChange(value.filter((_, i) => i !== index))
+  }
+
+  return (
+    <div className="space-y-3">
+      {value.map((mapping, index) => (
+        <div key={index} className="flex items-center gap-2 p-2 border rounded-lg bg-muted/30">
+          <Badge variant="destructive" className="shrink-0">{mapping.avoid}</Badge>
+          <span className="text-muted-foreground">→</span>
+          <Badge variant="default" className="shrink-0">{mapping.use_instead}</Badge>
+          <div className="flex-1" />
+          <Button type="button" variant="ghost" size="sm" onClick={() => removeMapping(index)}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      ))}
+      
+      <div className="flex gap-2">
+        <Input
+          value={newMapping.avoid}
+          onChange={(e) => setNewMapping({ ...newMapping, avoid: e.target.value })}
+          placeholder="Kullanma (örn: ucuz)"
+          className="flex-1"
+        />
+        <Input
+          value={newMapping.use_instead}
+          onChange={(e) => setNewMapping({ ...newMapping, use_instead: e.target.value })}
+          placeholder="Yerine kullan (örn: uygun fiyatlı)"
+          className="flex-1"
+        />
+        <Button type="button" variant="outline" onClick={addMapping}>
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// =====================================================
 // MAIN FORM COMPONENT
 // =====================================================
 interface CustomerBriefFormProps {
@@ -429,7 +625,18 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
     competitors: [],
     do_not_do: [],
     must_emphasize: [],
-    special_events: []
+    special_events: [],
+    // Faz 2 alanları
+    brand_values: [],
+    buying_motivations: [],
+    content_pillars: [],
+    platform_rules: {},
+    example_captions: { good_examples: [], bad_examples: [] },
+    word_mapping: [],
+    brand_colors: {},
+    brand_fonts: {},
+    brand_assets: {},
+    integrations: {}
   })
 
   // Initialize form with customer data
@@ -461,7 +668,18 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
         competitors: customer.competitors || [],
         do_not_do: customer.do_not_do || [],
         must_emphasize: customer.must_emphasize || [],
-        special_events: customer.special_events || []
+        special_events: customer.special_events || [],
+        // Faz 2 alanları
+        brand_values: customer.brand_values || [],
+        buying_motivations: customer.buying_motivations || [],
+        content_pillars: customer.content_pillars || [],
+        platform_rules: customer.platform_rules || {},
+        example_captions: customer.example_captions || { good_examples: [], bad_examples: [] },
+        word_mapping: customer.word_mapping || [],
+        brand_colors: customer.brand_colors || {},
+        brand_fonts: customer.brand_fonts || {},
+        brand_assets: customer.brand_assets || {},
+        integrations: customer.integrations || {}
       })
     }
   }, [customer])
@@ -494,7 +712,15 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
     urun: <Package className="h-4 w-4" />,
     rekabet: <Target className="h-4 w-4" />,
     kurallar: <ShieldCheck className="h-4 w-4" />,
-    takvim: <Calendar className="h-4 w-4" />
+    takvim: <Calendar className="h-4 w-4" />,
+    // Faz 2
+    degerler: <Heart className="h-4 w-4" />,
+    strateji: <Layers className="h-4 w-4" />,
+    platform: <Settings className="h-4 w-4" />,
+    ornekler: <FileText className="h-4 w-4" />,
+    kelime: <BookOpen className="h-4 w-4" />,
+    gorseller: <Palette className="h-4 w-4" />,
+    entegrasyon: <Link className="h-4 w-4" />
   }
 
   return (
@@ -520,7 +746,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
 
       <Separator />
 
-      {/* SECTION: Temel Bilgiler */}
+      {/* ==================== TEMEL BİLGİLER ==================== */}
       <CollapsibleSection
         id="temel"
         title="Temel Bilgiler"
@@ -628,7 +854,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
         </div>
       </CollapsibleSection>
 
-      {/* SECTION: İletişim */}
+      {/* ==================== İLETİŞİM ==================== */}
       <CollapsibleSection
         id="iletisim"
         title="İletişim"
@@ -669,7 +895,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
         </div>
       </CollapsibleSection>
 
-      {/* SECTION: Sosyal Medya */}
+      {/* ==================== SOSYAL MEDYA ==================== */}
       <CollapsibleSection
         id="sosyal"
         title="Sosyal Medya"
@@ -684,7 +910,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
         />
       </CollapsibleSection>
 
-      {/* SECTION: Marka Kimliği */}
+      {/* ==================== MARKA KİMLİĞİ ==================== */}
       <CollapsibleSection
         id="marka"
         title="Marka Kimliği"
@@ -749,7 +975,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
         </div>
       </CollapsibleSection>
 
-      {/* SECTION: Hedef Kitle */}
+      {/* ==================== HEDEF KİTLE ==================== */}
       <CollapsibleSection
         id="hedef"
         title="Hedef Kitle"
@@ -765,7 +991,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
               id="target_audience"
               value={formData.target_audience || ''}
               onChange={(e) => setFormData({ ...formData, target_audience: e.target.value })}
-              placeholder="Örn: 30-55 yaş arası, sağlıklı beslenmeye önem veren ev hanımları ve gurme yemek meraklıları"
+              placeholder="Örn: 30-55 yaş arası, sağlıklı beslenmeye önem veren ev hanımları"
               rows={3}
             />
           </div>
@@ -785,14 +1011,14 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
                 id="target_geography"
                 value={formData.target_geography || ''}
                 onChange={(e) => setFormData({ ...formData, target_geography: e.target.value })}
-                placeholder="Örn: Türkiye geneli, İzmir bölgesi"
+                placeholder="Örn: Türkiye geneli"
               />
             </div>
           </div>
         </div>
       </CollapsibleSection>
 
-      {/* SECTION: Ürün Bilgileri */}
+      {/* ==================== ÜRÜN BİLGİLERİ ==================== */}
       <CollapsibleSection
         id="urun"
         title="Ürün Bilgileri"
@@ -839,7 +1065,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
         </div>
       </CollapsibleSection>
 
-      {/* SECTION: Rekabet */}
+      {/* ==================== REKABET ==================== */}
       <CollapsibleSection
         id="rekabet"
         title="Rekabet Analizi"
@@ -854,7 +1080,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
         />
       </CollapsibleSection>
 
-      {/* SECTION: Kurallar */}
+      {/* ==================== KURALLAR ==================== */}
       <CollapsibleSection
         id="kurallar"
         title="İçerik Kuralları"
@@ -883,7 +1109,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
         </div>
       </CollapsibleSection>
 
-      {/* SECTION: Takvim */}
+      {/* ==================== TAKVİM ==================== */}
       <CollapsibleSection
         id="takvim"
         title="Özel Günler & Takvim"
@@ -896,6 +1122,309 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
           value={formData.special_events || []}
           onChange={(special_events) => setFormData({ ...formData, special_events })}
         />
+      </CollapsibleSection>
+
+      {/* ==================== GELİŞMİŞ BÖLÜMLER AYIRICI ==================== */}
+      <div className="flex items-center gap-3 py-2">
+        <Separator className="flex-1" />
+        <span className="text-xs text-muted-foreground font-medium">GELİŞMİŞ AYARLAR</span>
+        <Separator className="flex-1" />
+      </div>
+
+      {/* ==================== MARKA DEĞERLERİ ==================== */}
+      <CollapsibleSection
+        id="degerler"
+        title="Marka Değerleri"
+        icon={sectionIcons.degerler}
+        isOpen={openSections.includes('degerler')}
+        onToggle={() => toggleSection('degerler')}
+        completion={calculateSectionCompletion(formData, ['brand_values', 'buying_motivations'])}
+        badge="Gelişmiş"
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Marka Değerleri</Label>
+            <TagInput
+              value={formData.brand_values || []}
+              onChange={(brand_values) => setFormData({ ...formData, brand_values })}
+              placeholder="Örn: Sürdürülebilirlik, İnovasyon"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Satın Alma Motivasyonları</Label>
+            <TagInput
+              value={formData.buying_motivations || []}
+              onChange={(buying_motivations) => setFormData({ ...formData, buying_motivations })}
+              placeholder="Örn: Maliyet düşürme, ESG uyumu"
+            />
+          </div>
+        </div>
+      </CollapsibleSection>
+
+      {/* ==================== İÇERİK STRATEJİSİ ==================== */}
+      <CollapsibleSection
+        id="strateji"
+        title="İçerik Stratejisi"
+        icon={sectionIcons.strateji}
+        isOpen={openSections.includes('strateji')}
+        onToggle={() => toggleSection('strateji')}
+        completion={calculateSectionCompletion(formData, ['content_pillars'])}
+        badge="Gelişmiş"
+      >
+        <ContentPillarInput
+          value={formData.content_pillars || []}
+          onChange={(content_pillars) => setFormData({ ...formData, content_pillars })}
+        />
+      </CollapsibleSection>
+
+      {/* ==================== PLATFORM KURALLARI ==================== */}
+      <CollapsibleSection
+        id="platform"
+        title="Platform Kuralları"
+        icon={sectionIcons.platform}
+        isOpen={openSections.includes('platform')}
+        onToggle={() => toggleSection('platform')}
+        completion={calculateSectionCompletion(formData, ['platform_rules'])}
+        badge="Gelişmiş"
+      >
+        <PlatformRulesInput
+          value={formData.platform_rules || {}}
+          onChange={(platform_rules) => setFormData({ ...formData, platform_rules })}
+        />
+      </CollapsibleSection>
+
+      {/* ==================== ÖRNEK İÇERİKLER ==================== */}
+      <CollapsibleSection
+        id="ornekler"
+        title="Örnek İçerikler"
+        icon={sectionIcons.ornekler}
+        isOpen={openSections.includes('ornekler')}
+        onToggle={() => toggleSection('ornekler')}
+        completion={calculateSectionCompletion(formData, ['example_captions'])}
+        badge="Gelişmiş"
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label className="text-green-600">✅ İyi Örnekler</Label>
+            <TagInput
+              value={formData.example_captions?.good_examples || []}
+              onChange={(good_examples) => setFormData({ 
+                ...formData, 
+                example_captions: { ...formData.example_captions, good_examples } 
+              })}
+              placeholder="Beğendiğiniz caption örnekleri"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-red-600">❌ Kötü Örnekler</Label>
+            <TagInput
+              value={formData.example_captions?.bad_examples || []}
+              onChange={(bad_examples) => setFormData({ 
+                ...formData, 
+                example_captions: { ...formData.example_captions, bad_examples } 
+              })}
+              placeholder="İstemediğiniz tarz örnekler"
+            />
+          </div>
+        </div>
+      </CollapsibleSection>
+
+      {/* ==================== KELİME HARİTASI ==================== */}
+      <CollapsibleSection
+        id="kelime"
+        title="Kelime Haritası"
+        icon={sectionIcons.kelime}
+        isOpen={openSections.includes('kelime')}
+        onToggle={() => toggleSection('kelime')}
+        completion={calculateSectionCompletion(formData, ['word_mapping'])}
+        badge="Gelişmiş"
+      >
+        <WordMappingInput
+          value={formData.word_mapping || []}
+          onChange={(word_mapping) => setFormData({ ...formData, word_mapping })}
+        />
+      </CollapsibleSection>
+
+      {/* ==================== MARKA GÖRSELLERİ ==================== */}
+      <CollapsibleSection
+        id="gorseller"
+        title="Marka Görselleri"
+        icon={sectionIcons.gorseller}
+        isOpen={openSections.includes('gorseller')}
+        onToggle={() => toggleSection('gorseller')}
+        completion={calculateSectionCompletion(formData, ['brand_colors', 'brand_fonts', 'brand_assets'])}
+        badge="Gelişmiş"
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Marka Renkleri</Label>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Ana Renk</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="color"
+                    value={formData.brand_colors?.primary || '#000000'}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      brand_colors: { ...formData.brand_colors, primary: e.target.value }
+                    })}
+                    className="w-12 h-9 p-1"
+                  />
+                  <Input
+                    value={formData.brand_colors?.primary || ''}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      brand_colors: { ...formData.brand_colors, primary: e.target.value }
+                    })}
+                    placeholder="#1E40AF"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">İkincil Renk</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="color"
+                    value={formData.brand_colors?.secondary || '#000000'}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      brand_colors: { ...formData.brand_colors, secondary: e.target.value }
+                    })}
+                    className="w-12 h-9 p-1"
+                  />
+                  <Input
+                    value={formData.brand_colors?.secondary || ''}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      brand_colors: { ...formData.brand_colors, secondary: e.target.value }
+                    })}
+                    placeholder="#64748B"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Vurgu Rengi</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="color"
+                    value={formData.brand_colors?.accent || '#000000'}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      brand_colors: { ...formData.brand_colors, accent: e.target.value }
+                    })}
+                    className="w-12 h-9 p-1"
+                  />
+                  <Input
+                    value={formData.brand_colors?.accent || ''}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      brand_colors: { ...formData.brand_colors, accent: e.target.value }
+                    })}
+                    placeholder="#F59E0B"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Başlık Fontu</Label>
+              <Input
+                value={formData.brand_fonts?.heading || ''}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  brand_fonts: { ...formData.brand_fonts, heading: e.target.value }
+                })}
+                placeholder="Örn: Montserrat"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Gövde Fontu</Label>
+              <Input
+                value={formData.brand_fonts?.body || ''}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  brand_fonts: { ...formData.brand_fonts, body: e.target.value }
+                })}
+                placeholder="Örn: Open Sans"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Logo URL</Label>
+              <Input
+                value={formData.brand_assets?.logo_url || ''}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  brand_assets: { ...formData.brand_assets, logo_url: e.target.value }
+                })}
+                placeholder="https://..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Marka Rehberi URL</Label>
+              <Input
+                value={formData.brand_assets?.guidelines_url || ''}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  brand_assets: { ...formData.brand_assets, guidelines_url: e.target.value }
+                })}
+                placeholder="https://..."
+              />
+            </div>
+          </div>
+        </div>
+      </CollapsibleSection>
+
+      {/* ==================== ENTEGRASYONLAR ==================== */}
+      <CollapsibleSection
+        id="entegrasyon"
+        title="Entegrasyonlar"
+        icon={sectionIcons.entegrasyon}
+        isOpen={openSections.includes('entegrasyon')}
+        onToggle={() => toggleSection('entegrasyon')}
+        completion={calculateSectionCompletion(formData, ['integrations'])}
+        badge="Faz 2"
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Google Analytics ID</Label>
+            <Input
+              value={formData.integrations?.google_analytics_id || ''}
+              onChange={(e) => setFormData({
+                ...formData,
+                integrations: { ...formData.integrations, google_analytics_id: e.target.value }
+              })}
+              placeholder="UA-XXXXXXXXX-X veya G-XXXXXXXXXX"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Google Ads ID</Label>
+            <Input
+              value={formData.integrations?.google_ads_id || ''}
+              onChange={(e) => setFormData({
+                ...formData,
+                integrations: { ...formData.integrations, google_ads_id: e.target.value }
+              })}
+              placeholder="AW-XXXXXXXXX"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Meta Pixel ID</Label>
+            <Input
+              value={formData.integrations?.meta_pixel_id || ''}
+              onChange={(e) => setFormData({
+                ...formData,
+                integrations: { ...formData.integrations, meta_pixel_id: e.target.value }
+              })}
+              placeholder="XXXXXXXXXXXXXXXX"
+            />
+          </div>
+        </div>
       </CollapsibleSection>
 
       <Separator />
