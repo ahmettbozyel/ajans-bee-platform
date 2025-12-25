@@ -1,6 +1,6 @@
 // =====================================================
 // Customer Types - Genişletilmiş Brief Sistemi
-// Version: 1.0
+// Version: 1.1 - AI Research Alanları Eklendi
 // =====================================================
 
 // Sosyal medya platform tipi
@@ -97,6 +97,50 @@ export interface Integrations {
   meta_pixel_id?: string;
 }
 
+// =====================================================
+// AI Research Tipleri
+// =====================================================
+
+// Müşteri Acı Noktaları
+export interface PainPoint {
+  problem: string;
+  intensity: 'low' | 'medium' | 'high';
+  source?: string;
+}
+
+// Hook Cümleleri
+export interface HookSentence {
+  hook: string;
+  type: 'question' | 'statistic' | 'emotion' | 'curiosity' | 'benefit';
+  platform?: string[];
+}
+
+// CTA Standartları
+export interface CtaStandard {
+  cta: string;
+  context: string;
+  platform?: string[];
+}
+
+// Yasaklı Kelimeler
+export interface ForbiddenWord {
+  word: string;
+  reason?: string;
+  alternative?: string;
+}
+
+// Sezonsal Takvim
+export interface SeasonalEvent {
+  name: string;
+  date_range: string;
+  content_ideas?: string[];
+  hashtags?: string[];
+}
+
+// =====================================================
+// Enum Types
+// =====================================================
+
 // Brand voice options
 export type BrandVoice = 'samimi' | 'kurumsal' | 'enerjik' | 'profesyonel';
 
@@ -109,7 +153,10 @@ export type PriceSegment = 'ekonomik' | 'orta' | 'premium' | 'lüks';
 // AI Research status
 export type AIResearchStatus = 'pending' | 'completed' | 'partial' | 'failed';
 
-// Ana Customer interface
+// =====================================================
+// Ana Customer Interface
+// =====================================================
+
 export interface Customer {
   id: string;
   created_at: string;
@@ -190,6 +237,13 @@ export interface Customer {
   // Faz 2 - Entegrasyonlar
   integrations?: Integrations | null;
 
+  // AI Research Alanları
+  pain_points?: PainPoint[] | null;
+  hook_sentences?: HookSentence[] | null;
+  cta_standards?: CtaStandard[] | null;
+  forbidden_words?: ForbiddenWord[] | null;
+  seasonal_calendar?: SeasonalEvent[] | null;
+
   // Eski alan (geriye uyumluluk)
   notes?: string | null;
 }
@@ -197,7 +251,10 @@ export interface Customer {
 // Form için partial tip
 export type CustomerFormData = Partial<Omit<Customer, 'id' | 'created_at' | 'updated_at' | 'user_id'>>;
 
-// Brief bölüm tanımları
+// =====================================================
+// Brief Bölüm Tanımları
+// =====================================================
+
 export const BRIEF_SECTIONS = {
   temelBilgiler: {
     id: 'temel',
@@ -311,10 +368,21 @@ export const BRIEF_SECTIONS = {
     icon: 'Link',
     fields: ['integrations'],
     required: []
+  },
+  // AI Research Bölümleri
+  aiResearch: {
+    id: 'ai-research',
+    label: 'AI Araştırma',
+    icon: 'Bot',
+    fields: ['pain_points', 'hook_sentences', 'cta_standards', 'forbidden_words', 'seasonal_calendar'],
+    required: []
   }
 } as const;
 
-// Sektör listesi (genişletilmiş)
+// =====================================================
+// Sabit Değerler
+// =====================================================
+
 export const SECTORS = [
   { value: 'gida', label: 'Gıda & İçecek' },
   { value: 'tekstil', label: 'Tekstil & Moda' },
@@ -322,39 +390,42 @@ export const SECTORS = [
   { value: 'saglik', label: 'Sağlık & Güzellik' },
   { value: 'egitim', label: 'Eğitim' },
   { value: 'finans', label: 'Finans & Sigorta' },
-  { value: 'gayrimenkul', label: 'Gayrimenkul' },
-  { value: 'otomotiv', label: 'Otomotiv' },
   { value: 'turizm', label: 'Turizm & Otelcilik' },
-  { value: 'eticaret', label: 'E-ticaret' },
-  { value: 'uretim', label: 'Üretim & Sanayi' },
+  { value: 'insaat', label: 'İnşaat & Gayrimenkul' },
+  { value: 'otomotiv', label: 'Otomotiv' },
+  { value: 'enerji', label: 'Enerji' },
+  { value: 'tarim', label: 'Tarım' },
+  { value: 'eglence', label: 'Eğlence & Medya' },
   { value: 'hizmet', label: 'Hizmet Sektörü' },
+  { value: 'uretim', label: 'Üretim & Sanayi' },
   { value: 'perakende', label: 'Perakende' },
-  { value: 'medya', label: 'Medya & Eğlence' },
+  { value: 'lojistik', label: 'Lojistik & Taşımacılık' },
   { value: 'diger', label: 'Diğer' }
 ] as const;
 
-// Marka sesi seçenekleri
 export const BRAND_VOICES = [
-  { value: 'samimi', label: 'Samimi', description: 'Sıcak, arkadaşça, yakın' },
-  { value: 'kurumsal', label: 'Kurumsal', description: 'Resmi, güvenilir, ciddi' },
-  { value: 'enerjik', label: 'Enerjik', description: 'Dinamik, heyecanlı, genç' },
-  { value: 'profesyonel', label: 'Profesyonel', description: 'Uzman, bilgili, güvenilir' }
+  { value: 'samimi', label: 'Samimi' },
+  { value: 'kurumsal', label: 'Kurumsal' },
+  { value: 'enerjik', label: 'Enerjik' },
+  { value: 'profesyonel', label: 'Profesyonel' }
 ] as const;
 
-// İş tipi seçenekleri
 export const BUSINESS_TYPES = [
   { value: 'B2B', label: 'B2B', description: 'İşletmeden işletmeye' },
   { value: 'B2C', label: 'B2C', description: 'İşletmeden tüketiciye' },
   { value: 'Both', label: 'Her İkisi', description: 'Hem B2B hem B2C' }
 ] as const;
 
-// Fiyat segmenti seçenekleri
 export const PRICE_SEGMENTS = [
   { value: 'ekonomik', label: 'Ekonomik' },
   { value: 'orta', label: 'Orta Segment' },
   { value: 'premium', label: 'Premium' },
   { value: 'luks', label: 'Lüks' }
 ] as const;
+
+// =====================================================
+// Helper Fonksiyonlar
+// =====================================================
 
 // Helper: Brief tamamlanma yüzdesini hesapla
 export function calculateBriefCompletion(customer: Partial<Customer>): number {
@@ -398,20 +469,22 @@ export function calculateBriefCompletion(customer: Partial<Customer>): number {
     // Faz 2 - Marka Görselleri
     'brand_colors', 'brand_fonts', 'brand_assets',
     // Faz 2 - Entegrasyonlar
-    'integrations'
+    'integrations',
+    // AI Research
+    'pain_points', 'hook_sentences', 'cta_standards', 'forbidden_words', 'seasonal_calendar'
   ];
 
-  const filledCount = allFields.filter(field => 
-    checkField((customer as Record<string, unknown>)[field])
-  ).length;
+  const filledFields = allFields.filter(field => 
+    checkField(customer[field as keyof Customer])
+  );
 
-  return Math.round((filledCount / allFields.length) * 100);
+  return Math.round((filledFields.length / allFields.length) * 100);
 }
 
-// Helper: Bölüm bazlı tamamlanma
+// Helper: Bölüm tamamlanma yüzdesini hesapla
 export function calculateSectionCompletion(
-  customer: Partial<Customer>,
-  sectionFields: string[]
+  customer: Partial<Customer>, 
+  fields: readonly string[]
 ): number {
   const checkField = (value: unknown): boolean => {
     if (value === null || value === undefined) return false;
@@ -421,11 +494,11 @@ export function calculateSectionCompletion(
     return true;
   };
 
-  if (sectionFields.length === 0) return 0;
-  
-  const filledCount = sectionFields.filter(field => 
-    checkField((customer as Record<string, unknown>)[field])
-  ).length;
+  const filledFields = fields.filter(field => 
+    checkField(customer[field as keyof Customer])
+  );
 
-  return Math.round((filledCount / sectionFields.length) * 100);
+  return fields.length > 0 
+    ? Math.round((filledFields.length / fields.length) * 100) 
+    : 0;
 }
