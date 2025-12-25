@@ -7,7 +7,7 @@ import {
   Target, ShieldCheck, Calendar, ChevronDown, ChevronRight,
   Bot, Plus, X, Check, Globe, Instagram, Facebook, Linkedin,
   Youtube, Twitter, Loader2, Heart, Layers, Settings, FileText,
-  BookOpen, Palette, Link
+  BookOpen, Palette, Link, AlertCircle
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,6 +17,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
 import type { 
   Customer, 
@@ -47,6 +48,19 @@ import {
 } from '@/lib/customer-types'
 
 // =====================================================
+// AI RESEARCH HOOK
+// =====================================================
+const AI_RESEARCH_ENDPOINT = 'https://n8n.beeswebsite.com/webhook/ai-research'
+
+interface AIResearchState {
+  isLoading: boolean
+  progress: number
+  status: 'idle' | 'researching' | 'analyzing' | 'completing' | 'done' | 'error'
+  error: string | null
+  filledFields: string[]
+}
+
+// =====================================================
 // COLLAPSIBLE SECTION COMPONENT
 // =====================================================
 interface SectionProps {
@@ -58,9 +72,10 @@ interface SectionProps {
   completion: number
   children: React.ReactNode
   badge?: string
+  hasAIContent?: boolean
 }
 
-function CollapsibleSection({ id, title, icon, isOpen, onToggle, completion, children, badge }: SectionProps) {
+function CollapsibleSection({ id, title, icon, isOpen, onToggle, completion, children, badge, hasAIContent }: SectionProps) {
   return (
     <div className="border rounded-lg overflow-hidden bg-card">
       <button
@@ -73,6 +88,9 @@ function CollapsibleSection({ id, title, icon, isOpen, onToggle, completion, chi
           <span className="font-medium">{title}</span>
           {badge && (
             <Badge variant="secondary" className="text-xs">{badge}</Badge>
+          )}
+          {hasAIContent && (
+            <Bot className="h-4 w-4 text-primary" />
           )}
         </div>
         <div className="flex items-center gap-3">
@@ -144,15 +162,58 @@ function ProgressIndicator({ percentage }: ProgressIndicatorProps) {
 }
 
 // =====================================================
+// AI RESEARCH PROGRESS COMPONENT
+// =====================================================
+interface AIResearchProgressProps {
+  state: AIResearchState
+}
+
+function AIResearchProgress({ state }: AIResearchProgressProps) {
+  const statusMessages = {
+    idle: '',
+    researching: '🔍 Web araştırması yapılıyor...',
+    analyzing: '🧠 Veriler analiz ediliyor...',
+    completing: '✍️ Brief tamamlanıyor...',
+    done: '✅ Tamamlandı!',
+    error: '❌ Hata oluştu'
+  }
+
+  return (
+    <div className="space-y-3 p-4 bg-primary/5 rounded-lg border border-primary/20">
+      <div className="flex items-center gap-3">
+        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+        <div className="flex-1">
+          <p className="text-sm font-medium">{statusMessages[state.status]}</p>
+          <p className="text-xs text-muted-foreground">Bu işlem 2-3 dakika sürebilir</p>
+        </div>
+      </div>
+      
+      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+        <div 
+          className="h-full bg-primary rounded-full transition-all duration-1000"
+          style={{ width: `${state.progress}%` }}
+        />
+      </div>
+      
+      <div className="flex justify-between text-xs text-muted-foreground">
+        <span>İlerleme: {state.progress}%</span>
+        <span>Tahmini: {Math.max(0, Math.ceil((100 - state.progress) / 10) * 15)} saniye</span>
+      </div>
+    </div>
+  )
+}
+
+// =====================================================
 // TAG INPUT COMPONENT (for arrays)
 // =====================================================
 interface TagInputProps {
   value: string[]
   onChange: (value: string[]) => void
   placeholder?: string
+  hasAIContent?: boolean
 }
 
-function TagInput({ value, onChange, placeholder }: TagInputProps) {
+function TagInput({ value, onChange, placeholder, hasAIContent }: TagInputProps) {
   const [inputValue, setInputValue] = useState('')
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -171,6 +232,12 @@ function TagInput({ value, onChange, placeholder }: TagInputProps) {
 
   return (
     <div className="space-y-2">
+      {hasAIContent && (
+        <div className="flex items-center gap-1 text-xs text-primary">
+          <Bot className="h-3 w-3" />
+          <span>AI tarafından önerildi</span>
+        </div>
+      )}
       <div className="flex flex-wrap gap-2">
         {value.map((tag, index) => (
           <Badge key={index} variant="secondary" className="gap-1 pr-1">
@@ -598,6 +665,15 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
   // Open sections state
   const [openSections, setOpenSections] = useState<string[]>(['temel'])
   
+  // AI Research state
+  const [aiResearch, setAIResearch] = useState<AIResearchState>({
+    isLoading: false,
+    progress: 0,
+    status: 'idle',
+    error: null,
+    filledFields: []
+  })
+  
   // Form data
   const [formData, setFormData] = useState<CustomerFormData>({
     name: '',
@@ -636,7 +712,13 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
     brand_colors: {},
     brand_fonts: {},
     brand_assets: {},
-    integrations: {}
+    integrations: {},
+    // AI Research alanları
+    pain_points: [],
+    hook_sentences: [],
+    cta_standards: [],
+    forbidden_words: [],
+    seasonal_calendar: []
   })
 
   // Initialize form with customer data
@@ -679,7 +761,13 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
         brand_colors: customer.brand_colors || {},
         brand_fonts: customer.brand_fonts || {},
         brand_assets: customer.brand_assets || {},
-        integrations: customer.integrations || {}
+        integrations: customer.integrations || {},
+        // AI Research alanları
+        pain_points: customer.pain_points || [],
+        hook_sentences: customer.hook_sentences || [],
+        cta_standards: customer.cta_standards || [],
+        forbidden_words: customer.forbidden_words || [],
+        seasonal_calendar: customer.seasonal_calendar || []
       })
     }
   }, [customer])
@@ -695,6 +783,150 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
 
   // Calculate completion
   const completion = calculateBriefCompletion(formData)
+
+  // AI Research handler
+  const handleAIResearch = async () => {
+    if (!customer?.id) {
+      setAIResearch(prev => ({ ...prev, error: 'Müşteri kaydedilmeli' }))
+      return
+    }
+
+    if (!formData.website_url) {
+      setAIResearch(prev => ({ ...prev, error: 'Website URL gerekli' }))
+      return
+    }
+
+    setAIResearch({
+      isLoading: true,
+      progress: 0,
+      status: 'researching',
+      error: null,
+      filledFields: []
+    })
+
+    // Progress simulation
+    const progressInterval = setInterval(() => {
+      setAIResearch(prev => {
+        if (prev.progress >= 90) {
+          return prev
+        }
+        
+        const newProgress = prev.progress + Math.random() * 15
+        let newStatus = prev.status
+        
+        if (newProgress > 30 && prev.status === 'researching') {
+          newStatus = 'analyzing'
+        } else if (newProgress > 60 && prev.status === 'analyzing') {
+          newStatus = 'completing'
+        }
+        
+        return {
+          ...prev,
+          progress: Math.min(newProgress, 90),
+          status: newStatus
+        }
+      })
+    }, 3000)
+
+    try {
+      const response = await fetch(AI_RESEARCH_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          customer_id: customer.id,
+          name: formData.name,
+          website: formData.website_url,
+          sector: formData.sector
+        })
+      })
+
+      clearInterval(progressInterval)
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+
+      const data = await response.json()
+      
+      // Update form with AI data
+      const filledFields: string[] = []
+      
+      if (data.brand_description && !formData.brand_description) {
+        setFormData(prev => ({ ...prev, brand_description: data.brand_description }))
+        filledFields.push('brand_description')
+      }
+      if (data.mission && !formData.mission) {
+        setFormData(prev => ({ ...prev, mission: data.mission }))
+        filledFields.push('mission')
+      }
+      if (data.vision && !formData.vision) {
+        setFormData(prev => ({ ...prev, vision: data.vision }))
+        filledFields.push('vision')
+      }
+      if (data.usp && !formData.usp) {
+        setFormData(prev => ({ ...prev, usp: data.usp }))
+        filledFields.push('usp')
+      }
+      if (data.target_audience && !formData.target_audience) {
+        setFormData(prev => ({ ...prev, target_audience: data.target_audience }))
+        filledFields.push('target_audience')
+      }
+      if (data.pain_points?.length) {
+        setFormData(prev => ({ ...prev, pain_points: data.pain_points }))
+        filledFields.push('pain_points')
+      }
+      if (data.hook_sentences?.length) {
+        setFormData(prev => ({ ...prev, hook_sentences: data.hook_sentences }))
+        filledFields.push('hook_sentences')
+      }
+      if (data.cta_standards?.length) {
+        setFormData(prev => ({ ...prev, cta_standards: data.cta_standards }))
+        filledFields.push('cta_standards')
+      }
+      if (data.forbidden_words?.length) {
+        setFormData(prev => ({ ...prev, forbidden_words: data.forbidden_words }))
+        filledFields.push('forbidden_words')
+      }
+      if (data.seasonal_calendar?.length) {
+        setFormData(prev => ({ ...prev, seasonal_calendar: data.seasonal_calendar }))
+        filledFields.push('seasonal_calendar')
+      }
+      if (data.competitors?.length) {
+        setFormData(prev => ({ ...prev, competitors: data.competitors }))
+        filledFields.push('competitors')
+      }
+      if (data.content_pillars?.length) {
+        setFormData(prev => ({ ...prev, content_pillars: data.content_pillars }))
+        filledFields.push('content_pillars')
+      }
+
+      setAIResearch({
+        isLoading: false,
+        progress: 100,
+        status: 'done',
+        error: null,
+        filledFields
+      })
+
+      // Auto-save after AI research
+      setTimeout(() => {
+        onSave(formData)
+      }, 1000)
+
+    } catch (error) {
+      clearInterval(progressInterval)
+      console.error('AI Research error:', error)
+      setAIResearch({
+        isLoading: false,
+        progress: 0,
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Bir hata oluştu',
+        filledFields: []
+      })
+    }
+  }
 
   // Handle submit
   const handleSubmit = async (e: React.FormEvent) => {
@@ -723,26 +955,57 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
     entegrasyon: <Link className="h-4 w-4" />
   }
 
+  // Check if field has AI content
+  const hasAIContent = (field: string) => aiResearch.filledFields.includes(field)
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Progress Indicator */}
       <ProgressIndicator percentage={completion} />
 
-      {/* AI Button (Disabled for now) */}
-      <Button
-        type="button"
-        variant="secondary"
-        className="w-full justify-start gap-3 h-auto py-3"
-        disabled
-      >
-        <Bot className="h-5 w-5" />
-        <div className="text-left">
-          <div className="font-medium">Eksikleri AI ile Tamamla</div>
-          <div className="text-xs text-muted-foreground">
-            Website varsa önerilir • ~30-60 saniye (Yakında)
+      {/* AI Research Button */}
+      {aiResearch.isLoading ? (
+        <AIResearchProgress state={aiResearch} />
+      ) : (
+        <Button
+          type="button"
+          variant="secondary"
+          className="w-full justify-start gap-3 h-auto py-3"
+          onClick={handleAIResearch}
+          disabled={!customer?.id || !formData.website_url || isLoading}
+        >
+          <Bot className="h-5 w-5" />
+          <div className="text-left">
+            <div className="font-medium">Eksikleri AI ile Tamamla</div>
+            <div className="text-xs text-muted-foreground">
+              {!customer?.id 
+                ? 'Önce müşteriyi kaydedin' 
+                : !formData.website_url 
+                  ? 'Website URL gerekli'
+                  : 'Website varsa önerilir • ~2-3 dakika'
+              }
+            </div>
           </div>
-        </div>
-      </Button>
+        </Button>
+      )}
+
+      {/* AI Research Error */}
+      {aiResearch.error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{aiResearch.error}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* AI Research Success */}
+      {aiResearch.status === 'done' && aiResearch.filledFields.length > 0 && (
+        <Alert>
+          <Bot className="h-4 w-4" />
+          <AlertDescription>
+            AI {aiResearch.filledFields.length} alan doldurdu. Kontrol edip kaydedin.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Separator />
 
@@ -918,10 +1181,14 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
         isOpen={openSections.includes('marka')}
         onToggle={() => toggleSection('marka')}
         completion={calculateSectionCompletion(formData, BRIEF_SECTIONS.markaKimligi.fields)}
+        hasAIContent={hasAIContent('brand_description') || hasAIContent('mission') || hasAIContent('vision') || hasAIContent('usp')}
       >
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="brand_description">Marka Açıklaması</Label>
+            <Label htmlFor="brand_description" className="flex items-center gap-2">
+              Marka Açıklaması
+              {hasAIContent('brand_description') && <Bot className="h-3 w-3 text-primary" />}
+            </Label>
             <Textarea
               id="brand_description"
               value={formData.brand_description || ''}
@@ -932,7 +1199,10 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="mission">Misyon</Label>
+              <Label htmlFor="mission" className="flex items-center gap-2">
+                Misyon
+                {hasAIContent('mission') && <Bot className="h-3 w-3 text-primary" />}
+              </Label>
               <Textarea
                 id="mission"
                 value={formData.mission || ''}
@@ -942,7 +1212,10 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="vision">Vizyon</Label>
+              <Label htmlFor="vision" className="flex items-center gap-2">
+                Vizyon
+                {hasAIContent('vision') && <Bot className="h-3 w-3 text-primary" />}
+              </Label>
               <Textarea
                 id="vision"
                 value={formData.vision || ''}
@@ -963,7 +1236,10 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="usp">USP (Benzersiz Satış Noktası)</Label>
+              <Label htmlFor="usp" className="flex items-center gap-2">
+                USP (Benzersiz Satış Noktası)
+                {hasAIContent('usp') && <Bot className="h-3 w-3 text-primary" />}
+              </Label>
               <Input
                 id="usp"
                 value={formData.usp || ''}
@@ -983,10 +1259,14 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
         isOpen={openSections.includes('hedef')}
         onToggle={() => toggleSection('hedef')}
         completion={calculateSectionCompletion(formData, BRIEF_SECTIONS.hedefKitle.fields)}
+        hasAIContent={hasAIContent('target_audience')}
       >
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="target_audience">Hedef Kitle Tanımı</Label>
+            <Label htmlFor="target_audience" className="flex items-center gap-2">
+              Hedef Kitle Tanımı
+              {hasAIContent('target_audience') && <Bot className="h-3 w-3 text-primary" />}
+            </Label>
             <Textarea
               id="target_audience"
               value={formData.target_audience || ''}
@@ -1073,6 +1353,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
         isOpen={openSections.includes('rekabet')}
         onToggle={() => toggleSection('rekabet')}
         completion={calculateSectionCompletion(formData, BRIEF_SECTIONS.rekabet.fields)}
+        hasAIContent={hasAIContent('competitors')}
       >
         <CompetitorInput
           value={formData.competitors || []}
@@ -1170,6 +1451,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
         onToggle={() => toggleSection('strateji')}
         completion={calculateSectionCompletion(formData, ['content_pillars'])}
         badge="Gelişmiş"
+        hasAIContent={hasAIContent('content_pillars')}
       >
         <ContentPillarInput
           value={formData.content_pillars || []}
@@ -1434,7 +1716,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
         <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
           İptal
         </Button>
-        <Button type="submit" disabled={isLoading || !formData.name} className="flex-1">
+        <Button type="submit" disabled={isLoading || !formData.name || aiResearch.isLoading} className="flex-1">
           {isLoading ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
