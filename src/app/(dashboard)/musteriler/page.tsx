@@ -87,37 +87,53 @@ export default function MusterilerPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Oturum bulunamadı')
 
+      // Tüm alanları içeren veri objesi
+      const customerData = {
+        name: formData.name,
+        brand_name: formData.brand_name || null,
+        website_url: formData.website_url || null,
+        sector: formData.sector || null,
+        sub_sector: formData.sub_sector || null,
+        business_type: formData.business_type || null,
+        brand_voice: formData.brand_voice || null,
+        email: formData.email || null,
+        phone: formData.phone || null,
+        location: formData.location || null,
+        social_media: formData.social_media || {},
+        brand_description: formData.brand_description || null,
+        mission: formData.mission || null,
+        vision: formData.vision || null,
+        slogan: formData.slogan || null,
+        usp: formData.usp || null,
+        target_audience: formData.target_audience || null,
+        target_age_range: formData.target_age_range || null,
+        target_geography: formData.target_geography || null,
+        product_categories: formData.product_categories || [],
+        top_products: formData.top_products || [],
+        price_segment: formData.price_segment || null,
+        competitors: formData.competitors || [],
+        do_not_do: formData.do_not_do || [],
+        must_emphasize: formData.must_emphasize || [],
+        special_events: formData.special_events || [],
+        // Faz 2 alanları
+        brand_values: formData.brand_values || [],
+        buying_motivations: formData.buying_motivations || [],
+        content_pillars: formData.content_pillars || [],
+        platform_rules: formData.platform_rules || {},
+        example_captions: formData.example_captions || {},
+        word_mapping: formData.word_mapping || [],
+        brand_colors: formData.brand_colors || {},
+        brand_fonts: formData.brand_fonts || {},
+        brand_assets: formData.brand_assets || {},
+        integrations: formData.integrations || {}
+      }
+
       if (editingCustomer) {
         // Update
         const { error } = await supabase
           .from('customers')
           .update({
-            name: formData.name,
-            brand_name: formData.brand_name || null,
-            website_url: formData.website_url || null,
-            sector: formData.sector || null,
-            sub_sector: formData.sub_sector || null,
-            business_type: formData.business_type || null,
-            brand_voice: formData.brand_voice || null,
-            email: formData.email || null,
-            phone: formData.phone || null,
-            location: formData.location || null,
-            social_media: formData.social_media || {},
-            brand_description: formData.brand_description || null,
-            mission: formData.mission || null,
-            vision: formData.vision || null,
-            slogan: formData.slogan || null,
-            usp: formData.usp || null,
-            target_audience: formData.target_audience || null,
-            target_age_range: formData.target_age_range || null,
-            target_geography: formData.target_geography || null,
-            product_categories: formData.product_categories || [],
-            top_products: formData.top_products || [],
-            price_segment: formData.price_segment || null,
-            competitors: formData.competitors || [],
-            do_not_do: formData.do_not_do || [],
-            must_emphasize: formData.must_emphasize || [],
-            special_events: formData.special_events || [],
+            ...customerData,
             updated_at: new Date().toISOString()
           })
           .eq('id', editingCustomer.id)
@@ -128,32 +144,7 @@ export default function MusterilerPage() {
         const { error } = await supabase
           .from('customers')
           .insert({
-            name: formData.name || '',
-            brand_name: formData.brand_name || null,
-            website_url: formData.website_url || null,
-            sector: formData.sector || null,
-            sub_sector: formData.sub_sector || null,
-            business_type: formData.business_type || null,
-            brand_voice: formData.brand_voice || null,
-            email: formData.email || null,
-            phone: formData.phone || null,
-            location: formData.location || null,
-            social_media: formData.social_media || {},
-            brand_description: formData.brand_description || null,
-            mission: formData.mission || null,
-            vision: formData.vision || null,
-            slogan: formData.slogan || null,
-            usp: formData.usp || null,
-            target_audience: formData.target_audience || null,
-            target_age_range: formData.target_age_range || null,
-            target_geography: formData.target_geography || null,
-            product_categories: formData.product_categories || [],
-            top_products: formData.top_products || [],
-            price_segment: formData.price_segment || null,
-            competitors: formData.competitors || [],
-            do_not_do: formData.do_not_do || [],
-            must_emphasize: formData.must_emphasize || [],
-            special_events: formData.special_events || [],
+            ...customerData,
             user_id: user.id
           })
 
