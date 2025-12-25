@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -9,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Plus, Search, Pencil, Trash2, Building2, ArrowRight, Clock, Globe, Users } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, Building2, Clock, Globe, Users } from 'lucide-react'
 import { getRecentCustomers, addToRecentCustomers, formatRelativeTime, type RecentCustomer } from '@/lib/local-storage'
 import { CustomerBriefForm } from '@/components/customers/customer-brief-form'
 import type { Customer, CustomerFormData } from '@/lib/customer-types'
@@ -25,6 +26,7 @@ function getBrandVoiceLabel(value: string): string {
 }
 
 export default function MusterilerPage() {
+  const router = useRouter()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [recentCustomers, setRecentCustomers] = useState<RecentCustomer[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -32,7 +34,6 @@ export default function MusterilerPage() {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null)
-  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null)
   const [formLoading, setFormLoading] = useState(false)
 
   const supabase = createClient()
@@ -67,19 +68,23 @@ export default function MusterilerPage() {
     customer.sector?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  // Navigate to customer detail
+  function handleCustomerClick(customer: Customer) {
+    addToRecentCustomers({
+      id: customer.id,
+      name: customer.name,
+      sector: customer.sector || ''
+    })
+    setRecentCustomers(getRecentCustomers())
+    router.push(`/customers/${customer.id}`)
+  }
+
   // Open sheet for new customer
   function handleNewCustomer() {
-    setEditingCustomer(null)
     setSheetOpen(true)
   }
 
-  // Open sheet for editing
-  function handleEditCustomer(customer: Customer) {
-    setEditingCustomer(customer)
-    setSheetOpen(true)
-  }
-
-  // Save customer (create or update)
+  // Save new customer
   async function handleSaveCustomer(formData: CustomerFormData) {
     setFormLoading(true)
 
@@ -87,7 +92,6 @@ export default function MusterilerPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Oturum bulunamadı')
 
-      // Tüm alanları içeren veri objesi
       const customerData = {
         name: formData.name,
         brand_name: formData.brand_name || null,
@@ -115,7 +119,6 @@ export default function MusterilerPage() {
         do_not_do: formData.do_not_do || [],
         must_emphasize: formData.must_emphasize || [],
         special_events: formData.special_events || [],
-        // Faz 2 alanları
         brand_values: formData.brand_values || [],
         buying_motivations: formData.buying_motivations || [],
         content_pillars: formData.content_pillars || [],
@@ -125,35 +128,26 @@ export default function MusterilerPage() {
         brand_colors: formData.brand_colors || {},
         brand_fonts: formData.brand_fonts || {},
         brand_assets: formData.brand_assets || {},
-        integrations: formData.integrations || {}
+        integrations: formData.integrations || {},
+        user_id: user.id
       }
 
-      if (editingCustomer) {
-        // Update
-        const { error } = await supabase
-          .from('customers')
-          .update({
-            ...customerData,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', editingCustomer.id)
+      const { data, error } = await supabase
+        .from('customers')
+        .insert(customerData)
+        .select()
+        .single()
 
-        if (error) throw error
-      } else {
-        // Create
-        const { error } = await supabase
-          .from('customers')
-          .insert({
-            ...customerData,
-            user_id: user.id
-          })
-
-        if (error) throw error
-      }
+      if (error) throw error
 
       setSheetOpen(false)
-      setEditingCustomer(null)
-      fetchCustomers()
+      
+      // Yeni müşteriyi oluşturduktan sonra detay sayfasına git
+      if (data) {
+        router.push(`/customers/${data.id}`)
+      } else {
+        fetchCustomers()
+      }
     } catch (error) {
       console.error('Error saving customer:', error)
       throw error
@@ -182,17 +176,6 @@ export default function MusterilerPage() {
     }
   }
 
-  // Select customer (for content creation)
-  function handleSelectCustomer(customer: Customer) {
-    addToRecentCustomers({
-      id: customer.id,
-      name: customer.name,
-      sector: customer.sector || ''
-    })
-    setRecentCustomers(getRecentCustomers())
-    window.location.href = `/icerik-uret?customer=${customer.id}`
-  }
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -204,10 +187,7 @@ export default function MusterilerPage() {
           </p>
         </div>
         
-        <Sheet open={sheetOpen} onOpenChange={(open) => {
-          setSheetOpen(open)
-          if (!open) setEditingCustomer(null)
-        }}>
+        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger asChild>
             <Button onClick={handleNewCustomer}>
               <Plus className="h-4 w-4 mr-2" />
@@ -216,9 +196,7 @@ export default function MusterilerPage() {
           </SheetTrigger>
           <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
             <SheetHeader>
-              <SheetTitle>
-                {editingCustomer ? 'Müşteri Düzenle' : 'Yeni Müşteri Ekle'}
-              </SheetTitle>
+              <SheetTitle>Yeni Müşteri Ekle</SheetTitle>
               <SheetDescription>
                 Müşteri brief bilgilerini girin. AI içerik üretirken bu bilgileri kullanacak.
               </SheetDescription>
@@ -226,12 +204,9 @@ export default function MusterilerPage() {
             
             <div className="mt-6">
               <CustomerBriefForm
-                customer={editingCustomer}
+                customer={null}
                 onSave={handleSaveCustomer}
-                onCancel={() => {
-                  setSheetOpen(false)
-                  setEditingCustomer(null)
-                }}
+                onCancel={() => setSheetOpen(false)}
                 isLoading={formLoading}
               />
             </div>
@@ -266,7 +241,7 @@ export default function MusterilerPage() {
                 <Card 
                   key={recent.id} 
                   className="cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => handleSelectCustomer(customer)}
+                  onClick={() => handleCustomerClick(customer)}
                 >
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between">
@@ -314,94 +289,40 @@ export default function MusterilerPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredCustomers.map((customer) => {
               const completion = calculateBriefCompletion(customer)
               
               return (
-                <Card key={customer.id} className="hover:shadow-sm transition-shadow">
+                <Card 
+                  key={customer.id} 
+                  className="cursor-pointer hover:shadow-md transition-all hover:border-primary/50"
+                  onClick={() => handleCustomerClick(customer)}
+                >
                   <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                          <CardTitle className="text-base truncate">{customer.name}</CardTitle>
-                        </div>
-                        
-                        {/* Badges */}
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {customer.sector && (
-                            <Badge variant="secondary">
-                              {getSectorLabel(customer.sector)}
-                            </Badge>
-                          )}
-                          {customer.brand_voice && (
-                            <Badge variant="outline">
-                              {getBrandVoiceLabel(customer.brand_voice)}
-                            </Badge>
-                          )}
-                          {customer.business_type && (
-                            <Badge variant="outline">
-                              {customer.business_type}
-                            </Badge>
-                          )}
-                        </div>
-
-                        {/* Info Row */}
-                        <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground">
-                          {customer.website_url && (
-                            <span className="flex items-center gap-1">
-                              <Globe className="h-3 w-3" />
-                              {(() => {
-                                try {
-                                  return new URL(customer.website_url).hostname
-                                } catch {
-                                  return customer.website_url
-                                }
-                              })()}
-                            </span>
-                          )}
-                          {customer.target_audience && (
-                            <span className="flex items-center gap-1 truncate max-w-48">
-                              <Users className="h-3 w-3" />
-                              {customer.target_audience}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Completion Bar */}
-                        <div className="flex items-center gap-2 mt-3">
-                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden max-w-32">
-                            <div 
-                              className={`h-full rounded-full transition-all ${
-                                completion < 30 ? 'bg-red-500' :
-                                completion < 60 ? 'bg-yellow-500' :
-                                completion < 90 ? 'bg-blue-500' : 'bg-green-500'
-                              }`}
-                              style={{ width: `${completion}%` }}
-                            />
-                          </div>
-                          <span className="text-xs text-muted-foreground">
-                            Brief %{completion}
-                          </span>
-                        </div>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-5 w-5 text-muted-foreground" />
+                        <CardTitle className="text-base">{customer.name}</CardTitle>
                       </div>
                       
-                      {/* Actions */}
-                      <div className="flex items-center gap-2 flex-shrink-0">
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
+                          className="h-8 w-8"
                           onClick={(e) => {
                             e.stopPropagation()
-                            handleEditCustomer(customer)
+                            router.push(`/customers/${customer.id}`)
                           }}
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
+                          className="h-8 w-8"
                           onClick={(e) => {
                             e.stopPropagation()
                             setCustomerToDelete(customer)
@@ -410,14 +331,52 @@ export default function MusterilerPage() {
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => handleSelectCustomer(customer)}
-                        >
-                          Seç
-                          <ArrowRight className="h-4 w-4 ml-1" />
-                        </Button>
                       </div>
+                    </div>
+                    
+                    {/* Badges */}
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {customer.sector && (
+                        <Badge variant="secondary" className="text-xs">
+                          {getSectorLabel(customer.sector)}
+                        </Badge>
+                      )}
+                      {customer.brand_voice && (
+                        <Badge variant="outline" className="text-xs">
+                          {getBrandVoiceLabel(customer.brand_voice)}
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    {customer.website_url && (
+                      <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+                        <Globe className="h-3 w-3" />
+                        {(() => {
+                          try {
+                            return new URL(customer.website_url).hostname
+                          } catch {
+                            return customer.website_url
+                          }
+                        })()}
+                      </div>
+                    )}
+
+                    {/* Completion Bar */}
+                    <div className="flex items-center gap-2 mt-3 pt-3 border-t">
+                      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full rounded-full transition-all ${
+                            completion < 30 ? 'bg-red-500' :
+                            completion < 60 ? 'bg-yellow-500' :
+                            completion < 90 ? 'bg-blue-500' : 'bg-green-500'
+                          }`}
+                          style={{ width: `${completion}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-muted-foreground font-medium">
+                        %{completion}
+                      </span>
                     </div>
                   </CardHeader>
                 </Card>
