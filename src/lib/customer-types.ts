@@ -36,6 +36,67 @@ export interface SpecialEvent {
   recurring?: boolean;
 }
 
+// İçerik Sütunları (Content Pillars)
+export interface ContentPillar {
+  name: string;
+  description: string;
+  example_topics?: string[];
+}
+
+// Platform Kuralları
+export interface PlatformRule {
+  caption_length?: string;
+  emoji_count?: string;
+  hashtag_count?: string;
+  cta_style?: string;
+}
+
+export interface PlatformRules {
+  instagram?: PlatformRule;
+  linkedin?: PlatformRule;
+  facebook?: PlatformRule;
+  tiktok?: PlatformRule;
+  twitter?: PlatformRule;
+}
+
+// Örnek İçerikler
+export interface ExampleCaptions {
+  good_examples?: string[];
+  bad_examples?: string[];
+}
+
+// Kelime Haritası
+export interface WordMapping {
+  avoid: string;
+  use_instead: string;
+}
+
+// Marka Renkleri
+export interface BrandColors {
+  primary?: string;
+  secondary?: string;
+  accent?: string;
+}
+
+// Marka Fontları
+export interface BrandFonts {
+  heading?: string;
+  body?: string;
+}
+
+// Marka Varlıkları
+export interface BrandAssets {
+  logo_url?: string;
+  guidelines_url?: string;
+}
+
+// Entegrasyonlar
+export interface Integrations {
+  google_analytics_id?: string;
+  google_ads_id?: string;
+  meta_pixel_id?: string;
+}
+
 // Brand voice options
 export type BrandVoice = 'samimi' | 'kurumsal' | 'enerjik' | 'profesyonel';
 
@@ -104,6 +165,30 @@ export interface Customer {
   // AI araştırma meta
   ai_research_date?: string | null;
   ai_research_status?: AIResearchStatus | null;
+
+  // Faz 2 - Marka Değerleri
+  brand_values?: string[] | null;
+  buying_motivations?: string[] | null;
+
+  // Faz 2 - İçerik Stratejisi
+  content_pillars?: ContentPillar[] | null;
+
+  // Faz 2 - Platform Kuralları
+  platform_rules?: PlatformRules | null;
+
+  // Faz 2 - Örnek İçerikler
+  example_captions?: ExampleCaptions | null;
+
+  // Faz 2 - Kelime Haritası
+  word_mapping?: WordMapping[] | null;
+
+  // Faz 2 - Marka Görselleri
+  brand_colors?: BrandColors | null;
+  brand_fonts?: BrandFonts | null;
+  brand_assets?: BrandAssets | null;
+
+  // Faz 2 - Entegrasyonlar
+  integrations?: Integrations | null;
 
   // Eski alan (geriye uyumluluk)
   notes?: string | null;
@@ -176,6 +261,56 @@ export const BRIEF_SECTIONS = {
     icon: 'Calendar',
     fields: ['special_events'],
     required: []
+  },
+  // Faz 2 - Gelişmiş Bölümler
+  markaDegerleri: {
+    id: 'degerler',
+    label: 'Marka Değerleri',
+    icon: 'Heart',
+    fields: ['brand_values', 'buying_motivations'],
+    required: []
+  },
+  icerikStratejisi: {
+    id: 'strateji',
+    label: 'İçerik Stratejisi',
+    icon: 'Layers',
+    fields: ['content_pillars'],
+    required: []
+  },
+  platformKurallari: {
+    id: 'platform',
+    label: 'Platform Kuralları',
+    icon: 'Settings',
+    fields: ['platform_rules'],
+    required: []
+  },
+  ornekIcerikler: {
+    id: 'ornekler',
+    label: 'Örnek İçerikler',
+    icon: 'FileText',
+    fields: ['example_captions'],
+    required: []
+  },
+  kelimeHaritasi: {
+    id: 'kelime',
+    label: 'Kelime Haritası',
+    icon: 'BookOpen',
+    fields: ['word_mapping'],
+    required: []
+  },
+  markaGorselleri: {
+    id: 'gorseller',
+    label: 'Marka Görselleri',
+    icon: 'Palette',
+    fields: ['brand_colors', 'brand_fonts', 'brand_assets'],
+    required: []
+  },
+  entegrasyonlar: {
+    id: 'entegrasyon',
+    label: 'Entegrasyonlar',
+    icon: 'Link',
+    fields: ['integrations'],
+    required: []
   }
 } as const;
 
@@ -232,15 +367,38 @@ export function calculateBriefCompletion(customer: Partial<Customer>): number {
   };
 
   const allFields = [
+    // Temel
     'name', 'website_url', 'sector', 'sub_sector', 'business_type', 'brand_voice',
+    // İletişim
     'email', 'phone', 'location',
+    // Sosyal Medya
     'social_media',
+    // Marka Kimliği
     'brand_description', 'mission', 'vision', 'slogan', 'usp',
+    // Hedef Kitle
     'target_audience', 'target_age_range', 'target_geography',
+    // Ürün
     'product_categories', 'top_products', 'price_segment',
+    // Rekabet
     'competitors',
+    // Kurallar
     'do_not_do', 'must_emphasize',
-    'special_events'
+    // Takvim
+    'special_events',
+    // Faz 2 - Marka Değerleri
+    'brand_values', 'buying_motivations',
+    // Faz 2 - İçerik Stratejisi
+    'content_pillars',
+    // Faz 2 - Platform Kuralları
+    'platform_rules',
+    // Faz 2 - Örnek İçerikler
+    'example_captions',
+    // Faz 2 - Kelime Haritası
+    'word_mapping',
+    // Faz 2 - Marka Görselleri
+    'brand_colors', 'brand_fonts', 'brand_assets',
+    // Faz 2 - Entegrasyonlar
+    'integrations'
   ];
 
   const filledCount = allFields.filter(field => 
