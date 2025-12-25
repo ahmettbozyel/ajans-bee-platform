@@ -86,22 +86,37 @@ export default function MusterilerPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Oturum bulunamadı')
 
-      // Clean up empty values
-      const cleanedData = Object.fromEntries(
-        Object.entries(formData).filter(([_, v]) => {
-          if (v === null || v === undefined || v === '') return false
-          if (Array.isArray(v) && v.length === 0) return false
-          if (typeof v === 'object' && Object.keys(v).length === 0) return false
-          return true
-        })
-      )
-
       if (editingCustomer) {
         // Update
         const { error } = await supabase
           .from('customers')
           .update({
-            ...cleanedData,
+            name: formData.name,
+            brand_name: formData.brand_name || null,
+            website_url: formData.website_url || null,
+            sector: formData.sector || null,
+            sub_sector: formData.sub_sector || null,
+            business_type: formData.business_type || null,
+            brand_voice: formData.brand_voice || null,
+            email: formData.email || null,
+            phone: formData.phone || null,
+            location: formData.location || null,
+            social_media: formData.social_media || {},
+            brand_description: formData.brand_description || null,
+            mission: formData.mission || null,
+            vision: formData.vision || null,
+            slogan: formData.slogan || null,
+            usp: formData.usp || null,
+            target_audience: formData.target_audience || null,
+            target_age_range: formData.target_age_range || null,
+            target_geography: formData.target_geography || null,
+            product_categories: formData.product_categories || [],
+            top_products: formData.top_products || [],
+            price_segment: formData.price_segment || null,
+            competitors: formData.competitors || [],
+            do_not_do: formData.do_not_do || [],
+            must_emphasize: formData.must_emphasize || [],
+            special_events: formData.special_events || [],
             updated_at: new Date().toISOString()
           })
           .eq('id', editingCustomer.id)
@@ -112,7 +127,32 @@ export default function MusterilerPage() {
         const { error } = await supabase
           .from('customers')
           .insert({
-            ...cleanedData,
+            name: formData.name || '',
+            brand_name: formData.brand_name || null,
+            website_url: formData.website_url || null,
+            sector: formData.sector || null,
+            sub_sector: formData.sub_sector || null,
+            business_type: formData.business_type || null,
+            brand_voice: formData.brand_voice || null,
+            email: formData.email || null,
+            phone: formData.phone || null,
+            location: formData.location || null,
+            social_media: formData.social_media || {},
+            brand_description: formData.brand_description || null,
+            mission: formData.mission || null,
+            vision: formData.vision || null,
+            slogan: formData.slogan || null,
+            usp: formData.usp || null,
+            target_audience: formData.target_audience || null,
+            target_age_range: formData.target_age_range || null,
+            target_geography: formData.target_geography || null,
+            product_categories: formData.product_categories || [],
+            top_products: formData.top_products || [],
+            price_segment: formData.price_segment || null,
+            competitors: formData.competitors || [],
+            do_not_do: formData.do_not_do || [],
+            must_emphasize: formData.must_emphasize || [],
+            special_events: formData.special_events || [],
             user_id: user.id
           })
 
@@ -320,7 +360,13 @@ export default function MusterilerPage() {
                           {customer.website_url && (
                             <span className="flex items-center gap-1">
                               <Globe className="h-3 w-3" />
-                              {new URL(customer.website_url).hostname}
+                              {(() => {
+                                try {
+                                  return new URL(customer.website_url).hostname
+                                } catch {
+                                  return customer.website_url
+                                }
+                              })()}
                             </span>
                           )}
                           {customer.target_audience && (
