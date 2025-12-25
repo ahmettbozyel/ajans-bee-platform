@@ -10,10 +10,34 @@ export type Database = {
           name: string
           brand_name: string | null
           sector: string | null
-          tone_of_voice: string | null
+          brand_voice: string | null  // renamed from tone_of_voice
           target_audience: string | null
           notes: string | null
           user_id: string
+          // Yeni alanlar
+          website_url: string | null
+          sub_sector: string | null
+          business_type: string | null
+          email: string | null
+          phone: string | null
+          location: string | null
+          social_media: Record<string, unknown> | null
+          brand_description: string | null
+          mission: string | null
+          vision: string | null
+          slogan: string | null
+          usp: string | null
+          target_age_range: string | null
+          target_geography: string | null
+          product_categories: string[] | null
+          top_products: string[] | null
+          price_segment: string | null
+          competitors: Record<string, unknown>[] | null
+          do_not_do: string[] | null
+          must_emphasize: string[] | null
+          special_events: Record<string, unknown>[] | null
+          ai_research_date: string | null
+          ai_research_status: string | null
         }
         Insert: {
           id?: string
@@ -22,10 +46,33 @@ export type Database = {
           name: string
           brand_name?: string | null
           sector?: string | null
-          tone_of_voice?: string | null
+          brand_voice?: string | null
           target_audience?: string | null
           notes?: string | null
           user_id: string
+          website_url?: string | null
+          sub_sector?: string | null
+          business_type?: string | null
+          email?: string | null
+          phone?: string | null
+          location?: string | null
+          social_media?: Record<string, unknown> | null
+          brand_description?: string | null
+          mission?: string | null
+          vision?: string | null
+          slogan?: string | null
+          usp?: string | null
+          target_age_range?: string | null
+          target_geography?: string | null
+          product_categories?: string[] | null
+          top_products?: string[] | null
+          price_segment?: string | null
+          competitors?: Record<string, unknown>[] | null
+          do_not_do?: string[] | null
+          must_emphasize?: string[] | null
+          special_events?: Record<string, unknown>[] | null
+          ai_research_date?: string | null
+          ai_research_status?: string | null
         }
         Update: {
           id?: string
@@ -34,10 +81,33 @@ export type Database = {
           name?: string
           brand_name?: string | null
           sector?: string | null
-          tone_of_voice?: string | null
+          brand_voice?: string | null
           target_audience?: string | null
           notes?: string | null
           user_id?: string
+          website_url?: string | null
+          sub_sector?: string | null
+          business_type?: string | null
+          email?: string | null
+          phone?: string | null
+          location?: string | null
+          social_media?: Record<string, unknown> | null
+          brand_description?: string | null
+          mission?: string | null
+          vision?: string | null
+          slogan?: string | null
+          usp?: string | null
+          target_age_range?: string | null
+          target_geography?: string | null
+          product_categories?: string[] | null
+          top_products?: string[] | null
+          price_segment?: string | null
+          competitors?: Record<string, unknown>[] | null
+          do_not_do?: string[] | null
+          must_emphasize?: string[] | null
+          special_events?: Record<string, unknown>[] | null
+          ai_research_date?: string | null
+          ai_research_status?: string | null
         }
       }
       posts: {
