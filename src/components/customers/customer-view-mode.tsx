@@ -55,23 +55,58 @@ interface CustomerViewModeProps {
 }
 
 // =====================================================
+// SAFE STRING HELPER - Prevents React error #31
+// =====================================================
+
+function safeString(value: unknown): string {
+  if (value === null || value === undefined) return ''
+  if (typeof value === 'string') return value
+  if (typeof value === 'number') return String(value)
+  if (typeof value === 'object') {
+    // If it's an object with a specific property, try to extract it
+    if ('value' in value && typeof (value as any).value === 'string') {
+      return (value as any).value
+    }
+    if ('label' in value && typeof (value as any).label === 'string') {
+      return (value as any).label
+    }
+    // Last resort: stringify
+    try {
+      return JSON.stringify(value)
+    } catch {
+      return '[object]'
+    }
+  }
+  return String(value)
+}
+
+function safeArray<T>(value: unknown): T[] {
+  if (Array.isArray(value)) return value as T[]
+  return []
+}
+
+// =====================================================
 // HELPER FUNCTIONS
 // =====================================================
 
-function getSectorLabel(value: string): string {
-  return SECTORS.find(s => s.value === value)?.label || value
+function getSectorLabel(value: unknown): string {
+  const strValue = safeString(value)
+  return SECTORS.find(s => s.value === strValue)?.label || strValue
 }
 
-function getBrandVoiceLabel(value: string): string {
-  return BRAND_VOICES.find(v => v.value === value)?.label || value
+function getBrandVoiceLabel(value: unknown): string {
+  const strValue = safeString(value)
+  return BRAND_VOICES.find(v => v.value === strValue)?.label || strValue
 }
 
-function getBusinessTypeLabel(value: string): string {
-  return BUSINESS_TYPES.find(t => t.value === value)?.label || value
+function getBusinessTypeLabel(value: unknown): string {
+  const strValue = safeString(value)
+  return BUSINESS_TYPES.find(t => t.value === strValue)?.label || strValue
 }
 
-function getPriceSegmentLabel(value: string): string {
-  return PRICE_SEGMENTS.find(s => s.value === value)?.label || value
+function getPriceSegmentLabel(value: unknown): string {
+  const strValue = safeString(value)
+  return PRICE_SEGMENTS.find(s => s.value === strValue)?.label || strValue
 }
 
 function formatFileSize(bytes: number): string {
@@ -226,7 +261,6 @@ function AssetCard({ asset, onDownload, onPreview, onDelete }: AssetCardProps) {
 
   return (
     <div className="group relative border rounded-lg p-3 hover:border-primary/50 hover:shadow-sm transition-all bg-card">
-      {/* Thumbnail */}
       <div className="aspect-square rounded-md bg-muted/50 flex items-center justify-center mb-2 overflow-hidden">
         {isImage ? (
           <img 
@@ -240,8 +274,6 @@ function AssetCard({ asset, onDownload, onPreview, onDelete }: AssetCardProps) {
           </div>
         )}
       </div>
-
-      {/* Info */}
       <div className="space-y-1">
         <p className="text-xs font-medium truncate" title={asset.name}>
           {asset.name}
@@ -255,8 +287,6 @@ function AssetCard({ asset, onDownload, onPreview, onDelete }: AssetCardProps) {
           </span>
         </div>
       </div>
-
-      {/* Hover Actions */}
       <div className="absolute inset-0 bg-background/80 backdrop-blur-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
         <Button size="sm" variant="secondary" onClick={() => onDownload(asset)}>
           <Download className="h-3 w-3 mr-1" />
@@ -277,30 +307,39 @@ function AssetCard({ asset, onDownload, onPreview, onDelete }: AssetCardProps) {
 // =====================================================
 
 interface CompetitorCardProps {
-  competitor: Competitor
+  competitor: Competitor | unknown
 }
 
 function CompetitorCard({ competitor }: CompetitorCardProps) {
+  // Safe access for competitor data
+  const comp = competitor as any
+  const name = safeString(comp?.name)
+  const instagramHandle = safeString(comp?.instagram_handle)
+  const followers = typeof comp?.followers === 'number' ? comp.followers : undefined
+  const strengths = safeArray<string>(comp?.strengths)
+
+  if (!name) return null
+
   return (
     <div className="p-3 border rounded-lg bg-muted/30">
       <div className="flex items-start justify-between mb-2">
-        <span className="font-medium text-sm">{competitor.name}</span>
-        {competitor.instagram_handle && (
+        <span className="font-medium text-sm">{name}</span>
+        {instagramHandle && (
           <Badge variant="outline" className="text-[10px]">
-            @{competitor.instagram_handle}
+            @{instagramHandle}
           </Badge>
         )}
       </div>
-      {competitor.followers && (
+      {followers && (
         <p className="text-xs text-muted-foreground mb-2">
-          {formatFollowers(competitor.followers)} takipçi
+          {formatFollowers(followers)} takipçi
         </p>
       )}
-      {competitor.strengths && competitor.strengths.length > 0 && (
+      {strengths.length > 0 && (
         <div className="flex flex-wrap gap-1">
-          {competitor.strengths.map((strength, i) => (
+          {strengths.map((strength, i) => (
             <Badge key={i} variant="secondary" className="text-[10px]">
-              {strength}
+              {safeString(strength)}
             </Badge>
           ))}
         </div>
@@ -314,13 +353,26 @@ function CompetitorCard({ competitor }: CompetitorCardProps) {
 // =====================================================
 
 interface EventCardProps {
-  event: SpecialEvent
+  event: SpecialEvent | unknown
 }
 
 function EventCard({ event }: EventCardProps) {
-  const eventDate = new Date(event.date)
-  const month = eventDate.toLocaleDateString('tr-TR', { month: 'short' })
-  const day = eventDate.getDate()
+  const evt = event as any
+  const dateStr = safeString(evt?.date)
+  const name = safeString(evt?.name)
+  const notes = safeString(evt?.notes)
+
+  if (!name || !dateStr) return null
+
+  let month = ''
+  let day = 0
+  try {
+    const eventDate = new Date(dateStr)
+    month = eventDate.toLocaleDateString('tr-TR', { month: 'short' })
+    day = eventDate.getDate()
+  } catch {
+    return null
+  }
 
   return (
     <div className="flex items-center gap-3 p-2 border rounded-lg bg-muted/30">
@@ -329,9 +381,9 @@ function EventCard({ event }: EventCardProps) {
         <span className="text-lg font-bold text-primary">{day}</span>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{event.name}</p>
-        {event.notes && (
-          <p className="text-xs text-muted-foreground truncate">{event.notes}</p>
+        <p className="text-sm font-medium truncate">{name}</p>
+        {notes && (
+          <p className="text-xs text-muted-foreground truncate">{notes}</p>
         )}
       </div>
     </div>
@@ -400,13 +452,11 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
 
         if (error) throw error
 
-        // Get public URLs for each file
         const assetsWithUrls: BrandAsset[] = (data || []).map(file => {
           const { data: urlData } = supabase.storage
             .from('brand-assets')
             .getPublicUrl(`${customer.id}/${file.name}`)
 
-          // Parse category from file name (format: category_filename.ext)
           const parts = file.name.split('_')
           const category = ['logo', 'brand-guide', 'corporate-identity', 'other'].includes(parts[0]) 
             ? parts[0] as BrandAsset['category']
@@ -435,7 +485,6 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
     fetchAssets()
   }, [customer.id, supabase])
 
-  // Upload handler
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || files.length === 0) return
@@ -453,12 +502,10 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
         if (error) throw error
       }
 
-      // Refresh assets
       const { data } = await supabase.storage
         .from('brand-assets')
         .list(`${customer.id}`)
 
-      // Update assets state
       const assetsWithUrls: BrandAsset[] = (data || []).map(file => {
         const { data: urlData } = supabase.storage
           .from('brand-assets')
@@ -489,7 +536,6 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
     }
   }
 
-  // Download handler
   const handleDownload = async (asset: BrandAsset) => {
     const link = document.createElement('a')
     link.href = asset.url
@@ -500,12 +546,10 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
     document.body.removeChild(link)
   }
 
-  // Preview handler
   const handlePreview = (asset: BrandAsset) => {
     window.open(asset.url, '_blank')
   }
 
-  // Delete asset handler
   const handleDeleteAsset = async (asset: BrandAsset) => {
     try {
       const { error } = await supabase.storage
@@ -526,12 +570,22 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
   const missingFields: string[] = []
   if (!customer.mission) missingFields.push('Misyon')
   if (!customer.vision) missingFields.push('Vizyon')
-  if (!customer.competitors || customer.competitors.length === 0) missingFields.push('Rakipler')
-  if (!customer.special_events || customer.special_events.length === 0) missingFields.push('Özel Günler')
+  if (!customer.competitors || safeArray(customer.competitors).length === 0) missingFields.push('Rakipler')
+  if (!customer.special_events || safeArray(customer.special_events).length === 0) missingFields.push('Özel Günler')
 
-  // Social media data
-  const socialMedia = customer.social_media || {}
-  const hasSocialMedia = Object.values(socialMedia).some(s => s?.handle)
+  // Social media data - safe access
+  const socialMedia = (customer.social_media && typeof customer.social_media === 'object') ? customer.social_media : {}
+  const hasSocialMedia = Object.values(socialMedia).some(s => s && typeof s === 'object' && (s as any)?.handle)
+
+  // Safe arrays
+  const competitors = safeArray(customer.competitors)
+  const specialEvents = safeArray(customer.special_events)
+  const productCategories = safeArray(customer.product_categories)
+  const topProducts = safeArray(customer.top_products)
+  const doNotDo = safeArray(customer.do_not_do)
+  const mustEmphasize = safeArray(customer.must_emphasize)
+  const painPoints = safeArray(customer.pain_points)
+  const hookSentences = safeArray(customer.hook_sentences)
 
   return (
     <div className="space-y-6">
@@ -577,10 +631,10 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
           <div className="flex flex-col md:flex-row md:items-start gap-6">
             {/* Logo */}
             <div className="shrink-0">
-              {customer.brand_assets?.logo_url ? (
+              {customer.brand_assets && typeof customer.brand_assets === 'object' && (customer.brand_assets as any)?.logo_url ? (
                 <img 
-                  src={customer.brand_assets.logo_url}
-                  alt={customer.name}
+                  src={(customer.brand_assets as any).logo_url}
+                  alt={safeString(customer.name)}
                   className="w-16 h-16 md:w-20 md:h-20 rounded-xl object-contain bg-white shadow-sm"
                 />
               ) : (
@@ -593,12 +647,12 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
             {/* Info */}
             <div className="flex-1 space-y-3">
               <div>
-                <h1 className="text-2xl font-bold">{customer.name}</h1>
+                <h1 className="text-2xl font-bold">{safeString(customer.name)}</h1>
                 <div className="flex flex-wrap items-center gap-2 mt-2">
                   {customer.sector && (
                     <Badge variant="secondary">
                       {getSectorLabel(customer.sector)}
-                      {customer.sub_sector && ` - ${customer.sub_sector}`}
+                      {customer.sub_sector && ` - ${safeString(customer.sub_sector)}`}
                     </Badge>
                   )}
                   {customer.business_type && (
@@ -607,7 +661,7 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
                   {customer.location && (
                     <Badge variant="outline" className="gap-1">
                       <MapPin className="h-3 w-3" />
-                      {customer.location}
+                      {safeString(customer.location)}
                     </Badge>
                   )}
                 </div>
@@ -617,7 +671,7 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
               <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                 {customer.website_url && (
                   <a 
-                    href={customer.website_url}
+                    href={safeString(customer.website_url)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 hover:text-primary transition-colors"
@@ -625,23 +679,23 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
                     <Globe className="h-4 w-4" />
                     {(() => {
                       try {
-                        return new URL(customer.website_url).hostname
+                        return new URL(safeString(customer.website_url)).hostname
                       } catch {
-                        return customer.website_url
+                        return safeString(customer.website_url)
                       }
                     })()}
                   </a>
                 )}
                 {customer.email && (
-                  <a href={`mailto:${customer.email}`} className="flex items-center gap-1 hover:text-primary transition-colors">
+                  <a href={`mailto:${safeString(customer.email)}`} className="flex items-center gap-1 hover:text-primary transition-colors">
                     <Mail className="h-4 w-4" />
-                    {customer.email}
+                    {safeString(customer.email)}
                   </a>
                 )}
                 {customer.phone && (
-                  <a href={`tel:${customer.phone}`} className="flex items-center gap-1 hover:text-primary transition-colors">
+                  <a href={`tel:${safeString(customer.phone)}`} className="flex items-center gap-1 hover:text-primary transition-colors">
                     <Phone className="h-4 w-4" />
-                    {customer.phone}
+                    {safeString(customer.phone)}
                   </a>
                 )}
               </div>
@@ -649,14 +703,17 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
               {/* Social Media Badges */}
               {hasSocialMedia && (
                 <div className="flex flex-wrap gap-2">
-                  {Object.entries(socialMedia).map(([platform, data]) => (
-                    <SocialBadge 
-                      key={platform}
-                      platform={platform}
-                      handle={data?.handle}
-                      followers={data?.followers}
-                    />
-                  ))}
+                  {Object.entries(socialMedia).map(([platform, data]) => {
+                    const d = data as any
+                    return (
+                      <SocialBadge 
+                        key={platform}
+                        platform={platform}
+                        handle={safeString(d?.handle) || undefined}
+                        followers={typeof d?.followers === 'number' ? d.followers : undefined}
+                      />
+                    )
+                  })}
                 </div>
               )}
 
@@ -787,31 +844,31 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
             {customer.brand_description && (
               <div>
                 <p className="text-xs text-muted-foreground font-medium mb-1">Açıklama</p>
-                <p>{customer.brand_description}</p>
+                <p>{safeString(customer.brand_description)}</p>
               </div>
             )}
             {customer.mission && (
               <div>
                 <p className="text-xs text-muted-foreground font-medium mb-1">Misyon</p>
-                <p>{customer.mission}</p>
+                <p>{safeString(customer.mission)}</p>
               </div>
             )}
             {customer.vision && (
               <div>
                 <p className="text-xs text-muted-foreground font-medium mb-1">Vizyon</p>
-                <p>{customer.vision}</p>
+                <p>{safeString(customer.vision)}</p>
               </div>
             )}
             {customer.slogan && (
               <div>
                 <p className="text-xs text-muted-foreground font-medium mb-1">Slogan</p>
-                <p className="italic">"{customer.slogan}"</p>
+                <p className="italic">"{safeString(customer.slogan)}"</p>
               </div>
             )}
             {customer.usp && (
               <div>
                 <p className="text-xs text-muted-foreground font-medium mb-1">USP (Fark)</p>
-                <p>{customer.usp}</p>
+                <p>{safeString(customer.usp)}</p>
               </div>
             )}
           </div>
@@ -829,20 +886,20 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
             {customer.target_audience && (
               <div>
                 <p className="text-xs text-muted-foreground font-medium mb-1">Genel Tanım</p>
-                <p>{customer.target_audience}</p>
+                <p>{safeString(customer.target_audience)}</p>
               </div>
             )}
             <div className="grid grid-cols-2 gap-3">
               {customer.target_age_range && (
                 <div>
                   <p className="text-xs text-muted-foreground font-medium mb-1">Yaş Aralığı</p>
-                  <p>{customer.target_age_range}</p>
+                  <p>{safeString(customer.target_age_range)}</p>
                 </div>
               )}
               {customer.target_geography && (
                 <div>
                   <p className="text-xs text-muted-foreground font-medium mb-1">Coğrafya</p>
-                  <p>{customer.target_geography}</p>
+                  <p>{safeString(customer.target_geography)}</p>
                 </div>
               )}
             </div>
@@ -853,29 +910,29 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
         <InfoCard
           title="Ürün / Hizmet"
           icon={<Package className="h-4 w-4" />}
-          isEmpty={(!customer.product_categories || customer.product_categories.length === 0) && (!customer.top_products || customer.top_products.length === 0)}
+          isEmpty={productCategories.length === 0 && topProducts.length === 0}
           emptyMessage="Ürün bilgisi henüz eklenmedi"
           onAddClick={onEdit}
         >
           <div className="space-y-3 text-sm">
-            {customer.product_categories && customer.product_categories.length > 0 && (
+            {productCategories.length > 0 && (
               <div>
                 <p className="text-xs text-muted-foreground font-medium mb-2">Kategoriler</p>
                 <div className="flex flex-wrap gap-1">
-                  {customer.product_categories.map((cat, i) => (
-                    <Badge key={i} variant="secondary" className="text-xs">{cat}</Badge>
+                  {productCategories.map((cat, i) => (
+                    <Badge key={i} variant="secondary" className="text-xs">{safeString(cat)}</Badge>
                   ))}
                 </div>
               </div>
             )}
-            {customer.top_products && customer.top_products.length > 0 && (
+            {topProducts.length > 0 && (
               <div>
                 <p className="text-xs text-muted-foreground font-medium mb-2">En Çok Satanlar</p>
                 <div className="space-y-1">
-                  {customer.top_products.map((product, i) => (
+                  {topProducts.map((product, i) => (
                     <div key={i} className="flex items-center gap-2 text-sm">
                       <span className="text-muted-foreground">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '•'}</span>
-                      {product}
+                      {safeString(product)}
                     </div>
                   ))}
                 </div>
@@ -894,12 +951,12 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
         <InfoCard
           title="Rekabet"
           icon={<Target className="h-4 w-4" />}
-          isEmpty={!customer.competitors || customer.competitors.length === 0}
+          isEmpty={competitors.length === 0}
           emptyMessage="Rakip bilgisi henüz eklenmedi"
           onAddClick={onEdit}
         >
           <div className="space-y-2">
-            {customer.competitors?.map((competitor, i) => (
+            {competitors.map((competitor, i) => (
               <CompetitorCard key={i} competitor={competitor} />
             ))}
           </div>
@@ -909,27 +966,27 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
         <InfoCard
           title="Kurallar"
           icon={<ShieldCheck className="h-4 w-4" />}
-          isEmpty={(!customer.do_not_do || customer.do_not_do.length === 0) && (!customer.must_emphasize || customer.must_emphasize.length === 0)}
+          isEmpty={doNotDo.length === 0 && mustEmphasize.length === 0}
           emptyMessage="İçerik kuralları henüz tanımlanmadı"
           onAddClick={onEdit}
         >
           <div className="space-y-3">
-            {customer.do_not_do && customer.do_not_do.length > 0 && (
+            {doNotDo.length > 0 && (
               <div>
                 <p className="text-xs text-red-600 font-medium mb-2">❌ Yapılmaması Gerekenler</p>
                 <div className="flex flex-wrap gap-1">
-                  {customer.do_not_do.map((item, i) => (
-                    <Badge key={i} variant="destructive" className="text-xs">{item}</Badge>
+                  {doNotDo.map((item, i) => (
+                    <Badge key={i} variant="destructive" className="text-xs">{safeString(item)}</Badge>
                   ))}
                 </div>
               </div>
             )}
-            {customer.must_emphasize && customer.must_emphasize.length > 0 && (
+            {mustEmphasize.length > 0 && (
               <div>
                 <p className="text-xs text-green-600 font-medium mb-2">✅ Vurgulanması Gerekenler</p>
                 <div className="flex flex-wrap gap-1">
-                  {customer.must_emphasize.map((item, i) => (
-                    <Badge key={i} variant="default" className="text-xs bg-green-600">{item}</Badge>
+                  {mustEmphasize.map((item, i) => (
+                    <Badge key={i} variant="default" className="text-xs bg-green-600">{safeString(item)}</Badge>
                   ))}
                 </div>
               </div>
@@ -941,28 +998,34 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
         <InfoCard
           title="AI İçgörüleri"
           icon={<Bot className="h-4 w-4" />}
-          isEmpty={(!customer.pain_points || customer.pain_points.length === 0) && (!customer.hook_sentences || customer.hook_sentences.length === 0)}
+          isEmpty={painPoints.length === 0 && hookSentences.length === 0}
           emptyMessage="AI içgörüleri henüz oluşturulmadı"
           onAddClick={onAIRefresh}
         >
           <div className="space-y-3">
-            {customer.pain_points && customer.pain_points.length > 0 && (
+            {painPoints.length > 0 && (
               <div>
                 <p className="text-xs text-muted-foreground font-medium mb-2">Acı Noktalar</p>
                 <div className="space-y-1">
-                  {customer.pain_points.slice(0, 3).map((point, i) => (
-                    <p key={i} className="text-sm">• {point.problem}</p>
-                  ))}
+                  {painPoints.slice(0, 3).map((point, i) => {
+                    const p = point as any
+                    return (
+                      <p key={i} className="text-sm">• {safeString(p?.problem || p)}</p>
+                    )
+                  })}
                 </div>
               </div>
             )}
-            {customer.hook_sentences && customer.hook_sentences.length > 0 && (
+            {hookSentences.length > 0 && (
               <div>
                 <p className="text-xs text-muted-foreground font-medium mb-2">Hook Cümleleri</p>
                 <div className="space-y-1">
-                  {customer.hook_sentences.slice(0, 3).map((hook, i) => (
-                    <p key={i} className="text-sm italic">"{hook.hook}"</p>
-                  ))}
+                  {hookSentences.slice(0, 3).map((hook, i) => {
+                    const h = hook as any
+                    return (
+                      <p key={i} className="text-sm italic">"{safeString(h?.hook || h)}"</p>
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -979,7 +1042,7 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {!customer.special_events || customer.special_events.length === 0 ? (
+          {specialEvents.length === 0 ? (
             <EmptyState
               icon={<Calendar className="h-12 w-12" />}
               title="Özel tarih henüz eklenmedi"
@@ -992,7 +1055,7 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
             />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-              {customer.special_events.map((event, i) => (
+              {specialEvents.map((event, i) => (
                 <EventCard key={i} event={event} />
               ))}
             </div>
@@ -1001,7 +1064,10 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
       </Card>
 
       {/* ==================== EXAMPLE CAPTIONS ==================== */}
-      {customer.example_captions && (customer.example_captions.good_examples?.length || customer.example_captions.bad_examples?.length) && (
+      {customer.example_captions && typeof customer.example_captions === 'object' && (
+        safeArray((customer.example_captions as any)?.good_examples).length > 0 || 
+        safeArray((customer.example_captions as any)?.bad_examples).length > 0
+      ) && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -1011,15 +1077,15 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {customer.example_captions.good_examples?.map((caption, i) => (
-                <CopyableText key={i} text={caption} />
+              {safeArray((customer.example_captions as any)?.good_examples).map((caption, i) => (
+                <CopyableText key={i} text={safeString(caption)} />
               ))}
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* ==================== MOBILE ACCORDION (for smaller screens) ==================== */}
+      {/* ==================== MOBILE ACCORDION ==================== */}
       <div className="md:hidden">
         <Accordion type="single" collapsible className="w-full">
           <AccordionItem value="marka">
@@ -1030,15 +1096,13 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
               </span>
             </AccordionTrigger>
             <AccordionContent>
-              {/* Mobile content for brand identity */}
               <div className="space-y-2 text-sm">
-                {customer.brand_description && <p>{customer.brand_description}</p>}
-                {customer.mission && <p><strong>Misyon:</strong> {customer.mission}</p>}
-                {customer.vision && <p><strong>Vizyon:</strong> {customer.vision}</p>}
+                {customer.brand_description && <p>{safeString(customer.brand_description)}</p>}
+                {customer.mission && <p><strong>Misyon:</strong> {safeString(customer.mission)}</p>}
+                {customer.vision && <p><strong>Vizyon:</strong> {safeString(customer.vision)}</p>}
               </div>
             </AccordionContent>
           </AccordionItem>
-          {/* Add more accordion items as needed */}
         </Accordion>
       </div>
     </div>
