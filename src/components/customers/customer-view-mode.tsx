@@ -63,14 +63,12 @@ function safeString(value: unknown): string {
   if (typeof value === 'string') return value
   if (typeof value === 'number') return String(value)
   if (typeof value === 'object') {
-    // If it's an object with a specific property, try to extract it
     if ('value' in value && typeof (value as any).value === 'string') {
       return (value as any).value
     }
     if ('label' in value && typeof (value as any).label === 'string') {
       return (value as any).label
     }
-    // Last resort: stringify
     try {
       return JSON.stringify(value)
     } catch {
@@ -246,7 +244,7 @@ function SocialBadge({ platform, handle, followers }: SocialBadgeProps) {
 }
 
 // =====================================================
-// ASSET CARD COMPONENT
+// ASSET CARD COMPONENT - WITH DELETE BUTTON
 // =====================================================
 
 interface AssetCardProps {
@@ -257,7 +255,18 @@ interface AssetCardProps {
 }
 
 function AssetCard({ asset, onDownload, onPreview, onDelete }: AssetCardProps) {
+  const [deleting, setDeleting] = useState(false)
   const isImage = asset.file_type.startsWith('image/')
+
+  const handleDelete = async () => {
+    if (!confirm('Bu dosyayı silmek istediğinizden emin misiniz?')) return
+    setDeleting(true)
+    try {
+      await onDelete(asset)
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   return (
     <div className="group relative border rounded-lg p-3 hover:border-primary/50 hover:shadow-sm transition-all bg-card">
@@ -287,16 +296,30 @@ function AssetCard({ asset, onDownload, onPreview, onDelete }: AssetCardProps) {
           </span>
         </div>
       </div>
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-        <Button size="sm" variant="secondary" onClick={() => onDownload(asset)}>
-          <Download className="h-3 w-3 mr-1" />
-          İndir
-        </Button>
-        {isImage && (
-          <Button size="sm" variant="outline" onClick={() => onPreview(asset)}>
-            <Eye className="h-3 w-3" />
+      
+      {/* Hover Overlay with Download, Preview, Delete */}
+      <div className="absolute inset-0 bg-background/90 backdrop-blur-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="secondary" onClick={() => onDownload(asset)}>
+            <Download className="h-3 w-3 mr-1" />
+            İndir
           </Button>
-        )}
+          {isImage && (
+            <Button size="sm" variant="outline" onClick={() => onPreview(asset)}>
+              <Eye className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+        <Button 
+          size="sm" 
+          variant="destructive" 
+          onClick={handleDelete}
+          disabled={deleting}
+          className="w-full"
+        >
+          <Trash2 className="h-3 w-3 mr-1" />
+          {deleting ? 'Siliniyor...' : 'Sil'}
+        </Button>
       </div>
     </div>
   )
@@ -311,7 +334,6 @@ interface CompetitorCardProps {
 }
 
 function CompetitorCard({ competitor }: CompetitorCardProps) {
-  // Safe access for competitor data
   const comp = competitor as any
   const name = safeString(comp?.name)
   const instagramHandle = safeString(comp?.instagram_handle)
