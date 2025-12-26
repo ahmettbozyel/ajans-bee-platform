@@ -1,20 +1,20 @@
-// localStorage keys
-const RECENT_CUSTOMERS_KEY = 'ajans-bee-recent-customers'
-const LAST_CUSTOMER_KEY = 'ajans-bee-last-customer'
+// Local storage utilities for recent customers
 
 export interface RecentCustomer {
   id: string
   name: string
   sector: string
-  lastUsed: string // ISO date string
+  lastUsed: number
 }
 
-// Get recent customers (max 5)
+const STORAGE_KEY = 'recent_customers'
+const MAX_RECENT = 5
+
 export function getRecentCustomers(): RecentCustomer[] {
   if (typeof window === 'undefined') return []
   
   try {
-    const stored = localStorage.getItem(RECENT_CUSTOMERS_KEY)
+    const stored = localStorage.getItem(STORAGE_KEY)
     if (!stored) return []
     return JSON.parse(stored)
   } catch {
@@ -22,8 +22,7 @@ export function getRecentCustomers(): RecentCustomer[] {
   }
 }
 
-// Add customer to recent list
-export function addToRecentCustomers(customer: { id: string; name: string; sector: string }) {
+export function addToRecentCustomers(customer: Omit<RecentCustomer, 'lastUsed'>): void {
   if (typeof window === 'undefined') return
   
   try {
@@ -32,49 +31,52 @@ export function addToRecentCustomers(customer: { id: string; name: string; secto
     // Remove if already exists
     const filtered = recent.filter(c => c.id !== customer.id)
     
-    // Add to beginning with current timestamp
+    // Add to beginning with timestamp
     const updated: RecentCustomer[] = [
-      {
-        id: customer.id,
-        name: customer.name,
-        sector: customer.sector,
-        lastUsed: new Date().toISOString()
-      },
+      { ...customer, lastUsed: Date.now() },
       ...filtered
-    ].slice(0, 5) // Keep only 5
+    ].slice(0, MAX_RECENT)
     
-    localStorage.setItem(RECENT_CUSTOMERS_KEY, JSON.stringify(updated))
-    localStorage.setItem(LAST_CUSTOMER_KEY, customer.id)
-  } catch (error) {
-    console.error('Failed to save recent customer:', error)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+  } catch {
+    // Ignore storage errors
   }
 }
 
-// Get last used customer ID
-export function getLastCustomerId(): string | null {
-  if (typeof window === 'undefined') return null
+export function removeFromRecentCustomers(customerId: string): void {
+  if (typeof window === 'undefined') return
   
   try {
-    return localStorage.getItem(LAST_CUSTOMER_KEY)
+    const recent = getRecentCustomers()
+    const filtered = recent.filter(c => c.id !== customerId)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered))
   } catch {
-    return null
+    // Ignore storage errors
   }
 }
 
-// Format relative time (e.g., "3 gün önce")
-export function formatRelativeTime(dateString: string): string {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-  const diffMinutes = Math.floor(diffMs / (1000 * 60))
+export function clearRecentCustomers(): void {
+  if (typeof window === 'undefined') return
   
-  if (diffMinutes < 1) return 'Az önce'
-  if (diffMinutes < 60) return `${diffMinutes} dk önce`
-  if (diffHours < 24) return `${diffHours} saat önce`
-  if (diffDays === 1) return 'Dün'
-  if (diffDays < 7) return `${diffDays} gün önce`
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} hafta önce`
-  return `${Math.floor(diffDays / 30)} ay önce`
+  try {
+    localStorage.removeItem(STORAGE_KEY)
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+export function formatRelativeTime(timestamp: number): string {
+  const now = Date.now()
+  const diff = now - timestamp
+  
+  const minutes = Math.floor(diff / (1000 * 60))
+  const hours = Math.floor(diff / (1000 * 60 * 60))
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  
+  if (minutes < 1) return 'Az önce'
+  if (minutes < 60) return `${minutes} dk önce`
+  if (hours < 24) return `${hours} saat önce`
+  if (days < 7) return `${days} gün önce`
+  
+  return new Date(timestamp).toLocaleDateString('tr-TR')
 }
