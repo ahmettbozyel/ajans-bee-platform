@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -41,7 +41,6 @@ import {
 import {
   TechnicalService,
   TechnicalServiceWithCustomer,
-  TechnicalServiceFormData,
   ServiceType,
   PaymentStatus,
   SERVICE_TYPES,
@@ -53,7 +52,36 @@ import {
   getServiceTypeLabel,
   getPaymentStatusLabel
 } from '@/lib/technical-service-types'
-import { Customer } from '@/lib/customer-types'
+
+// Basit customer tipi (sadece liste için)
+interface CustomerBasic {
+  id: string
+  name: string
+  customer_type: string
+}
+
+// Form state tipi
+interface FormState {
+  customer_id: string
+  service_type: ServiceType
+  name: string
+  platform: string
+  renewal_date: string
+  payment_status: PaymentStatus
+  price: string
+  notes: string
+}
+
+const initialFormState: FormState = {
+  customer_id: '',
+  service_type: 'hosting',
+  name: '',
+  platform: '',
+  renewal_date: '',
+  payment_status: 'pending',
+  price: '',
+  notes: ''
+}
 
 // Hizmet tipi ikonu
 const getServiceIcon = (type: ServiceType) => {
@@ -78,15 +106,12 @@ const getBadgeVariant = (color: string): 'default' | 'secondary' | 'destructive'
 
 export default function TeknikHizmetlerPage() {
   const [services, setServices] = useState<TechnicalServiceWithCustomer[]>([])
-  const [customers, setCustomers] = useState<Customer[]>([])
+  const [customers, setCustomers] = useState<CustomerBasic[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingService, setEditingService] = useState<TechnicalService | null>(null)
-  const [formData, setFormData] = useState<TechnicalServiceFormData>({
-    service_type: 'hosting',
-    payment_status: 'pending'
-  })
+  const [formData, setFormData] = useState<FormState>(initialFormState)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
 
@@ -147,32 +172,49 @@ export default function TeknikHizmetlerPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Oturum bulunamadı')
 
-      const payload = {
-        ...formData,
+      // Payload'ı temiz bir şekilde oluştur
+      const payload: {
+        customer_id: string
+        user_id: string
+        service_type: ServiceType
+        name: string
+        platform: string | null
+        renewal_date: string | null
+        payment_status: PaymentStatus
+        price: number | null
+        notes: string | null
+      } = {
+        customer_id: formData.customer_id,
         user_id: user.id,
-        price: formData.price ? parseFloat(String(formData.price)) : null
+        service_type: formData.service_type,
+        name: formData.name,
+        platform: formData.platform || null,
+        renewal_date: formData.renewal_date || null,
+        payment_status: formData.payment_status,
+        price: formData.price ? parseFloat(formData.price) : null,
+        notes: formData.notes || null
       }
 
       if (editingService) {
         // Güncelle
-        const { error } = await supabase
+        const { error: updateError } = await supabase
           .from('technical_services')
           .update(payload)
           .eq('id', editingService.id)
 
-        if (error) throw error
+        if (updateError) throw updateError
       } else {
         // Yeni ekle
-        const { error } = await supabase
+        const { error: insertError } = await supabase
           .from('technical_services')
           .insert(payload)
 
-        if (error) throw error
+        if (insertError) throw insertError
       }
 
       setIsDialogOpen(false)
       setEditingService(null)
-      setFormData({ service_type: 'hosting', payment_status: 'pending' })
+      setFormData(initialFormState)
       loadData()
 
     } catch (err) {
@@ -190,12 +232,12 @@ export default function TeknikHizmetlerPage() {
     try {
       setDeleting(id)
       
-      const { error } = await supabase
+      const { error: deleteError } = await supabase
         .from('technical_services')
         .delete()
         .eq('id', id)
 
-      if (error) throw error
+      if (deleteError) throw deleteError
       loadData()
 
     } catch (err) {
@@ -213,11 +255,11 @@ export default function TeknikHizmetlerPage() {
       customer_id: service.customer_id,
       service_type: service.service_type,
       name: service.name,
-      platform: service.platform,
-      renewal_date: service.renewal_date,
+      platform: service.platform || '',
+      renewal_date: service.renewal_date || '',
       payment_status: service.payment_status,
-      price: service.price,
-      notes: service.notes
+      price: service.price ? String(service.price) : '',
+      notes: service.notes || ''
     })
     setIsDialogOpen(true)
   }
@@ -225,7 +267,7 @@ export default function TeknikHizmetlerPage() {
   // Yeni ekleme modunu aç
   function openNewDialog() {
     setEditingService(null)
-    setFormData({ service_type: 'hosting', payment_status: 'pending' })
+    setFormData(initialFormState)
     setIsDialogOpen(true)
   }
 
@@ -268,7 +310,7 @@ export default function TeknikHizmetlerPage() {
                 <div className="grid gap-2">
                   <Label htmlFor="customer_id">Marka *</Label>
                   <Select
-                    value={formData.customer_id || ''}
+                    value={formData.customer_id}
                     onValueChange={(value) => setFormData({ ...formData, customer_id: value })}
                   >
                     <SelectTrigger>
@@ -288,7 +330,7 @@ export default function TeknikHizmetlerPage() {
                 <div className="grid gap-2">
                   <Label htmlFor="service_type">Hizmet Tipi *</Label>
                   <Select
-                    value={formData.service_type || 'hosting'}
+                    value={formData.service_type}
                     onValueChange={(value) => setFormData({ ...formData, service_type: value as ServiceType })}
                   >
                     <SelectTrigger>
@@ -310,7 +352,7 @@ export default function TeknikHizmetlerPage() {
                   <Input
                     id="name"
                     placeholder="örn: example.com hosting"
-                    value={formData.name || ''}
+                    value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
                 </div>
@@ -319,7 +361,7 @@ export default function TeknikHizmetlerPage() {
                 <div className="grid gap-2">
                   <Label htmlFor="platform">Platform</Label>
                   <Select
-                    value={formData.platform || ''}
+                    value={formData.platform}
                     onValueChange={(value) => setFormData({ ...formData, platform: value })}
                   >
                     <SelectTrigger>
@@ -341,7 +383,7 @@ export default function TeknikHizmetlerPage() {
                   <Input
                     id="renewal_date"
                     type="date"
-                    value={formData.renewal_date || ''}
+                    value={formData.renewal_date}
                     onChange={(e) => setFormData({ ...formData, renewal_date: e.target.value })}
                   />
                 </div>
@@ -350,7 +392,7 @@ export default function TeknikHizmetlerPage() {
                 <div className="grid gap-2">
                   <Label htmlFor="payment_status">Ödeme Durumu</Label>
                   <Select
-                    value={formData.payment_status || 'pending'}
+                    value={formData.payment_status}
                     onValueChange={(value) => setFormData({ ...formData, payment_status: value as PaymentStatus })}
                   >
                     <SelectTrigger>
@@ -374,8 +416,8 @@ export default function TeknikHizmetlerPage() {
                     type="number"
                     step="0.01"
                     placeholder="0.00"
-                    value={formData.price || ''}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value ? parseFloat(e.target.value) : undefined })}
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                   />
                 </div>
 
@@ -385,7 +427,7 @@ export default function TeknikHizmetlerPage() {
                   <Textarea
                     id="notes"
                     placeholder="Ek bilgiler..."
-                    value={formData.notes || ''}
+                    value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   />
                 </div>
@@ -468,7 +510,7 @@ export default function TeknikHizmetlerPage() {
                         <span>• {PLATFORMS.find(p => p.value === service.platform)?.label || service.platform}</span>
                       )}
                       {service.price && (
-                        <span>• ₺{service.price.toLocaleString('tr-TR')}</span>
+                        <span>• ₺{Number(service.price).toLocaleString('tr-TR')}</span>
                       )}
                     </div>
                   </div>
