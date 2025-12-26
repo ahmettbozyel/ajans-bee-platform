@@ -39,8 +39,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
-  TechnicalService,
-  TechnicalServiceWithCustomer,
   ServiceType,
   PaymentStatus,
   SERVICE_TYPES,
@@ -58,6 +56,27 @@ interface CustomerBasic {
   id: string
   name: string
   customer_type: string
+}
+
+// Supabase'den gelen servis tipi
+interface ServiceFromDB {
+  id: string
+  created_at: string
+  updated_at: string
+  customer_id: string
+  user_id: string
+  service_type: ServiceType
+  name: string
+  platform: string | null
+  renewal_date: string | null
+  payment_status: PaymentStatus
+  price: number | null
+  notes: string | null
+  customer: {
+    id: string
+    name: string
+    customer_type: string
+  } | null
 }
 
 // Form state tipi
@@ -105,12 +124,12 @@ const getBadgeVariant = (color: string): 'default' | 'secondary' | 'destructive'
 }
 
 export default function TeknikHizmetlerPage() {
-  const [services, setServices] = useState<TechnicalServiceWithCustomer[]>([])
+  const [services, setServices] = useState<ServiceFromDB[]>([])
   const [customers, setCustomers] = useState<CustomerBasic[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingService, setEditingService] = useState<TechnicalService | null>(null)
+  const [editingService, setEditingService] = useState<ServiceFromDB | null>(null)
   const [formData, setFormData] = useState<FormState>(initialFormState)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
@@ -120,6 +139,7 @@ export default function TeknikHizmetlerPage() {
   // Verileri yükle
   useEffect(() => {
     loadData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function loadData() {
@@ -146,7 +166,7 @@ export default function TeknikHizmetlerPage() {
         .order('renewal_date', { ascending: true, nullsFirst: false })
 
       if (servicesError) throw servicesError
-      setServices(servicesData || [])
+      setServices((servicesData || []) as ServiceFromDB[])
 
     } catch (err) {
       console.error('Veri yükleme hatası:', err)
@@ -172,42 +192,38 @@ export default function TeknikHizmetlerPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Oturum bulunamadı')
 
-      // Payload'ı temiz bir şekilde oluştur
-      const payload: {
-        customer_id: string
-        user_id: string
-        service_type: ServiceType
-        name: string
-        platform: string | null
-        renewal_date: string | null
-        payment_status: PaymentStatus
-        price: number | null
-        notes: string | null
-      } = {
-        customer_id: formData.customer_id,
-        user_id: user.id,
-        service_type: formData.service_type,
-        name: formData.name,
-        platform: formData.platform || null,
-        renewal_date: formData.renewal_date || null,
-        payment_status: formData.payment_status,
-        price: formData.price ? parseFloat(formData.price) : null,
-        notes: formData.notes || null
-      }
-
       if (editingService) {
-        // Güncelle
+        // Güncelle - user_id hariç
         const { error: updateError } = await supabase
           .from('technical_services')
-          .update(payload)
+          .update({
+            customer_id: formData.customer_id,
+            service_type: formData.service_type,
+            name: formData.name,
+            platform: formData.platform || null,
+            renewal_date: formData.renewal_date || null,
+            payment_status: formData.payment_status,
+            price: formData.price ? parseFloat(formData.price) : null,
+            notes: formData.notes || null
+          })
           .eq('id', editingService.id)
 
         if (updateError) throw updateError
       } else {
-        // Yeni ekle
+        // Yeni ekle - user_id dahil
         const { error: insertError } = await supabase
           .from('technical_services')
-          .insert(payload)
+          .insert({
+            customer_id: formData.customer_id,
+            user_id: user.id,
+            service_type: formData.service_type,
+            name: formData.name,
+            platform: formData.platform || null,
+            renewal_date: formData.renewal_date || null,
+            payment_status: formData.payment_status,
+            price: formData.price ? parseFloat(formData.price) : null,
+            notes: formData.notes || null
+          })
 
         if (insertError) throw insertError
       }
@@ -249,7 +265,7 @@ export default function TeknikHizmetlerPage() {
   }
 
   // Düzenleme modunu aç
-  function openEditDialog(service: TechnicalService) {
+  function openEditDialog(service: ServiceFromDB) {
     setEditingService(service)
     setFormData({
       customer_id: service.customer_id,
