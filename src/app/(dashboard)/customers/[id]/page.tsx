@@ -10,9 +10,10 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   ArrowLeft, Building2, Globe, Users, FileText, Clock, 
-  Sparkles, Pencil, Check, X, Loader2
+  Sparkles, Pencil, Check, X, Loader2, Eye, Edit
 } from 'lucide-react'
 import { CustomerBriefForm } from '@/components/customers/customer-brief-form'
+import { CustomerViewMode } from '@/components/customers/customer-view-mode'
 import type { Customer, CustomerFormData } from '@/lib/customer-types'
 import { SECTORS, BRAND_VOICES, calculateBriefCompletion } from '@/lib/customer-types'
 
@@ -39,6 +40,9 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('brief')
+  
+  // NEW: View/Edit mode toggle
+  const [briefMode, setBriefMode] = useState<'view' | 'edit'>('view')
 
   // Fetch customer
   useEffect(() => {
@@ -124,11 +128,48 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
       if (error) throw error
       
       setCustomer(data)
+      // Switch back to view mode after saving
+      setBriefMode('view')
     } catch (err) {
       console.error('Error saving customer:', err)
       throw err
     } finally {
       setSaving(false)
+    }
+  }
+
+  // Delete customer handler
+  async function handleDeleteCustomer() {
+    if (!customer) return
+    
+    const confirmed = window.confirm('Bu müşteriyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')
+    if (!confirmed) return
+
+    try {
+      // First delete all assets from storage
+      const { data: files } = await supabase.storage
+        .from('brand-assets')
+        .list(customer.id)
+
+      if (files && files.length > 0) {
+        const filesToDelete = files.map(f => `${customer.id}/${f.name}`)
+        await supabase.storage
+          .from('brand-assets')
+          .remove(filesToDelete)
+      }
+
+      // Then delete the customer record
+      const { error } = await supabase
+        .from('customers')
+        .delete()
+        .eq('id', customer.id)
+
+      if (error) throw error
+
+      router.push('/musteriler')
+    } catch (err) {
+      console.error('Error deleting customer:', err)
+      alert('Müşteri silinirken bir hata oluştu')
     }
   }
 
@@ -267,24 +308,46 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
           </TabsTrigger>
         </TabsList>
 
-        {/* Brief Tab */}
+        {/* Brief Tab - NOW WITH VIEW/EDIT TOGGLE */}
         <TabsContent value="brief" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Müşteri Brief</CardTitle>
-              <CardDescription>
-                Müşteri hakkında detaylı bilgileri düzenleyin
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <CustomerBriefForm
-                customer={customer}
-                onSave={handleSaveCustomer}
-                onCancel={() => router.push('/musteriler')}
-                isLoading={saving}
-              />
-            </CardContent>
-          </Card>
+          {briefMode === 'view' ? (
+            // VIEW MODE - New Component
+            <CustomerViewMode
+              customer={customer}
+              onEdit={() => setBriefMode('edit')}
+              onDelete={handleDeleteCustomer}
+            />
+          ) : (
+            // EDIT MODE - Existing Form
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg">Müşteri Brief Düzenle</CardTitle>
+                    <CardDescription>
+                      Müşteri hakkında detaylı bilgileri düzenleyin
+                    </CardDescription>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setBriefMode('view')}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    İptal
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <CustomerBriefForm
+                  customer={customer}
+                  onSave={handleSaveCustomer}
+                  onCancel={() => setBriefMode('view')}
+                  isLoading={saving}
+                />
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* Geçmiş Tab */}
