@@ -1,6 +1,6 @@
 // =====================================================
 // Customer Types - Genişletilmiş Brief Sistemi
-// Version: 1.1 - AI Research Alanları Eklendi
+// Version: 1.2 - Customer Type Eklendi (Karar #13)
 // =====================================================
 
 // Sosyal medya platform tipi
@@ -141,6 +141,9 @@ export interface SeasonalEvent {
 // Enum Types
 // =====================================================
 
+// Customer type (Karar #13)
+export type CustomerType = 'retainer' | 'project';
+
 // Brand voice options
 export type BrandVoice = 'samimi' | 'kurumsal' | 'enerjik' | 'profesyonel';
 
@@ -165,6 +168,9 @@ export interface Customer {
 
   // Temel bilgiler (zorunlu)
   name: string;
+  
+  // Müşteri tipi (Karar #13)
+  customer_type: CustomerType;
   
   // Temel bilgiler (opsiyonel)
   brand_name?: string | null;
@@ -252,6 +258,15 @@ export interface Customer {
 export type CustomerFormData = Partial<Omit<Customer, 'id' | 'created_at' | 'updated_at' | 'user_id'>>;
 
 // =====================================================
+// Müşteri Tipi Sabitleri (Karar #13)
+// =====================================================
+
+export const CUSTOMER_TYPES = [
+  { value: 'retainer', label: 'Retainer', description: 'Aylık düzenli hizmet' },
+  { value: 'project', label: 'Proje', description: 'Proje bazlı hizmet' }
+] as const;
+
+// =====================================================
 // Brief Bölüm Tanımları
 // =====================================================
 
@@ -260,8 +275,8 @@ export const BRIEF_SECTIONS = {
     id: 'temel',
     label: 'Temel Bilgiler',
     icon: 'Building2',
-    fields: ['name', 'website_url', 'sector', 'sub_sector', 'business_type', 'brand_voice'],
-    required: ['name']
+    fields: ['name', 'customer_type', 'website_url', 'sector', 'sub_sector', 'business_type', 'brand_voice'],
+    required: ['name', 'customer_type']
   },
   iletisim: {
     id: 'iletisim',
@@ -319,7 +334,6 @@ export const BRIEF_SECTIONS = {
     fields: ['special_events'],
     required: []
   },
-  // Faz 2 - Gelişmiş Bölümler
   markaDegerleri: {
     id: 'degerler',
     label: 'Marka Değerleri',
@@ -369,7 +383,6 @@ export const BRIEF_SECTIONS = {
     fields: ['integrations'],
     required: []
   },
-  // AI Research Bölümleri
   aiResearch: {
     id: 'ai-research',
     label: 'AI Araştırma',
@@ -438,39 +451,22 @@ export function calculateBriefCompletion(customer: Partial<Customer>): number {
   };
 
   const allFields = [
-    // Temel
-    'name', 'website_url', 'sector', 'sub_sector', 'business_type', 'brand_voice',
-    // İletişim
+    'name', 'customer_type', 'website_url', 'sector', 'sub_sector', 'business_type', 'brand_voice',
     'email', 'phone', 'location',
-    // Sosyal Medya
     'social_media',
-    // Marka Kimliği
     'brand_description', 'mission', 'vision', 'slogan', 'usp',
-    // Hedef Kitle
     'target_audience', 'target_age_range', 'target_geography',
-    // Ürün
     'product_categories', 'top_products', 'price_segment',
-    // Rekabet
     'competitors',
-    // Kurallar
     'do_not_do', 'must_emphasize',
-    // Takvim
     'special_events',
-    // Faz 2 - Marka Değerleri
     'brand_values', 'buying_motivations',
-    // Faz 2 - İçerik Stratejisi
     'content_pillars',
-    // Faz 2 - Platform Kuralları
     'platform_rules',
-    // Faz 2 - Örnek İçerikler
     'example_captions',
-    // Faz 2 - Kelime Haritası
     'word_mapping',
-    // Faz 2 - Marka Görselleri
     'brand_colors', 'brand_fonts', 'brand_assets',
-    // Faz 2 - Entegrasyonlar
     'integrations',
-    // AI Research
     'pain_points', 'hook_sentences', 'cta_standards', 'forbidden_words', 'seasonal_calendar'
   ];
 

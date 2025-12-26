@@ -6,7 +6,8 @@ import {
   PenTool, 
   Image, 
   History, 
-  Users, 
+  Building2,
+  Server,
   LogOut,
   Menu
 } from 'lucide-react'
@@ -17,7 +18,8 @@ const navigation = [
   { name: 'İçerik Üret', href: '/icerik-uret', icon: PenTool },
   { name: 'Görseller', href: '/gorseller', icon: Image },
   { name: 'Geçmiş', href: '/gecmis', icon: History },
-  { name: 'Müşteriler', href: '/musteriler', icon: Users },
+  { name: 'Markalar', href: '/musteriler', icon: Building2 },
+  { name: 'Teknik Hizmetler', href: '/teknik-hizmetler', icon: Server },
 ]
 
 export default async function DashboardLayout({
