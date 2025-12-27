@@ -9,6 +9,7 @@ import {
   Menu
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { TopBar } from '@/components/layouts/top-bar'
 
 // Karar #15: Sidebar menü yapısı
 const navigation = [
@@ -120,6 +121,11 @@ export default async function DashboardLayout({
         {/* Main content */}
         <main className="flex-1 lg:pl-64">
           <div className="content-bg min-h-screen">
+            {/* Top Bar - Desktop only */}
+            <div className="hidden lg:block">
+              <TopBar />
+            </div>
+            
             <div className="p-6">
               {children}
             </div>
