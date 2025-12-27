@@ -1,24 +1,29 @@
 // =====================================================
 // Technical Service Types - Karar #13
-// Version: 1.1 - Types alignment with types.ts
+// Version: 1.2 - Standalone types (no circular imports)
 // =====================================================
-
-// Import from main types for consistency
-import type { 
-  TechnicalService as TechnicalServiceRow,
-  TechnicalServiceInsert,
-  TechnicalServiceUpdate
-} from './types';
-
-// Re-export for convenience
-export type TechnicalService = TechnicalServiceRow;
-export type { TechnicalServiceInsert, TechnicalServiceUpdate };
 
 // Hizmet tipi (aligned with Database enum)
 export type ServiceType = 'hosting' | 'domain' | 'ssl' | 'email';
 
 // Ödeme durumu (aligned with Database enum)
 export type PaymentStatus = 'pending' | 'paid' | 'overdue';
+
+// TechnicalService interface (matches Database row)
+export interface TechnicalService {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  customer_id: string;
+  user_id: string;
+  service_type: ServiceType;
+  name: string;
+  platform: string | null;
+  renewal_date: string | null;
+  payment_status: PaymentStatus;
+  price: number | null;
+  notes: string | null;
+}
 
 // Form için partial tip
 export type TechnicalServiceFormData = Partial<Omit<TechnicalService, 'id' | 'created_at' | 'updated_at' | 'user_id'>>;
