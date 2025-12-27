@@ -4,7 +4,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -12,13 +11,12 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Plus, Search, Pencil, Trash2, Building2, Clock, Globe, Users, Eye, EyeOff } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, Building2, Clock, Globe, Eye, EyeOff, Sparkles } from 'lucide-react'
 import { getRecentCustomers, addToRecentCustomers, formatRelativeTime, type RecentCustomer } from '@/lib/local-storage'
 import { CustomerBriefForm } from '@/components/customers/customer-brief-form'
-import type { Customer, CustomerFormData, CustomerType, CustomerStatus } from '@/lib/customer-types'
-import { SECTORS, BRAND_VOICES, CUSTOMER_TYPES, calculateBriefCompletion, getCustomerTypeLabel } from '@/lib/customer-types'
+import type { Customer, CustomerFormData } from '@/lib/customer-types'
+import { SECTORS, BRAND_VOICES, calculateBriefCompletion, getCustomerTypeLabel } from '@/lib/customer-types'
 
-// Helper functions
 function getSectorLabel(value: string): string {
   return SECTORS.find(s => s.value === value)?.label || value
 }
@@ -41,7 +39,6 @@ export default function MusterilerPage() {
 
   const supabase = createClient()
 
-  // Fetch customers
   useEffect(() => {
     fetchCustomers()
     setRecentCustomers(getRecentCustomers())
@@ -64,23 +61,19 @@ export default function MusterilerPage() {
     }
   }
 
-  // Filter customers by search and status
   const filteredCustomers = customers.filter(customer => {
-    // Search filter
     const matchesSearch = customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       customer.brand_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       customer.sector?.toLowerCase().includes(searchQuery.toLowerCase())
     
-    // Status filter - show inactive only if toggle is on
     const matchesStatus = showInactive || customer.status !== 'inactive'
     
     return matchesSearch && matchesStatus
   })
 
-  // Count inactive customers
   const inactiveCount = customers.filter(c => c.status === 'inactive').length
+  const activeCount = customers.filter(c => c.status !== 'inactive').length
 
-  // Navigate to customer detail
   function handleCustomerClick(customer: Customer) {
     addToRecentCustomers({
       id: customer.id,
@@ -91,12 +84,10 @@ export default function MusterilerPage() {
     router.push(`/customers/${customer.id}`)
   }
 
-  // Open sheet for new customer
   function handleNewCustomer() {
     setSheetOpen(true)
   }
 
-  // Save new customer
   async function handleSaveCustomer(formData: CustomerFormData) {
     setFormLoading(true)
 
@@ -156,7 +147,6 @@ export default function MusterilerPage() {
 
       setSheetOpen(false)
       
-      // Yeni müşteriyi oluşturduktan sonra detay sayfasına git
       if (data) {
         router.push(`/customers/${data.id}`)
       } else {
@@ -170,7 +160,6 @@ export default function MusterilerPage() {
     }
   }
 
-  // Delete customer
   async function handleDeleteCustomer() {
     if (!customerToDelete) return
 
@@ -195,20 +184,25 @@ export default function MusterilerPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Markalar</h1>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent">
+            Markalar
+          </h1>
           <p className="text-muted-foreground mt-1">
-            Marka brief&apos;lerini yönetin
+            Marka brief&apos;lerini yönetin ve içerik üretin
           </p>
         </div>
         
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger asChild>
-            <Button onClick={handleNewCustomer}>
+            <Button 
+              onClick={handleNewCustomer}
+              className="bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white shadow-lg shadow-indigo-500/25"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Yeni Marka
             </Button>
           </SheetTrigger>
-          <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+          <SheetContent className="w-full sm:max-w-xl overflow-y-auto glass">
             <SheetHeader>
               <SheetTitle>Yeni Marka Ekle</SheetTitle>
               <SheetDescription>
@@ -228,32 +222,73 @@ export default function MusterilerPage() {
         </Sheet>
       </div>
 
-      {/* Search and Filter */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Marka ara..."
-            className="pl-9"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        
-        {/* Show Inactive Toggle */}
-        {inactiveCount > 0 && (
-          <div className="flex items-center gap-2 px-3 py-2 border rounded-md">
-            <Switch
-              id="show-inactive"
-              checked={showInactive}
-              onCheckedChange={setShowInactive}
-            />
-            <Label htmlFor="show-inactive" className="text-sm cursor-pointer flex items-center gap-1.5">
-              {showInactive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-              Pasif markaları göster ({inactiveCount})
-            </Label>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="glass-card rounded-xl p-4 border-glow-indigo">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-indigo-500/10">
+              <Building2 className="h-4 w-4 text-indigo-500" />
+            </div>
           </div>
-        )}
+          <p className="text-2xl font-bold">{customers.length}</p>
+          <p className="text-xs text-muted-foreground">Toplam Marka</p>
+        </div>
+        <div className="glass-card rounded-xl p-4 border-glow-emerald">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-emerald-500/10">
+              <Eye className="h-4 w-4 text-emerald-500" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold">{activeCount}</p>
+          <p className="text-xs text-muted-foreground">Aktif</p>
+        </div>
+        <div className="glass-card rounded-xl p-4 border-glow-amber">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-amber-500/10">
+              <Clock className="h-4 w-4 text-amber-500" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold">{inactiveCount}</p>
+          <p className="text-xs text-muted-foreground">Pasif</p>
+        </div>
+        <div className="glass-card rounded-xl p-4 border-glow-fuchsia">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-fuchsia-500/10">
+              <Sparkles className="h-4 w-4 text-fuchsia-500" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold">0</p>
+          <p className="text-xs text-muted-foreground">İçerik Üretildi</p>
+        </div>
+      </div>
+
+      {/* Search and Filter */}
+      <div className="glass-card rounded-xl p-4 border border-border/40">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Marka ara..."
+              className="pl-9 bg-background/50"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          
+          {inactiveCount > 0 && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-background/50 border border-border/40">
+              <Switch
+                id="show-inactive"
+                checked={showInactive}
+                onCheckedChange={setShowInactive}
+              />
+              <Label htmlFor="show-inactive" className="text-sm cursor-pointer flex items-center gap-1.5">
+                {showInactive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                Pasif ({inactiveCount})
+              </Label>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Recent Customers */}
@@ -267,34 +302,33 @@ export default function MusterilerPage() {
             {recentCustomers.map((recent) => {
               const customer = customers.find(c => c.id === recent.id)
               if (!customer) return null
-              // Don't show inactive in recent unless toggle is on
               if (customer.status === 'inactive' && !showInactive) return null
               
               return (
-                <Card 
+                <div 
                   key={recent.id} 
-                  className={`cursor-pointer hover:shadow-md transition-shadow ${
+                  className={`glass-card rounded-xl p-4 cursor-pointer card-hover border border-border/40 ${
                     customer.status === 'inactive' ? 'opacity-60' : ''
                   }`}
                   onClick={() => handleCustomerClick(customer)}
                 >
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                        <CardTitle className="text-sm font-medium">
-                          {customer.name}
-                        </CardTitle>
-                        {customer.status === 'inactive' && (
-                          <Badge variant="secondary" className="text-xs">Pasif</Badge>
-                        )}
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center">
+                        <Building2 className="h-4 w-4 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{customer.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatRelativeTime(recent.lastUsed)}
+                        </p>
                       </div>
                     </div>
-                    <CardDescription className="text-xs">
-                      {getSectorLabel(customer.sector || '')} • {formatRelativeTime(recent.lastUsed)}
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
+                    {customer.status === 'inactive' && (
+                      <Badge variant="secondary" className="text-xs">Pasif</Badge>
+                    )}
+                  </div>
+                </div>
               )
             })}
           </div>
@@ -308,24 +342,27 @@ export default function MusterilerPage() {
         </h2>
         
         {loading ? (
-          <div className="text-center py-8 text-muted-foreground">
-            Yükleniyor...
+          <div className="glass-card rounded-xl p-8 text-center text-muted-foreground">
+            <div className="animate-pulse">Yükleniyor...</div>
           </div>
         ) : filteredCustomers.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-8">
-              <Building2 className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-              <p className="text-muted-foreground">
-                {searchQuery ? 'Aramanızla eşleşen marka bulunamadı.' : 'Henüz marka eklenmemiş.'}
-              </p>
-              {!searchQuery && (
-                <Button className="mt-4" onClick={handleNewCustomer}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  İlk Markayı Ekle
-                </Button>
-              )}
-            </CardContent>
-          </Card>
+          <div className="glass-card rounded-xl p-12 text-center border-glow-indigo">
+            <div className="inline-flex items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-violet-500/10 border border-indigo-500/20 mb-4">
+              <Building2 className="h-8 w-8 text-indigo-500" />
+            </div>
+            <p className="text-muted-foreground mb-4">
+              {searchQuery ? 'Aramanızla eşleşen marka bulunamadı.' : 'Henüz marka eklenmemiş.'}
+            </p>
+            {!searchQuery && (
+              <Button 
+                onClick={handleNewCustomer}
+                className="bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                İlk Markayı Ekle
+              </Button>
+            )}
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredCustomers.map((customer) => {
@@ -333,106 +370,103 @@ export default function MusterilerPage() {
               const isInactive = customer.status === 'inactive'
               
               return (
-                <Card 
+                <div 
                   key={customer.id} 
-                  className={`cursor-pointer hover:shadow-md transition-all hover:border-primary/50 ${
+                  className={`glass-card rounded-xl p-5 cursor-pointer card-hover border border-border/40 group ${
                     isInactive ? 'opacity-60 border-dashed' : ''
                   }`}
                   onClick={() => handleCustomerClick(customer)}
                 >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-5 w-5 text-muted-foreground" />
-                        <CardTitle className="text-base">{customer.name}</CardTitle>
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center">
+                        <Building2 className="h-5 w-5 text-white" />
                       </div>
-                      
-                      {/* Action Buttons */}
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            router.push(`/customers/${customer.id}`)
-                          }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setCustomerToDelete(customer)
-                            setDeleteDialogOpen(true)
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                      <div>
+                        <h3 className="font-semibold">{customer.name}</h3>
+                        {customer.website_url && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Globe className="h-3 w-3" />
+                            {(() => {
+                              try { return new URL(customer.website_url).hostname } 
+                              catch { return customer.website_url }
+                            })()}
+                          </p>
+                        )}
                       </div>
                     </div>
                     
-                    {/* Badges */}
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {/* Status Badge */}
-                      {isInactive && (
-                        <Badge variant="secondary" className="text-xs">
-                          Pasif
-                        </Badge>
-                      )}
-                      {/* Customer Type Badge */}
-                      {customer.customer_type && (
-                        <Badge variant={customer.customer_type === 'retainer' ? 'default' : 'outline'} className="text-xs">
-                          {getCustomerTypeLabel(customer.customer_type)}
-                        </Badge>
-                      )}
-                      {customer.sector && (
-                        <Badge variant="secondary" className="text-xs">
-                          {getSectorLabel(customer.sector)}
-                        </Badge>
-                      )}
-                      {customer.brand_voice && (
-                        <Badge variant="outline" className="text-xs">
-                          {getBrandVoiceLabel(customer.brand_voice)}
-                        </Badge>
-                      )}
+                    {/* Actions */}
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-lg"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          router.push(`/customers/${customer.id}`)
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-lg text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setCustomerToDelete(customer)
+                          setDeleteDialogOpen(true)
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-
-                    {/* Info */}
-                    {customer.website_url && (
-                      <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
-                        <Globe className="h-3 w-3" />
-                        {(() => {
-                          try {
-                            return new URL(customer.website_url).hostname
-                          } catch {
-                            return customer.website_url
-                          }
-                        })()}
-                      </div>
+                  </div>
+                  
+                  {/* Badges */}
+                  <div className="flex flex-wrap gap-1.5 mb-4">
+                    {isInactive && (
+                      <Badge className="text-xs bg-zinc-500/10 text-zinc-500 border-zinc-500/20">
+                        Pasif
+                      </Badge>
                     )}
+                    {customer.customer_type && (
+                      <Badge 
+                        className={`text-xs ${
+                          customer.customer_type === 'retainer' 
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' 
+                            : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                        }`}
+                      >
+                        {getCustomerTypeLabel(customer.customer_type)}
+                      </Badge>
+                    )}
+                    {customer.sector && (
+                      <Badge variant="secondary" className="text-xs">
+                        {getSectorLabel(customer.sector)}
+                      </Badge>
+                    )}
+                  </div>
 
-                    {/* Completion Bar */}
-                    <div className="flex items-center gap-2 mt-3 pt-3 border-t">
-                      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full rounded-full transition-all ${
-                            completion < 30 ? 'bg-red-500' :
-                            completion < 60 ? 'bg-yellow-500' :
-                            completion < 90 ? 'bg-blue-500' : 'bg-green-500'
-                          }`}
-                          style={{ width: `${completion}%` }}
-                        />
-                      </div>
-                      <span className="text-xs text-muted-foreground font-medium">
-                        %{completion}
-                      </span>
+                  {/* Completion Bar */}
+                  <div className="flex items-center gap-2 pt-3 border-t border-border/40">
+                    <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full transition-all ${
+                          completion < 30 ? 'bg-rose-500' :
+                          completion < 60 ? 'bg-amber-500' :
+                          completion < 90 ? 'bg-indigo-500' : 'bg-emerald-500'
+                        }`}
+                        style={{ width: `${completion}%` }}
+                      />
                     </div>
-                  </CardHeader>
-                </Card>
+                    <span className="text-xs text-muted-foreground font-mono">
+                      %{completion}
+                    </span>
+                  </div>
+                </div>
               )
             })}
           </div>
@@ -441,12 +475,12 @@ export default function MusterilerPage() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="glass">
           <DialogHeader>
             <DialogTitle>Markayı Sil</DialogTitle>
             <DialogDescription>
               &quot;{customerToDelete?.name}&quot; markasını silmek istediğinize emin misiniz? 
-              Bu işlem geri alınamaz ve bu markaya ait tüm içerikler de silinecektir.
+              Bu işlem geri alınamaz.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
