@@ -86,6 +86,8 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
         sub_sector: formData.sub_sector || null,
         business_type: formData.business_type || null,
         brand_voice: formData.brand_voice || null,
+        customer_type: formData.customer_type || 'project',
+        status: formData.status || 'active',
         email: formData.email || null,
         phone: formData.phone || null,
         location: formData.location || null,
