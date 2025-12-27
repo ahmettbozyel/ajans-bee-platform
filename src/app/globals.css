@@ -3,8 +3,8 @@
 /* =====================================================
    AJANS BEE - DESIGN SYSTEM
    Glass Morphism + Glow Border Theme
-   =====================================================
-*/
+   Version: 2.0 - Ece UI Talimatları
+   ===================================================== */
 
 :root {
   /* Background */
@@ -313,15 +313,27 @@ body {
    ANIMATIONS
    ===================================================== */
 
+/* Pulse Glow - for status dot */
 @keyframes pulse-glow {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  0%, 100% { 
+    opacity: 1; 
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6); 
+  }
+  50% { 
+    opacity: 0.6; 
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.8); 
+  }
+}
+
+.pulse-status {
+  animation: pulse-glow 2s ease-in-out infinite;
 }
 
 .animate-pulse-glow {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
+/* Shimmer */
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
@@ -336,4 +348,29 @@ body {
   );
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
+}
+
+/* Theme Toggle Rotation */
+.theme-toggle {
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.theme-toggle:hover {
+  transform: rotate(15deg);
+}
+
+/* =====================================================
+   TOP BAR STYLES
+   ===================================================== */
+
+.top-bar-search {
+  transition: all 0.2s ease;
+}
+
+.top-bar-search:focus {
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.dark .top-bar-search:focus {
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
 }
