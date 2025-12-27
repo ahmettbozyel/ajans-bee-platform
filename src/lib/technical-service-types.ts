@@ -1,40 +1,24 @@
 // =====================================================
 // Technical Service Types - Karar #13
-// Version: 1.0
+// Version: 1.1 - Types alignment with types.ts
 // =====================================================
 
-// Hizmet tipi
+// Import from main types for consistency
+import type { 
+  TechnicalService as TechnicalServiceRow,
+  TechnicalServiceInsert,
+  TechnicalServiceUpdate
+} from './types';
+
+// Re-export for convenience
+export type TechnicalService = TechnicalServiceRow;
+export type { TechnicalServiceInsert, TechnicalServiceUpdate };
+
+// Hizmet tipi (aligned with Database enum)
 export type ServiceType = 'hosting' | 'domain' | 'ssl' | 'email';
 
-// Ödeme durumu
-export type PaymentStatus = 'pending' | 'paid' | 'overdue' | 'cancelled';
-
-// =====================================================
-// Ana TechnicalService Interface
-// =====================================================
-
-export interface TechnicalService {
-  id: string;
-  created_at: string;
-  updated_at: string;
-  
-  // İlişkiler
-  customer_id: string;
-  user_id: string;
-  
-  // Hizmet bilgileri
-  service_type: ServiceType;
-  name: string;
-  platform?: string | null; // Siteground, Natro, Hostinger vb.
-  
-  // Tarih ve ödeme
-  renewal_date?: string | null;
-  payment_status: PaymentStatus;
-  price?: number | null;
-  
-  // Ek bilgi
-  notes?: string | null;
-}
+// Ödeme durumu (aligned with Database enum)
+export type PaymentStatus = 'pending' | 'paid' | 'overdue';
 
 // Form için partial tip
 export type TechnicalServiceFormData = Partial<Omit<TechnicalService, 'id' | 'created_at' | 'updated_at' | 'user_id'>>;
@@ -45,7 +29,7 @@ export interface TechnicalServiceWithCustomer extends TechnicalService {
     id: string;
     name: string;
     customer_type: 'retainer' | 'project';
-  };
+  } | null;
 }
 
 // =====================================================
@@ -62,8 +46,7 @@ export const SERVICE_TYPES = [
 export const PAYMENT_STATUSES = [
   { value: 'pending', label: 'Beklemede', color: 'yellow' },
   { value: 'paid', label: 'Ödendi', color: 'green' },
-  { value: 'overdue', label: 'Gecikmiş', color: 'red' },
-  { value: 'cancelled', label: 'İptal', color: 'gray' }
+  { value: 'overdue', label: 'Gecikmiş', color: 'red' }
 ] as const;
 
 export const PLATFORMS = [
