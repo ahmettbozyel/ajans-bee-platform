@@ -1,14 +1,25 @@
 @import "tailwindcss";
 
+/* =====================================================
+   AJANS BEE - DESIGN SYSTEM
+   Glass Morphism + Glow Border Theme
+   =====================================================
+*/
+
 :root {
-  --background: 0 0% 100%;
+  /* Background */
+  --background: 0 0% 98%;
   --foreground: 240 10% 3.9%;
   --card: 0 0% 100%;
   --card-foreground: 240 10% 3.9%;
   --popover: 0 0% 100%;
   --popover-foreground: 240 10% 3.9%;
-  --primary: 47 100% 50%;
-  --primary-foreground: 240 10% 3.9%;
+  
+  /* Primary - Indigo */
+  --primary: 239 84% 67%;
+  --primary-foreground: 0 0% 100%;
+  
+  /* Secondary */
   --secondary: 240 4.8% 95.9%;
   --secondary-foreground: 240 5.9% 10%;
   --muted: 240 4.8% 95.9%;
@@ -19,8 +30,53 @@
   --destructive-foreground: 0 0% 98%;
   --border: 240 5.9% 90%;
   --input: 240 5.9% 90%;
-  --ring: 47 100% 50%;
-  --radius: 0.5rem;
+  --ring: 239 84% 67%;
+  --radius: 0.75rem;
+  
+  /* Glow Colors */
+  --glow-indigo: rgba(99, 102, 241, 0.25);
+  --glow-violet: rgba(139, 92, 246, 0.25);
+  --glow-cyan: rgba(34, 211, 238, 0.25);
+  --glow-emerald: rgba(16, 185, 129, 0.25);
+  --glow-amber: rgba(245, 158, 11, 0.3);
+  --glow-rose: rgba(244, 63, 94, 0.3);
+  --glow-fuchsia: rgba(217, 70, 239, 0.25);
+}
+
+.dark {
+  /* Background - Deep dark */
+  --background: 240 10% 4%;
+  --foreground: 0 0% 98%;
+  --card: 240 10% 6%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 10% 6%;
+  --popover-foreground: 0 0% 98%;
+  
+  /* Primary - Indigo */
+  --primary: 239 84% 67%;
+  --primary-foreground: 0 0% 100%;
+  
+  /* Secondary */
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --ring: 239 84% 67%;
+  
+  /* Glow Colors - Brighter in dark mode */
+  --glow-indigo: rgba(99, 102, 241, 0.3);
+  --glow-violet: rgba(139, 92, 246, 0.3);
+  --glow-cyan: rgba(34, 211, 238, 0.3);
+  --glow-emerald: rgba(16, 185, 129, 0.3);
+  --glow-amber: rgba(245, 158, 11, 0.3);
+  --glow-rose: rgba(244, 63, 94, 0.3);
+  --glow-fuchsia: rgba(217, 70, 239, 0.3);
 }
 
 @theme inline {
@@ -43,35 +99,22 @@
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
-  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  
+  /* Fonts */
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  
+  /* Radius */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
 }
 
-.dark {
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  --card: 240 10% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --popover: 240 10% 3.9%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 47 100% 50%;
-  --primary-foreground: 240 10% 3.9%;
-  --secondary: 240 3.7% 15.9%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  --accent: 240 3.7% 15.9%;
-  --accent-foreground: 0 0% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
-  --ring: 47 100% 50%;
-}
+/* =====================================================
+   BASE STYLES
+   ===================================================== */
 
 body {
   background: hsl(var(--background));
@@ -79,6 +122,218 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
+.font-mono {
+  font-family: var(--font-mono), monospace;
+}
+
 * {
   border-color: hsl(var(--border));
+}
+
+/* =====================================================
+   GLASS MORPHISM
+   ===================================================== */
+
+/* Light Mode Glass */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.08);
+}
+
+/* Dark Mode Glass */
+.dark .glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.dark .glass-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Sidebar Glass */
+.sidebar-bg {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.dark .sidebar-bg {
+  background: linear-gradient(180deg, rgba(15, 15, 20, 0.95) 0%, rgba(9, 9, 11, 0.98) 100%);
+}
+
+/* Content Background with subtle gradients */
+.content-bg {
+  background: 
+    radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(34, 211, 238, 0.03) 0%, transparent 50%);
+}
+
+.dark .content-bg {
+  background: 
+    radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(34, 211, 238, 0.05) 0%, transparent 50%);
+}
+
+/* =====================================================
+   GLOW BORDER EFFECTS
+   ===================================================== */
+
+/* Light Mode Glow */
+.border-glow-indigo {
+  border: 1px solid var(--glow-indigo);
+  box-shadow: 0 4px 20px -5px var(--glow-indigo);
+}
+
+.border-glow-violet {
+  border: 1px solid var(--glow-violet);
+  box-shadow: 0 4px 20px -5px var(--glow-violet);
+}
+
+.border-glow-cyan {
+  border: 1px solid var(--glow-cyan);
+  box-shadow: 0 4px 20px -5px var(--glow-cyan);
+}
+
+.border-glow-emerald {
+  border: 1px solid var(--glow-emerald);
+  box-shadow: 0 4px 20px -5px var(--glow-emerald);
+}
+
+.border-glow-amber {
+  border: 1px solid var(--glow-amber);
+  box-shadow: 0 4px 20px -5px var(--glow-amber);
+}
+
+.border-glow-rose {
+  border: 1px solid var(--glow-rose);
+  box-shadow: 0 4px 20px -5px var(--glow-rose);
+}
+
+.border-glow-fuchsia {
+  border: 1px solid var(--glow-fuchsia);
+  box-shadow: 0 4px 20px -5px var(--glow-fuchsia);
+}
+
+/* Dark Mode Glow - Enhanced */
+.dark .border-glow-indigo {
+  border: 1px solid var(--glow-indigo);
+  box-shadow: 0 0 20px -5px var(--glow-indigo), inset 0 0 20px -10px rgba(99, 102, 241, 0.1);
+}
+
+.dark .border-glow-violet {
+  border: 1px solid var(--glow-violet);
+  box-shadow: 0 0 20px -5px var(--glow-violet), inset 0 0 20px -10px rgba(139, 92, 246, 0.1);
+}
+
+.dark .border-glow-cyan {
+  border: 1px solid var(--glow-cyan);
+  box-shadow: 0 0 20px -5px var(--glow-cyan), inset 0 0 20px -10px rgba(34, 211, 238, 0.1);
+}
+
+.dark .border-glow-emerald {
+  border: 1px solid var(--glow-emerald);
+  box-shadow: 0 0 20px -5px var(--glow-emerald);
+}
+
+.dark .border-glow-amber {
+  border: 1px solid var(--glow-amber);
+  box-shadow: 0 0 20px -5px var(--glow-amber);
+}
+
+.dark .border-glow-rose {
+  border: 1px solid var(--glow-rose);
+  box-shadow: 0 0 20px -5px var(--glow-rose);
+}
+
+.dark .border-glow-fuchsia {
+  border: 1px solid var(--glow-fuchsia);
+  box-shadow: 0 0 20px -5px var(--glow-fuchsia), inset 0 0 20px -10px rgba(217, 70, 239, 0.1);
+}
+
+/* =====================================================
+   CARD HOVER EFFECTS
+   ===================================================== */
+
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  border-color: rgba(139, 92, 246, 0.4);
+  box-shadow: 0 8px 30px -5px rgba(139, 92, 246, 0.2);
+  transform: translateY(-2px);
+}
+
+.dark .card-hover:hover {
+  border-color: rgba(139, 92, 246, 0.5);
+  box-shadow: 0 0 30px -5px rgba(139, 92, 246, 0.4), inset 0 0 30px -10px rgba(139, 92, 246, 0.15);
+}
+
+/* =====================================================
+   TAB STYLES
+   ===================================================== */
+
+.tab-active {
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, rgba(99, 102, 241, 0.02) 100%);
+  border-bottom: 2px solid #6366f1;
+}
+
+.dark .tab-active {
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.2) 0%, rgba(99, 102, 241, 0.05) 100%);
+  border-bottom: 2px solid #6366f1;
+}
+
+/* =====================================================
+   SIDEBAR NAV STYLES
+   ===================================================== */
+
+.nav-item-active {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%);
+  border-left: 3px solid #6366f1;
+  color: hsl(var(--foreground));
+}
+
+.dark .nav-item-active {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.2) 0%, transparent 100%);
+  border-left: 3px solid #6366f1;
+}
+
+/* =====================================================
+   ANIMATIONS
+   ===================================================== */
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
 }

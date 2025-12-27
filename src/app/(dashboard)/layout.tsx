@@ -3,21 +3,19 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { 
   LayoutDashboard, 
-  PenTool, 
-  Image, 
-  History, 
   Building2,
   Server,
   LogOut,
-  Menu
+  Menu,
+  Sun,
+  Moon
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
+// Karar #14: Sadece Dashboard, Markalar, Teknik Hizmetler
+// İçerik Üret, Görseller, Geçmiş artık Marka Workspace içinde
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'İçerik Üret', href: '/icerik-uret', icon: PenTool },
-  { name: 'Görseller', href: '/gorseller', icon: Image },
-  { name: 'Geçmiş', href: '/gecmis', icon: History },
   { name: 'Markalar', href: '/musteriler', icon: Building2 },
   { name: 'Teknik Hizmetler', href: '/teknik-hizmetler', icon: Server },
 ]
@@ -35,9 +33,9 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen bg-background">
       {/* Mobile header */}
-      <header className="lg:hidden sticky top-0 z-50 flex h-14 items-center gap-4 border-b bg-background px-4">
+      <header className="lg:hidden sticky top-0 z-50 flex h-14 items-center gap-4 border-b border-border/40 glass px-4">
         <Button variant="ghost" size="icon" className="lg:hidden">
           <Menu className="h-5 w-5" />
         </Button>
@@ -50,11 +48,13 @@ export default async function DashboardLayout({
       <div className="flex">
         {/* Sidebar */}
         <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
-          <div className="flex flex-col flex-grow border-r bg-background">
+          <div className="flex flex-col flex-grow sidebar-bg border-r border-border/40">
             {/* Logo */}
-            <div className="flex h-16 items-center gap-2 px-6 border-b">
+            <div className="flex h-16 items-center gap-2 px-6 border-b border-border/40">
               <span className="text-2xl">🐝</span>
-              <span className="font-bold text-lg">Ajans Bee AI</span>
+              <span className="font-bold text-lg bg-gradient-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent">
+                Ajans Bee AI
+              </span>
             </div>
 
             {/* Navigation */}
@@ -63,7 +63,7 @@ export default async function DashboardLayout({
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
                 >
                   <item.icon className="h-5 w-5" />
                   {item.name}
@@ -72,10 +72,10 @@ export default async function DashboardLayout({
             </nav>
 
             {/* User section */}
-            <div className="border-t p-4">
+            <div className="border-t border-border/40 p-4">
               <div className="flex items-center gap-3 mb-3">
-                <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-sm font-medium text-primary">
+                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center">
+                  <span className="text-sm font-medium text-white">
                     {user.email?.charAt(0).toUpperCase()}
                   </span>
                 </div>
@@ -89,7 +89,7 @@ export default async function DashboardLayout({
                 </div>
               </div>
               <form action="/api/auth/signout" method="post">
-                <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
+                <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground">
                   <LogOut className="h-4 w-4" />
                   Çıkış Yap
                 </Button>
@@ -100,8 +100,10 @@ export default async function DashboardLayout({
 
         {/* Main content */}
         <main className="flex-1 lg:pl-64">
-          <div className="p-6">
-            {children}
+          <div className="content-bg min-h-screen">
+            <div className="p-6">
+              {children}
+            </div>
           </div>
         </main>
       </div>
