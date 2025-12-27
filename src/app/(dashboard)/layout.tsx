@@ -5,17 +5,19 @@ import {
   LayoutDashboard, 
   Building2,
   Server,
+  Settings,
   LogOut,
   Menu
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { TopBar } from '@/components/layouts/top-bar'
 
-// Karar #15: Sidebar menü yapısı - Menülere takılma
+// Karar #15: Sidebar menü yapısı
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Markalar', href: '/musteriler', icon: Building2 },
-  { name: 'Teknik Hizmetler', href: '/teknik-hizmetler', icon: Server },
+  { name: 'Dashboard', href: '/', icon: LayoutDashboard, comingSoon: false },
+  { name: 'Markalar', href: '/musteriler', icon: Building2, comingSoon: false },
+  { name: 'Teknik Hizmetler', href: '/teknik-hizmetler', icon: Server, comingSoon: false },
+  { name: 'Ayarlar', href: '/ayarlar', icon: Settings, comingSoon: true },
 ]
 
 // Ajans Bee Logo SVG Component
@@ -86,11 +88,23 @@ export default async function DashboardLayout({
                 {navigation.map((item) => (
                   <Link
                     key={item.name}
-                    href={item.href}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white transition-all duration-200 group"
+                    href={item.comingSoon ? '#' : item.href}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
+                      item.comingSoon 
+                        ? 'text-zinc-400 dark:text-zinc-500 opacity-50 cursor-not-allowed' 
+                        : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'
+                    }`}
+                    onClick={item.comingSoon ? (e) => e.preventDefault() : undefined}
                   >
-                    <item.icon className="h-5 w-5 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors" />
+                    <item.icon className={`h-5 w-5 ${
+                      item.comingSoon 
+                        ? '' 
+                        : 'group-hover:text-indigo-500 dark:group-hover:text-indigo-400'
+                    } transition-colors`} />
                     <span className="text-sm font-medium">{item.name}</span>
+                    {item.comingSoon && (
+                      <span className="ml-auto text-[10px] bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400 px-2 py-0.5 rounded-full">Yakında</span>
+                    )}
                   </Link>
                 ))}
               </div>
