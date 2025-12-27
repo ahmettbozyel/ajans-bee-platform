@@ -31,13 +31,17 @@ import type {
   PriceSegment,
   ContentPillar,
   PlatformRules,
-  WordMapping
+  WordMapping,
+  CustomerType,
+  CustomerStatus
 } from '@/lib/customer-types'
 import { 
   SECTORS, 
   BRAND_VOICES, 
   BUSINESS_TYPES, 
   PRICE_SEGMENTS,
+  CUSTOMER_TYPES,
+  CUSTOMER_STATUSES,
   BRIEF_SECTIONS,
   calculateBriefCompletion,
   calculateSectionCompletion
@@ -279,6 +283,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
   const [aiResearch, setAIResearch] = useState<AIResearchState>({ isLoading: false, progress: 0, status: 'idle', error: null, filledFields: [] })
   const [formData, setFormData] = useState<CustomerFormData>({
     name: '', brand_name: '', website_url: '', sector: '', sub_sector: '', business_type: null, brand_voice: 'samimi',
+    customer_type: 'project', status: 'active',
     email: '', phone: '', location: '', social_media: {}, brand_description: '', mission: '', vision: '', slogan: '', usp: '',
     target_audience: '', target_age_range: '', target_geography: '', product_categories: [], top_products: [], price_segment: null,
     competitors: [], do_not_do: [], must_emphasize: [], special_events: [], brand_values: [], buying_motivations: [],
@@ -292,7 +297,9 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
       setFormData({
         name: customer.name || '', brand_name: customer.brand_name || '', website_url: customer.website_url || '',
         sector: customer.sector || '', sub_sector: customer.sub_sector || '', business_type: customer.business_type || null,
-        brand_voice: customer.brand_voice || 'samimi', email: customer.email || '', phone: customer.phone || '',
+        brand_voice: customer.brand_voice || 'samimi',
+        customer_type: customer.customer_type || 'project', status: customer.status || 'active',
+        email: customer.email || '', phone: customer.phone || '',
         location: customer.location || '', social_media: customer.social_media || {}, brand_description: customer.brand_description || '',
         mission: customer.mission || '', vision: customer.vision || '', slogan: customer.slogan || '', usp: customer.usp || '',
         target_audience: customer.target_audience || '', target_age_range: customer.target_age_range || '',
@@ -377,8 +384,12 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
       <CollapsibleSection id="temel" title="Temel Bilgiler" icon={sectionIcons.temel} isOpen={openSections.includes('temel')} onToggle={() => toggleSection('temel')} completion={calculateSectionCompletion(formData, BRIEF_SECTIONS.temelBilgiler.fields)}>
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2"><Label htmlFor="name">Müşteri Adı *</Label><Input id="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Örn: Karaca Zeytinyağı" required /></div>
+            <div className="space-y-2"><Label htmlFor="name">Marka Adı *</Label><Input id="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Örn: Karaca Zeytinyağı" required /></div>
             <div className="space-y-2"><Label htmlFor="website_url">Website URL</Label><div className="relative"><Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input id="website_url" value={formData.website_url || ''} onChange={(e) => setFormData({ ...formData, website_url: e.target.value })} placeholder="https://example.com" className="pl-9" /></div><p className="text-xs text-muted-foreground">💡 Website girerseniz AI otomatik bilgi toplayabilir</p></div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2"><Label>Müşteri Tipi *</Label><Select value={formData.customer_type || 'project'} onValueChange={(v) => setFormData({ ...formData, customer_type: v as CustomerType })}><SelectTrigger><SelectValue placeholder="Tip seçin..." /></SelectTrigger><SelectContent>{CUSTOMER_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label} <span className="text-muted-foreground text-xs">({t.description})</span></SelectItem>)}</SelectContent></Select></div>
+            <div className="space-y-2"><Label>Durum</Label><Select value={formData.status || 'active'} onValueChange={(v) => setFormData({ ...formData, status: v as CustomerStatus })}><SelectTrigger><SelectValue placeholder="Durum seçin..." /></SelectTrigger><SelectContent>{CUSTOMER_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label} <span className="text-muted-foreground text-xs">({s.description})</span></SelectItem>)}</SelectContent></Select></div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2"><Label>Sektör *</Label><Select value={formData.sector || ''} onValueChange={(v) => setFormData({ ...formData, sector: v })}><SelectTrigger><SelectValue placeholder="Sektör seçin..." /></SelectTrigger><SelectContent>{SECTORS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent></Select></div>
@@ -509,7 +520,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
       <div className="flex gap-3 pt-2">
         <Button type="button" variant="outline" onClick={onCancel} className="flex-1">İptal</Button>
         <Button type="submit" disabled={isLoading || !formData.name || aiResearch.isLoading} className="flex-1">
-          {isLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Kaydediliyor...</> : customer ? 'Güncelle' : 'Müşteri Ekle'}
+          {isLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Kaydediliyor...</> : customer ? 'Güncelle' : 'Marka Ekle'}
         </Button>
       </div>
     </form>
