@@ -10,11 +10,13 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Plus, Search, Pencil, Trash2, Building2, Clock, Globe, Users } from 'lucide-react'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Plus, Search, Pencil, Trash2, Building2, Clock, Globe, Users, Eye, EyeOff } from 'lucide-react'
 import { getRecentCustomers, addToRecentCustomers, formatRelativeTime, type RecentCustomer } from '@/lib/local-storage'
 import { CustomerBriefForm } from '@/components/customers/customer-brief-form'
-import type { Customer, CustomerFormData } from '@/lib/customer-types'
-import { SECTORS, BRAND_VOICES, calculateBriefCompletion } from '@/lib/customer-types'
+import type { Customer, CustomerFormData, CustomerType, CustomerStatus } from '@/lib/customer-types'
+import { SECTORS, BRAND_VOICES, CUSTOMER_TYPES, calculateBriefCompletion, getCustomerTypeLabel } from '@/lib/customer-types'
 
 // Helper functions
 function getSectorLabel(value: string): string {
@@ -35,6 +37,7 @@ export default function MusterilerPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null)
   const [formLoading, setFormLoading] = useState(false)
+  const [showInactive, setShowInactive] = useState(false)
 
   const supabase = createClient()
 
@@ -61,12 +64,21 @@ export default function MusterilerPage() {
     }
   }
 
-  // Filter customers by search
-  const filteredCustomers = customers.filter(customer =>
-    customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    customer.brand_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    customer.sector?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // Filter customers by search and status
+  const filteredCustomers = customers.filter(customer => {
+    // Search filter
+    const matchesSearch = customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customer.brand_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customer.sector?.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    // Status filter - show inactive only if toggle is on
+    const matchesStatus = showInactive || customer.status !== 'inactive'
+    
+    return matchesSearch && matchesStatus
+  })
+
+  // Count inactive customers
+  const inactiveCount = customers.filter(c => c.status === 'inactive').length
 
   // Navigate to customer detail
   function handleCustomerClick(customer: Customer) {
@@ -100,6 +112,8 @@ export default function MusterilerPage() {
         sub_sector: formData.sub_sector || null,
         business_type: formData.business_type || null,
         brand_voice: formData.brand_voice || null,
+        customer_type: formData.customer_type || 'project',
+        status: formData.status || 'active',
         email: formData.email || null,
         phone: formData.phone || null,
         location: formData.location || null,
@@ -181,9 +195,9 @@ export default function MusterilerPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Müşteriler</h1>
+          <h1 className="text-2xl font-bold">Markalar</h1>
           <p className="text-muted-foreground mt-1">
-            Müşteri brief&apos;lerini yönetin
+            Marka brief&apos;lerini yönetin
           </p>
         </div>
         
@@ -191,14 +205,14 @@ export default function MusterilerPage() {
           <SheetTrigger asChild>
             <Button onClick={handleNewCustomer}>
               <Plus className="h-4 w-4 mr-2" />
-              Yeni Müşteri
+              Yeni Marka
             </Button>
           </SheetTrigger>
           <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
             <SheetHeader>
-              <SheetTitle>Yeni Müşteri Ekle</SheetTitle>
+              <SheetTitle>Yeni Marka Ekle</SheetTitle>
               <SheetDescription>
-                Müşteri brief bilgilerini girin. AI içerik üretirken bu bilgileri kullanacak.
+                Marka brief bilgilerini girin. AI içerik üretirken bu bilgileri kullanacak.
               </SheetDescription>
             </SheetHeader>
             
@@ -214,15 +228,32 @@ export default function MusterilerPage() {
         </Sheet>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Müşteri ara..."
-          className="pl-9"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
+      {/* Search and Filter */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Marka ara..."
+            className="pl-9"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        
+        {/* Show Inactive Toggle */}
+        {inactiveCount > 0 && (
+          <div className="flex items-center gap-2 px-3 py-2 border rounded-md">
+            <Switch
+              id="show-inactive"
+              checked={showInactive}
+              onCheckedChange={setShowInactive}
+            />
+            <Label htmlFor="show-inactive" className="text-sm cursor-pointer flex items-center gap-1.5">
+              {showInactive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+              Pasif markaları göster ({inactiveCount})
+            </Label>
+          </div>
+        )}
       </div>
 
       {/* Recent Customers */}
@@ -236,11 +267,15 @@ export default function MusterilerPage() {
             {recentCustomers.map((recent) => {
               const customer = customers.find(c => c.id === recent.id)
               if (!customer) return null
+              // Don't show inactive in recent unless toggle is on
+              if (customer.status === 'inactive' && !showInactive) return null
               
               return (
                 <Card 
                   key={recent.id} 
-                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  className={`cursor-pointer hover:shadow-md transition-shadow ${
+                    customer.status === 'inactive' ? 'opacity-60' : ''
+                  }`}
                   onClick={() => handleCustomerClick(customer)}
                 >
                   <CardHeader className="pb-2">
@@ -250,6 +285,9 @@ export default function MusterilerPage() {
                         <CardTitle className="text-sm font-medium">
                           {customer.name}
                         </CardTitle>
+                        {customer.status === 'inactive' && (
+                          <Badge variant="secondary" className="text-xs">Pasif</Badge>
+                        )}
                       </div>
                     </div>
                     <CardDescription className="text-xs">
@@ -266,7 +304,7 @@ export default function MusterilerPage() {
       {/* All Customers */}
       <div>
         <h2 className="text-sm font-medium text-muted-foreground mb-3">
-          Tüm Müşteriler ({filteredCustomers.length})
+          {showInactive ? 'Tüm Markalar' : 'Aktif Markalar'} ({filteredCustomers.length})
         </h2>
         
         {loading ? (
@@ -278,12 +316,12 @@ export default function MusterilerPage() {
             <CardContent className="text-center py-8">
               <Building2 className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
               <p className="text-muted-foreground">
-                {searchQuery ? 'Aramanızla eşleşen müşteri bulunamadı.' : 'Henüz müşteri eklenmemiş.'}
+                {searchQuery ? 'Aramanızla eşleşen marka bulunamadı.' : 'Henüz marka eklenmemiş.'}
               </p>
               {!searchQuery && (
                 <Button className="mt-4" onClick={handleNewCustomer}>
                   <Plus className="h-4 w-4 mr-2" />
-                  İlk Müşteriyi Ekle
+                  İlk Markayı Ekle
                 </Button>
               )}
             </CardContent>
@@ -292,11 +330,14 @@ export default function MusterilerPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredCustomers.map((customer) => {
               const completion = calculateBriefCompletion(customer)
+              const isInactive = customer.status === 'inactive'
               
               return (
                 <Card 
                   key={customer.id} 
-                  className="cursor-pointer hover:shadow-md transition-all hover:border-primary/50"
+                  className={`cursor-pointer hover:shadow-md transition-all hover:border-primary/50 ${
+                    isInactive ? 'opacity-60 border-dashed' : ''
+                  }`}
                   onClick={() => handleCustomerClick(customer)}
                 >
                   <CardHeader className="pb-3">
@@ -336,6 +377,18 @@ export default function MusterilerPage() {
                     
                     {/* Badges */}
                     <div className="flex flex-wrap gap-1.5 mt-2">
+                      {/* Status Badge */}
+                      {isInactive && (
+                        <Badge variant="secondary" className="text-xs">
+                          Pasif
+                        </Badge>
+                      )}
+                      {/* Customer Type Badge */}
+                      {customer.customer_type && (
+                        <Badge variant={customer.customer_type === 'retainer' ? 'default' : 'outline'} className="text-xs">
+                          {getCustomerTypeLabel(customer.customer_type)}
+                        </Badge>
+                      )}
                       {customer.sector && (
                         <Badge variant="secondary" className="text-xs">
                           {getSectorLabel(customer.sector)}
@@ -390,10 +443,10 @@ export default function MusterilerPage() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Müşteriyi Sil</DialogTitle>
+            <DialogTitle>Markayı Sil</DialogTitle>
             <DialogDescription>
-              &quot;{customerToDelete?.name}&quot; müşterisini silmek istediğinize emin misiniz? 
-              Bu işlem geri alınamaz ve bu müşteriye ait tüm içerikler de silinecektir.
+              &quot;{customerToDelete?.name}&quot; markasını silmek istediğinize emin misiniz? 
+              Bu işlem geri alınamaz ve bu markaya ait tüm içerikler de silinecektir.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
