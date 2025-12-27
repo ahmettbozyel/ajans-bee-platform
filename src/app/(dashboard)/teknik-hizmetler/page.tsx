@@ -50,7 +50,6 @@ import {
   getServiceTypeLabel,
   getPaymentStatusLabel
 } from '@/lib/technical-service-types'
-import type { TechnicalServiceInsert, TechnicalServiceUpdate } from '@/lib/types'
 
 // Basit customer tipi (sadece liste için)
 interface CustomerBasic {
@@ -158,7 +157,8 @@ export default function TeknikHizmetlerPage() {
       setCustomers(customersData || [])
 
       // Teknik hizmetleri yükle (müşteri bilgisiyle)
-      const { data: servicesData, error: servicesError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: servicesData, error: servicesError } = await (supabase as any)
         .from('technical_services')
         .select(`
           *,
@@ -193,42 +193,41 @@ export default function TeknikHizmetlerPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Oturum bulunamadı')
 
-      if (editingService) {
-        // Güncelle - user_id hariç
-        const updatePayload: TechnicalServiceUpdate = {
-          customer_id: formData.customer_id,
-          service_type: formData.service_type,
-          name: formData.name,
-          platform: formData.platform || null,
-          renewal_date: formData.renewal_date || null,
-          payment_status: formData.payment_status,
-          price: formData.price ? parseFloat(formData.price) : null,
-          notes: formData.notes || null
-        }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const supabaseAny = supabase as any
 
-        const { error: updateError } = await supabase
+      if (editingService) {
+        // Güncelle
+        const { error: updateError } = await supabaseAny
           .from('technical_services')
-          .update(updatePayload)
+          .update({
+            customer_id: formData.customer_id,
+            service_type: formData.service_type,
+            name: formData.name,
+            platform: formData.platform || null,
+            renewal_date: formData.renewal_date || null,
+            payment_status: formData.payment_status,
+            price: formData.price ? parseFloat(formData.price) : null,
+            notes: formData.notes || null
+          })
           .eq('id', editingService.id)
 
         if (updateError) throw updateError
       } else {
-        // Yeni ekle - user_id dahil
-        const insertPayload: TechnicalServiceInsert = {
-          customer_id: formData.customer_id,
-          user_id: user.id,
-          service_type: formData.service_type,
-          name: formData.name,
-          platform: formData.platform || null,
-          renewal_date: formData.renewal_date || null,
-          payment_status: formData.payment_status,
-          price: formData.price ? parseFloat(formData.price) : null,
-          notes: formData.notes || null
-        }
-
-        const { error: insertError } = await supabase
+        // Yeni ekle
+        const { error: insertError } = await supabaseAny
           .from('technical_services')
-          .insert(insertPayload)
+          .insert({
+            customer_id: formData.customer_id,
+            user_id: user.id,
+            service_type: formData.service_type,
+            name: formData.name,
+            platform: formData.platform || null,
+            renewal_date: formData.renewal_date || null,
+            payment_status: formData.payment_status,
+            price: formData.price ? parseFloat(formData.price) : null,
+            notes: formData.notes || null
+          })
 
         if (insertError) throw insertError
       }
@@ -253,7 +252,8 @@ export default function TeknikHizmetlerPage() {
     try {
       setDeleting(id)
       
-      const { error: deleteError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: deleteError } = await (supabase as any)
         .from('technical_services')
         .delete()
         .eq('id', id)
