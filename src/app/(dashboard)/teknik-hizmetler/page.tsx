@@ -50,6 +50,7 @@ import {
   getServiceTypeLabel,
   getPaymentStatusLabel
 } from '@/lib/technical-service-types'
+import type { TechnicalServiceInsert, TechnicalServiceUpdate } from '@/lib/types'
 
 // Basit customer tipi (sadece liste için)
 interface CustomerBasic {
@@ -194,36 +195,40 @@ export default function TeknikHizmetlerPage() {
 
       if (editingService) {
         // Güncelle - user_id hariç
+        const updatePayload: TechnicalServiceUpdate = {
+          customer_id: formData.customer_id,
+          service_type: formData.service_type,
+          name: formData.name,
+          platform: formData.platform || null,
+          renewal_date: formData.renewal_date || null,
+          payment_status: formData.payment_status,
+          price: formData.price ? parseFloat(formData.price) : null,
+          notes: formData.notes || null
+        }
+
         const { error: updateError } = await supabase
           .from('technical_services')
-          .update({
-            customer_id: formData.customer_id,
-            service_type: formData.service_type,
-            name: formData.name,
-            platform: formData.platform || null,
-            renewal_date: formData.renewal_date || null,
-            payment_status: formData.payment_status,
-            price: formData.price ? parseFloat(formData.price) : null,
-            notes: formData.notes || null
-          })
+          .update(updatePayload)
           .eq('id', editingService.id)
 
         if (updateError) throw updateError
       } else {
         // Yeni ekle - user_id dahil
+        const insertPayload: TechnicalServiceInsert = {
+          customer_id: formData.customer_id,
+          user_id: user.id,
+          service_type: formData.service_type,
+          name: formData.name,
+          platform: formData.platform || null,
+          renewal_date: formData.renewal_date || null,
+          payment_status: formData.payment_status,
+          price: formData.price ? parseFloat(formData.price) : null,
+          notes: formData.notes || null
+        }
+
         const { error: insertError } = await supabase
           .from('technical_services')
-          .insert({
-            customer_id: formData.customer_id,
-            user_id: user.id,
-            service_type: formData.service_type,
-            name: formData.name,
-            platform: formData.platform || null,
-            renewal_date: formData.renewal_date || null,
-            payment_status: formData.payment_status,
-            price: formData.price ? parseFloat(formData.price) : null,
-            notes: formData.notes || null
-          })
+          .insert(insertPayload)
 
         if (insertError) throw insertError
       }
