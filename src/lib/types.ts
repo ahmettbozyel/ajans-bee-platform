@@ -16,6 +16,8 @@ export type Database = {
           user_id: string
           // Karar #13 - Müşteri tipi
           customer_type: 'retainer' | 'project' | null
+          // Karar #14 - Müşteri durumu
+          status: 'active' | 'inactive' | null
           // Faz 1 alanları
           website_url: string | null
           sub_sector: string | null
@@ -76,6 +78,7 @@ export type Database = {
           notes?: string | null
           user_id: string
           customer_type?: 'retainer' | 'project' | null
+          status?: 'active' | 'inactive' | null
           website_url?: string | null
           sub_sector?: string | null
           business_type?: string | null
@@ -127,6 +130,7 @@ export type Database = {
           notes?: string | null
           user_id?: string
           customer_type?: 'retainer' | 'project' | null
+          status?: 'active' | 'inactive' | null
           website_url?: string | null
           sub_sector?: string | null
           business_type?: string | null
@@ -261,6 +265,7 @@ export type Database = {
       content_type: 'post' | 'story' | 'reel' | 'carousel'
       post_status: 'draft' | 'approved' | 'published'
       customer_type: 'retainer' | 'project'
+      customer_status: 'active' | 'inactive'
       service_type: 'hosting' | 'domain' | 'ssl' | 'email'
       payment_status: 'pending' | 'paid' | 'overdue'
     }
@@ -284,5 +289,6 @@ export type Platform = Database['public']['Enums']['platform_type']
 export type ContentType = Database['public']['Enums']['content_type']
 export type PostStatus = Database['public']['Enums']['post_status']
 export type CustomerType = Database['public']['Enums']['customer_type']
+export type CustomerStatus = Database['public']['Enums']['customer_status']
 export type ServiceType = Database['public']['Enums']['service_type']
 export type PaymentStatus = Database['public']['Enums']['payment_status']
