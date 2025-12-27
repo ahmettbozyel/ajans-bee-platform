@@ -3,7 +3,7 @@
 /* =====================================================
    AJANS BEE - DESIGN SYSTEM
    Glass Morphism + Glow Border Theme
-   Version: 2.0 - Ece UI Talimatları
+   Version: 2.1 - Onaylı Tasarım
    ===================================================== */
 
 :root {
@@ -32,15 +32,6 @@
   --input: 240 5.9% 90%;
   --ring: 239 84% 67%;
   --radius: 0.75rem;
-  
-  /* Glow Colors */
-  --glow-indigo: rgba(99, 102, 241, 0.25);
-  --glow-violet: rgba(139, 92, 246, 0.25);
-  --glow-cyan: rgba(34, 211, 238, 0.25);
-  --glow-emerald: rgba(16, 185, 129, 0.25);
-  --glow-amber: rgba(245, 158, 11, 0.3);
-  --glow-rose: rgba(244, 63, 94, 0.3);
-  --glow-fuchsia: rgba(217, 70, 239, 0.25);
 }
 
 .dark {
@@ -68,15 +59,6 @@
   --border: 240 3.7% 15.9%;
   --input: 240 3.7% 15.9%;
   --ring: 239 84% 67%;
-  
-  /* Glow Colors - Brighter in dark mode */
-  --glow-indigo: rgba(99, 102, 241, 0.3);
-  --glow-violet: rgba(139, 92, 246, 0.3);
-  --glow-cyan: rgba(34, 211, 238, 0.3);
-  --glow-emerald: rgba(16, 185, 129, 0.3);
-  --glow-amber: rgba(245, 158, 11, 0.3);
-  --glow-rose: rgba(244, 63, 94, 0.3);
-  --glow-fuchsia: rgba(217, 70, 239, 0.3);
 }
 
 @theme inline {
@@ -117,38 +99,21 @@
    ===================================================== */
 
 body {
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 
 .font-mono {
-  font-family: var(--font-mono), monospace;
-}
-
-* {
-  border-color: hsl(var(--border));
+  font-family: 'JetBrains Mono', monospace;
 }
 
 /* =====================================================
-   GLASS MORPHISM
+   DARK MODE STYLES
    ===================================================== */
 
-/* Light Mode Glass */
-.glass {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+.dark body {
+  background: #09090b;
 }
 
-.glass-card {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.08);
-}
-
-/* Dark Mode Glass */
 .dark .glass {
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(20px);
@@ -161,21 +126,8 @@ body {
   -webkit-backdrop-filter: blur(20px);
 }
 
-/* Sidebar Glass */
-.sidebar-bg {
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-}
-
 .dark .sidebar-bg {
   background: linear-gradient(180deg, rgba(15, 15, 20, 0.95) 0%, rgba(9, 9, 11, 0.98) 100%);
-}
-
-/* Content Background with subtle gradients */
-.content-bg {
-  background: 
-    radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 50%, rgba(34, 211, 238, 0.03) 0%, transparent 50%);
 }
 
 .dark .content-bg {
@@ -185,135 +137,132 @@ body {
     radial-gradient(ellipse at 50% 50%, rgba(34, 211, 238, 0.05) 0%, transparent 50%);
 }
 
-/* =====================================================
-   GLOW BORDER EFFECTS
-   ===================================================== */
-
-/* Light Mode Glow */
-.border-glow-indigo {
-  border: 1px solid var(--glow-indigo);
-  box-shadow: 0 4px 20px -5px var(--glow-indigo);
-}
-
-.border-glow-violet {
-  border: 1px solid var(--glow-violet);
-  box-shadow: 0 4px 20px -5px var(--glow-violet);
-}
-
-.border-glow-cyan {
-  border: 1px solid var(--glow-cyan);
-  box-shadow: 0 4px 20px -5px var(--glow-cyan);
-}
-
-.border-glow-emerald {
-  border: 1px solid var(--glow-emerald);
-  box-shadow: 0 4px 20px -5px var(--glow-emerald);
-}
-
-.border-glow-amber {
-  border: 1px solid var(--glow-amber);
-  box-shadow: 0 4px 20px -5px var(--glow-amber);
-}
-
-.border-glow-rose {
-  border: 1px solid var(--glow-rose);
-  box-shadow: 0 4px 20px -5px var(--glow-rose);
-}
-
-.border-glow-fuchsia {
-  border: 1px solid var(--glow-fuchsia);
-  box-shadow: 0 4px 20px -5px var(--glow-fuchsia);
-}
-
-/* Dark Mode Glow - Enhanced */
+/* Dark Glow Effects */
 .dark .border-glow-indigo {
-  border: 1px solid var(--glow-indigo);
-  box-shadow: 0 0 20px -5px var(--glow-indigo), inset 0 0 20px -10px rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  box-shadow: 0 0 20px -5px rgba(99, 102, 241, 0.3), inset 0 0 20px -10px rgba(99, 102, 241, 0.1);
 }
 
 .dark .border-glow-violet {
-  border: 1px solid var(--glow-violet);
-  box-shadow: 0 0 20px -5px var(--glow-violet), inset 0 0 20px -10px rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  box-shadow: 0 0 20px -5px rgba(139, 92, 246, 0.3), inset 0 0 20px -10px rgba(139, 92, 246, 0.1);
 }
 
 .dark .border-glow-cyan {
-  border: 1px solid var(--glow-cyan);
-  box-shadow: 0 0 20px -5px var(--glow-cyan), inset 0 0 20px -10px rgba(34, 211, 238, 0.1);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  box-shadow: 0 0 20px -5px rgba(34, 211, 238, 0.3), inset 0 0 20px -10px rgba(34, 211, 238, 0.1);
 }
 
 .dark .border-glow-emerald {
-  border: 1px solid var(--glow-emerald);
-  box-shadow: 0 0 20px -5px var(--glow-emerald);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 20px -5px rgba(16, 185, 129, 0.3);
 }
 
 .dark .border-glow-amber {
-  border: 1px solid var(--glow-amber);
-  box-shadow: 0 0 20px -5px var(--glow-amber);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  box-shadow: 0 0 20px -5px rgba(245, 158, 11, 0.3);
 }
 
 .dark .border-glow-rose {
-  border: 1px solid var(--glow-rose);
-  box-shadow: 0 0 20px -5px var(--glow-rose);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  box-shadow: 0 0 20px -5px rgba(244, 63, 94, 0.3);
 }
 
 .dark .border-glow-fuchsia {
-  border: 1px solid var(--glow-fuchsia);
-  box-shadow: 0 0 20px -5px var(--glow-fuchsia), inset 0 0 20px -10px rgba(217, 70, 239, 0.1);
-}
-
-/* =====================================================
-   CARD HOVER EFFECTS
-   ===================================================== */
-
-.card-hover {
-  transition: all 0.3s ease;
-}
-
-.card-hover:hover {
-  border-color: rgba(139, 92, 246, 0.4);
-  box-shadow: 0 8px 30px -5px rgba(139, 92, 246, 0.2);
-  transform: translateY(-2px);
+  border: 1px solid rgba(217, 70, 239, 0.3);
+  box-shadow: 0 0 20px -5px rgba(217, 70, 239, 0.3), inset 0 0 20px -10px rgba(217, 70, 239, 0.1);
 }
 
 .dark .card-hover:hover {
   border-color: rgba(139, 92, 246, 0.5);
   box-shadow: 0 0 30px -5px rgba(139, 92, 246, 0.4), inset 0 0 30px -10px rgba(139, 92, 246, 0.15);
+  transform: translateY(-2px);
+}
+
+.dark .menu-active {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.2) 0%, rgba(99, 102, 241, 0.05) 100%);
+  border-left: 2px solid #6366f1;
 }
 
 /* =====================================================
-   TAB STYLES
+   LIGHT MODE STYLES
    ===================================================== */
 
-.tab-active {
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, rgba(99, 102, 241, 0.02) 100%);
-  border-bottom: 2px solid #6366f1;
+html:not(.dark) body {
+  background: #f8fafc;
 }
 
-.dark .tab-active {
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.2) 0%, rgba(99, 102, 241, 0.05) 100%);
-  border-bottom: 2px solid #6366f1;
+html:not(.dark) .glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+html:not(.dark) .glass-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.08);
+}
+
+html:not(.dark) .sidebar-bg {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+html:not(.dark) .content-bg {
+  background: 
+    radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(34, 211, 238, 0.03) 0%, transparent 50%);
+}
+
+/* Light Mode Glow */
+html:not(.dark) .border-glow-indigo {
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  box-shadow: 0 4px 20px -5px rgba(99, 102, 241, 0.15);
+}
+
+html:not(.dark) .border-glow-violet {
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  box-shadow: 0 4px 20px -5px rgba(139, 92, 246, 0.15);
+}
+
+html:not(.dark) .border-glow-cyan {
+  border: 1px solid rgba(34, 211, 238, 0.25);
+  box-shadow: 0 4px 20px -5px rgba(34, 211, 238, 0.15);
+}
+
+html:not(.dark) .border-glow-emerald {
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  box-shadow: 0 4px 20px -5px rgba(16, 185, 129, 0.15);
+}
+
+html:not(.dark) .border-glow-amber {
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  box-shadow: 0 4px 20px -5px rgba(245, 158, 11, 0.2);
+}
+
+html:not(.dark) .border-glow-rose {
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  box-shadow: 0 4px 20px -5px rgba(244, 63, 94, 0.2);
+}
+
+html:not(.dark) .card-hover:hover {
+  border-color: rgba(139, 92, 246, 0.4);
+  box-shadow: 0 8px 30px -5px rgba(139, 92, 246, 0.2);
+  transform: translateY(-2px);
+}
+
+html:not(.dark) .menu-active {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.1) 0%, rgba(99, 102, 241, 0.02) 100%);
+  border-left: 2px solid #6366f1;
 }
 
 /* =====================================================
-   SIDEBAR NAV STYLES
+   SHARED STYLES
    ===================================================== */
 
-.nav-item-active {
-  background: linear-gradient(90deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%);
-  border-left: 3px solid #6366f1;
-  color: hsl(var(--foreground));
-}
-
-.dark .nav-item-active {
-  background: linear-gradient(90deg, rgba(99, 102, 241, 0.2) 0%, transparent 100%);
-  border-left: 3px solid #6366f1;
-}
-
-/* =====================================================
-   ANIMATIONS
-   ===================================================== */
-
-/* Pulse Glow - for status dot */
+/* Pulse Status Animation */
 @keyframes pulse-glow {
   0%, 100% { 
     opacity: 1; 
@@ -329,28 +278,7 @@ body {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-/* Shimmer */
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-.animate-shimmer {
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.1) 50%,
-    transparent 100%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite;
-}
-
-/* Theme Toggle Rotation */
+/* Theme Toggle Animation */
 .theme-toggle {
   transition: transform 0.3s ease, background 0.3s ease;
 }
@@ -359,18 +287,43 @@ body {
   transform: rotate(15deg);
 }
 
-/* =====================================================
-   TOP BAR STYLES
-   ===================================================== */
-
-.top-bar-search {
-  transition: all 0.2s ease;
+/* Card Hover Transition */
+.card-hover {
+  transition: all 0.3s ease;
 }
 
-.top-bar-search:focus {
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+/* Scrollbar - Dark */
+.dark ::-webkit-scrollbar {
+  width: 6px;
 }
 
-.dark .top-bar-search:focus {
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+.dark ::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.02);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+/* Scrollbar - Light */
+html:not(.dark) ::-webkit-scrollbar {
+  width: 6px;
+}
+
+html:not(.dark) ::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.02);
+}
+
+html:not(.dark) ::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.1);
+  border-radius: 3px;
+}
+
+html:not(.dark) ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.2);
 }

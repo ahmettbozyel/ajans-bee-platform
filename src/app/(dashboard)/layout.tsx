@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { TopBar } from '@/components/layouts/top-bar'
 
-// Karar #15: Sidebar menü yapısı
+// Karar #15: Sidebar menü yapısı - Menülere takılma
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Markalar', href: '/musteriler', icon: Building2 },
@@ -44,7 +44,7 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile header */}
-      <header className="lg:hidden sticky top-0 z-50 flex h-14 items-center gap-4 border-b border-border/40 glass px-4">
+      <header className="lg:hidden sticky top-0 z-50 flex h-14 items-center gap-4 border-b border-zinc-200 dark:border-white/5 glass px-4">
         <Button variant="ghost" size="icon" className="lg:hidden">
           <Menu className="h-5 w-5" />
         </Button>
@@ -56,77 +56,81 @@ export default async function DashboardLayout({
         </div>
       </header>
 
-      <div className="flex">
-        {/* Sidebar */}
-        <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
-          <div className="flex flex-col flex-grow sidebar-bg border-r border-border/40">
+      <div className="flex min-h-screen">
+        {/* Sidebar - w-72 (288px) */}
+        <aside className="hidden lg:flex lg:w-72 lg:flex-col fixed left-0 top-0 h-full z-50">
+          <div className="flex flex-col flex-grow sidebar-bg border-r border-zinc-200 dark:border-white/5 transition-colors duration-300">
             {/* Logo Section */}
-            <div className="flex h-16 items-center gap-3 px-5 border-b border-border/40">
-              <div className="relative">
-                <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-amber-500/20 to-yellow-500/10 border border-amber-500/30 flex items-center justify-center shadow-lg shadow-amber-500/10">
-                  <AjansBeeLogoSVG className="w-7 h-7" />
+            <div className="p-6 border-b border-zinc-200 dark:border-white/5 transition-colors duration-300">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-amber-500/20 to-yellow-500/10 border border-amber-500/30 flex items-center justify-center shadow-lg shadow-amber-500/10">
+                    <AjansBeeLogoSVG className="w-7 h-7" />
+                  </div>
+                  {/* Online Status Dot */}
+                  <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-emerald-500 border-2 border-white dark:border-zinc-900 pulse-status"></div>
                 </div>
-                {/* Online Status Dot */}
-                <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-emerald-500 border-2 border-white dark:border-zinc-900 pulse-status"></div>
-              </div>
-              <div>
-                <h1 className="font-bold text-lg text-zinc-900 dark:text-white tracking-tight">Ajans Bee</h1>
-                <p className="text-[11px] text-zinc-500 font-mono tracking-wider">AI PLATFORM</p>
+                <div>
+                  <h1 className="font-bold text-lg text-zinc-900 dark:text-white tracking-tight transition-colors">Ajans Bee</h1>
+                  <p className="text-[11px] text-zinc-500 font-mono tracking-wider">AI PLATFORM</p>
+                </div>
               </div>
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 space-y-1 px-3 py-4">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all group"
-                >
-                  <div className="flex items-center gap-3">
-                    <item.icon className="h-5 w-5" />
-                    {item.name}
-                  </div>
-                </Link>
-              ))}
+            <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+              {/* Ana Menü */}
+              <div className="mb-6">
+                <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-600 uppercase tracking-widest px-3 mb-3">Ana Menü</p>
+                
+                {navigation.map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white transition-all duration-200 group"
+                  >
+                    <item.icon className="h-5 w-5 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors" />
+                    <span className="text-sm font-medium">{item.name}</span>
+                  </Link>
+                ))}
+              </div>
             </nav>
 
-            {/* User section */}
-            <div className="border-t border-border/40 p-4">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center">
-                  <span className="text-sm font-medium text-white">
-                    {user.email?.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {user.user_metadata?.full_name || 'Kullanıcı'}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {user.email}
-                  </p>
+            {/* User Section */}
+            <div className="p-4 border-t border-zinc-200 dark:border-white/5 transition-colors duration-300">
+              <div className="glass-card rounded-xl p-3 border border-zinc-200 dark:border-white/5 transition-colors duration-300">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+                    <span className="text-white text-sm font-semibold">
+                      {user.email?.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-zinc-900 dark:text-white truncate transition-colors">
+                      {user.user_metadata?.full_name || 'Kullanıcı'}
+                    </p>
+                    <p className="text-[11px] text-zinc-500 font-mono">Admin</p>
+                  </div>
+                  <form action="/api/auth/signout" method="post">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
+                      <LogOut className="h-4 w-4" />
+                    </Button>
+                  </form>
                 </div>
               </div>
-              <form action="/api/auth/signout" method="post">
-                <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground">
-                  <LogOut className="h-4 w-4" />
-                  Çıkış Yap
-                </Button>
-              </form>
             </div>
           </div>
         </aside>
 
-        {/* Main content */}
-        <main className="flex-1 lg:pl-64">
-          <div className="content-bg min-h-screen">
-            {/* Top Bar - Desktop only */}
-            <div className="hidden lg:block">
-              <TopBar />
-            </div>
-            
-            <div className="p-6">
+        {/* Main content - ml-72 */}
+        <main className="flex-1 lg:ml-72">
+          {/* Top Bar - Desktop only */}
+          <div className="hidden lg:block">
+            <TopBar />
+          </div>
+          
+          <div className="content-bg min-h-screen transition-colors duration-300">
+            <div className="p-8">
               {children}
             </div>
           </div>
