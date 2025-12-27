@@ -1,6 +1,6 @@
 // =====================================================
 // Customer Types - Genişletilmiş Brief Sistemi
-// Version: 1.2 - Customer Type Eklendi (Karar #13)
+// Version: 1.3 - Status Eklendi (Karar #14)
 // =====================================================
 
 // Sosyal medya platform tipi
@@ -144,6 +144,9 @@ export interface SeasonalEvent {
 // Customer type (Karar #13)
 export type CustomerType = 'retainer' | 'project';
 
+// Customer status (Karar #14)
+export type CustomerStatus = 'active' | 'inactive';
+
 // Brand voice options
 export type BrandVoice = 'samimi' | 'kurumsal' | 'enerjik' | 'profesyonel';
 
@@ -171,6 +174,9 @@ export interface Customer {
   
   // Müşteri tipi (Karar #13)
   customer_type: CustomerType;
+  
+  // Müşteri durumu (Karar #14)
+  status: CustomerStatus;
   
   // Temel bilgiler (opsiyonel)
   brand_name?: string | null;
@@ -267,6 +273,15 @@ export const CUSTOMER_TYPES = [
 ] as const;
 
 // =====================================================
+// Müşteri Durumu Sabitleri (Karar #14)
+// =====================================================
+
+export const CUSTOMER_STATUSES = [
+  { value: 'active', label: 'Aktif', description: 'Aktif müşteri' },
+  { value: 'inactive', label: 'Pasif', description: 'İş bitti, teknik hizmet devam' }
+] as const;
+
+// =====================================================
 // Brief Bölüm Tanımları
 // =====================================================
 
@@ -275,7 +290,7 @@ export const BRIEF_SECTIONS = {
     id: 'temel',
     label: 'Temel Bilgiler',
     icon: 'Building2',
-    fields: ['name', 'customer_type', 'website_url', 'sector', 'sub_sector', 'business_type', 'brand_voice'],
+    fields: ['name', 'customer_type', 'status', 'website_url', 'sector', 'sub_sector', 'business_type', 'brand_voice'],
     required: ['name', 'customer_type']
   },
   iletisim: {
@@ -451,7 +466,7 @@ export function calculateBriefCompletion(customer: Partial<Customer>): number {
   };
 
   const allFields = [
-    'name', 'customer_type', 'website_url', 'sector', 'sub_sector', 'business_type', 'brand_voice',
+    'name', 'customer_type', 'status', 'website_url', 'sector', 'sub_sector', 'business_type', 'brand_voice',
     'email', 'phone', 'location',
     'social_media',
     'brand_description', 'mission', 'vision', 'slogan', 'usp',
@@ -497,4 +512,16 @@ export function calculateSectionCompletion(
   return fields.length > 0 
     ? Math.round((filledFields.length / fields.length) * 100) 
     : 0;
+}
+
+// Helper: Müşteri tipi label'ı getir
+export function getCustomerTypeLabel(type: CustomerType): string {
+  const found = CUSTOMER_TYPES.find(t => t.value === type);
+  return found?.label || type;
+}
+
+// Helper: Müşteri durumu label'ı getir
+export function getCustomerStatusLabel(status: CustomerStatus): string {
+  const found = CUSTOMER_STATUSES.find(s => s.value === status);
+  return found?.label || status;
 }
