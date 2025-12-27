@@ -14,6 +14,8 @@ export type Database = {
           target_audience: string | null
           notes: string | null
           user_id: string
+          // Karar #13 - Müşteri tipi
+          customer_type: 'retainer' | 'project' | null
           // Faz 1 alanları
           website_url: string | null
           sub_sector: string | null
@@ -73,6 +75,7 @@ export type Database = {
           target_audience?: string | null
           notes?: string | null
           user_id: string
+          customer_type?: 'retainer' | 'project' | null
           website_url?: string | null
           sub_sector?: string | null
           business_type?: string | null
@@ -123,6 +126,7 @@ export type Database = {
           target_audience?: string | null
           notes?: string | null
           user_id?: string
+          customer_type?: 'retainer' | 'project' | null
           website_url?: string | null
           sub_sector?: string | null
           business_type?: string | null
@@ -161,6 +165,50 @@ export type Database = {
           cta_standards?: Record<string, unknown>[] | null
           forbidden_words?: Record<string, unknown>[] | null
           seasonal_calendar?: Record<string, unknown>[] | null
+        }
+      }
+      technical_services: {
+        Row: {
+          id: string
+          created_at: string
+          updated_at: string
+          customer_id: string
+          user_id: string
+          service_type: 'hosting' | 'domain' | 'ssl' | 'email'
+          name: string
+          platform: string | null
+          renewal_date: string | null
+          payment_status: 'pending' | 'paid' | 'overdue'
+          price: number | null
+          notes: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          customer_id: string
+          user_id: string
+          service_type: 'hosting' | 'domain' | 'ssl' | 'email'
+          name: string
+          platform?: string | null
+          renewal_date?: string | null
+          payment_status?: 'pending' | 'paid' | 'overdue'
+          price?: number | null
+          notes?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          customer_id?: string
+          user_id?: string
+          service_type?: 'hosting' | 'domain' | 'ssl' | 'email'
+          name?: string
+          platform?: string | null
+          renewal_date?: string | null
+          payment_status?: 'pending' | 'paid' | 'overdue'
+          price?: number | null
+          notes?: string | null
         }
       }
       posts: {
@@ -212,6 +260,9 @@ export type Database = {
       platform_type: 'instagram' | 'facebook' | 'twitter' | 'linkedin' | 'tiktok'
       content_type: 'post' | 'story' | 'reel' | 'carousel'
       post_status: 'draft' | 'approved' | 'published'
+      customer_type: 'retainer' | 'project'
+      service_type: 'hosting' | 'domain' | 'ssl' | 'email'
+      payment_status: 'pending' | 'paid' | 'overdue'
     }
   }
 }
@@ -221,6 +272,10 @@ export type Customer = Database['public']['Tables']['customers']['Row']
 export type CustomerInsert = Database['public']['Tables']['customers']['Insert']
 export type CustomerUpdate = Database['public']['Tables']['customers']['Update']
 
+export type TechnicalService = Database['public']['Tables']['technical_services']['Row']
+export type TechnicalServiceInsert = Database['public']['Tables']['technical_services']['Insert']
+export type TechnicalServiceUpdate = Database['public']['Tables']['technical_services']['Update']
+
 export type Post = Database['public']['Tables']['posts']['Row']
 export type PostInsert = Database['public']['Tables']['posts']['Insert']
 export type PostUpdate = Database['public']['Tables']['posts']['Update']
@@ -228,3 +283,6 @@ export type PostUpdate = Database['public']['Tables']['posts']['Update']
 export type Platform = Database['public']['Enums']['platform_type']
 export type ContentType = Database['public']['Enums']['content_type']
 export type PostStatus = Database['public']['Enums']['post_status']
+export type CustomerType = Database['public']['Enums']['customer_type']
+export type ServiceType = Database['public']['Enums']['service_type']
+export type PaymentStatus = Database['public']['Enums']['payment_status']
