@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
+import { BrandAssetsSection } from './brand-assets-section'
 import type { 
   Customer, 
   CustomerFormData, 
@@ -26,7 +27,9 @@ import type {
   BusinessType,
   PriceSegment,
   CustomerType,
-  CustomerStatus
+  CustomerStatus,
+  BrandColors,
+  BrandFonts
 } from '@/lib/customer-types'
 import { 
   SECTORS, 
@@ -38,7 +41,7 @@ import {
 
 const AI_RESEARCH_ENDPOINT = 'https://n8n.beeswebsite.com/webhook/ai-research'
 
-// 6 Bölüm yapısı - UI Kit v1.0 HTML ile UYUMLU
+// 7 Bölüm yapısı - UI Kit v1.0 HTML ile UYUMLU (Renk/Font eklendi)
 const BRIEF_SECTIONS_CONFIG = {
   markaKimligi: {
     id: 'marka-kimligi',
@@ -207,6 +210,9 @@ interface ProgressOverviewProps {
 }
 
 function ProgressOverview({ sections, onSectionClick }: ProgressOverviewProps) {
+  // 7 section olduğunda grid ayarı
+  const gridCols = sections.length <= 6 ? 'grid-cols-6' : 'grid-cols-7'
+  
   return (
     <div className="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900/50">
       <div className="flex items-center justify-between mb-4">
@@ -214,9 +220,9 @@ function ProgressOverview({ sections, onSectionClick }: ProgressOverviewProps) {
           <ListChecks className="w-5 h-5 text-indigo-500" />
           Brief Bölümleri
         </h2>
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">6 bölüm</span>
+        <span className="text-xs text-zinc-500 dark:text-zinc-400">{sections.length} bölüm</span>
       </div>
-      <div className="grid grid-cols-6 gap-3">
+      <div className={cn("grid gap-3", gridCols)}>
         {sections.map((section, i) => {
           const isComplete = section.filled === section.total
           const percentage = section.total > 0 ? Math.round((section.filled / section.total) * 100) : 0
@@ -577,16 +583,37 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
           ].filter(Boolean).length,
           total: 2
         }
+      case 'marka-assets':
+        // Renk/Font section completion
+        const colors = formData.brand_colors as BrandColors || {}
+        const fonts = formData.brand_fonts as BrandFonts || {}
+        return {
+          filled: [
+            colors.primary,
+            colors.secondary,
+            colors.accent,
+            fonts.corporate?.heading || fonts.web?.heading
+          ].filter(Boolean).length,
+          total: 4
+        }
       default:
         return { filled: 0, total: 0 }
     }
   }
 
-  const allSectionsProgress = Object.values(BRIEF_SECTIONS_CONFIG).map(section => ({
-    label: section.label,
-    id: section.id,
-    ...getSectionCompletion(section.id)
-  }))
+  // Include brand assets section in progress
+  const allSectionsProgress = [
+    ...Object.values(BRIEF_SECTIONS_CONFIG).map(section => ({
+      label: section.label,
+      id: section.id,
+      ...getSectionCompletion(section.id)
+    })),
+    {
+      label: 'Renkler & Fontlar',
+      id: 'marka-assets',
+      ...getSectionCompletion('marka-assets')
+    }
+  ]
 
   const totalFilled = allSectionsProgress.reduce((acc, s) => acc + s.filled, 0)
   const totalFields = allSectionsProgress.reduce((acc, s) => acc + s.total, 0)
@@ -595,6 +622,15 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
   const handleSubmit = async (e: React.FormEvent) => { 
     e.preventDefault()
     await onSave(formData)
+  }
+  
+  // Handle brand assets change
+  const handleBrandAssetsChange = (colors: BrandColors, fonts: BrandFonts) => {
+    setFormData(prev => ({
+      ...prev,
+      brand_colors: colors,
+      brand_fonts: fonts
+    }))
   }
 
   return (
@@ -1090,6 +1126,15 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
             </div>
           </div>
         )}
+      </div>
+      
+      {/* ==================== SECTION 7: MARKA RENK & FONTLAR ==================== */}
+      <div ref={(el) => { sectionRefs.current['marka-assets'] = el }} className="scroll-mt-32">
+        <BrandAssetsSection
+          colors={(formData.brand_colors as BrandColors) || {}}
+          fonts={(formData.brand_fonts as BrandFonts) || {}}
+          onChange={handleBrandAssetsChange}
+        />
       </div>
       
       {/* Form - hidden submit için */}
