@@ -20,11 +20,11 @@ export async function createUser(data: {
   role: 'admin' | 'operasyon' | 'personel'
 }) {
   try {
-    // 1. Auth'da kullanıcı oluştur
+    // 1. Auth'da kullanıcı oluştur (trigger otomatik public.users'a ekleyecek)
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
       password: data.password,
-      email_confirm: true, // Email doğrulamayı atla
+      email_confirm: true,
       user_metadata: {
         full_name: data.full_name
       }
@@ -34,21 +34,17 @@ export async function createUser(data: {
       return { success: false, error: authError.message }
     }
 
-    // 2. Public users tablosuna ekle
-    const { error: insertError } = await supabaseAdmin
+    // 2. Trigger zaten ekledi, sadece role ve full_name güncelle
+    const { error: updateError } = await supabaseAdmin
       .from('users')
-      .insert({
-        id: authData.user.id,
-        email: data.email,
+      .update({
         full_name: data.full_name,
-        role: data.role,
-        is_active: true
+        role: data.role
       })
+      .eq('id', authData.user.id)
 
-    if (insertError) {
-      // Auth'daki kullanıcıyı sil (rollback)
-      await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
-      return { success: false, error: insertError.message }
+    if (updateError) {
+      return { success: false, error: updateError.message }
     }
 
     return { success: true, user: authData.user }
