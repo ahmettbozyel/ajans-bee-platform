@@ -18,21 +18,28 @@ interface BrandAssetsSectionProps {
 
 // Validate HEX color
 function isValidHex(color: string): boolean {
-  if (!color) return false
-  // Clean and check
+  if (!color || typeof color !== 'string') return false
   const hex = color.trim()
   return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(hex)
 }
 
-// Get display color for swatch
-function getSwatchColor(value?: string): string {
-  if (!value) return 'transparent'
+// Get display color for swatch - SAFE version
+function getSwatchColor(value: unknown): string {
+  // Safety check - must be string
+  if (!value || typeof value !== 'string') return 'transparent'
+  
   // Handle comma-separated values (take first)
   const firstColor = value.split(',')[0].trim()
   if (isValidHex(firstColor)) return firstColor
   // Try adding # if missing
   if (isValidHex('#' + firstColor)) return '#' + firstColor
   return 'transparent'
+}
+
+// Safe string getter
+function safeString(value: unknown): string {
+  if (typeof value === 'string') return value
+  return ''
 }
 
 // Color input with preview
@@ -43,11 +50,12 @@ function ColorInput({
   placeholder = '#000000'
 }: { 
   label: string
-  value?: string
+  value?: unknown
   onChange: (value: string) => void
   placeholder?: string
 }) {
-  const swatchColor = useMemo(() => getSwatchColor(value), [value])
+  const stringValue = safeString(value)
+  const swatchColor = useMemo(() => getSwatchColor(stringValue), [stringValue])
   const hasValidColor = swatchColor !== 'transparent'
   
   return (
@@ -65,7 +73,7 @@ function ColorInput({
         />
         <Input
           type="text"
-          value={value || ''}
+          value={stringValue}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           className="font-mono text-sm h-10 text-zinc-900 dark:text-white placeholder:text-zinc-400"
@@ -85,16 +93,19 @@ function ExtraColorsList({
 }) {
   const [newColor, setNewColor] = useState('')
 
+  // Safety: ensure colors is array
+  const safeColors = Array.isArray(colors) ? colors : []
+
   const addColor = () => {
     const trimmed = newColor.trim()
-    if (trimmed && !colors.includes(trimmed)) {
-      onChange([...colors, trimmed])
+    if (trimmed && !safeColors.includes(trimmed)) {
+      onChange([...safeColors, trimmed])
       setNewColor('')
     }
   }
 
   const removeColor = (index: number) => {
-    onChange(colors.filter((_, i) => i !== index))
+    onChange(safeColors.filter((_, i) => i !== index))
   }
 
   const newSwatchColor = useMemo(() => getSwatchColor(newColor), [newColor])
@@ -104,9 +115,9 @@ function ExtraColorsList({
       <Label className="text-xs text-zinc-600 dark:text-zinc-400">Ek Renkler</Label>
       
       {/* Existing colors */}
-      {colors.length > 0 && (
+      {safeColors.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-2">
-          {colors.map((color, index) => {
+          {safeColors.map((color, index) => {
             const swatch = getSwatchColor(color)
             return (
               <div 
@@ -172,13 +183,17 @@ export function BrandAssetsSection({
 }: BrandAssetsSectionProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded)
 
+  // Safety: ensure colors and fonts are objects
+  const safeColors = colors && typeof colors === 'object' ? colors : {}
+  const safeFonts = fonts && typeof fonts === 'object' ? fonts : {}
+
   const updateColor = (key: keyof BrandColors, value: string) => {
     if (key === 'extra') return // handled separately
-    onChange({ ...colors, [key]: value || undefined }, fonts)
+    onChange({ ...safeColors, [key]: value || undefined }, safeFonts)
   }
 
   const updateExtraColors = (extraColors: string[]) => {
-    onChange({ ...colors, extra: extraColors.length > 0 ? extraColors : undefined }, fonts)
+    onChange({ ...safeColors, extra: extraColors.length > 0 ? extraColors : undefined }, safeFonts)
   }
 
   const updateFont = (
@@ -186,7 +201,7 @@ export function BrandAssetsSection({
     key: string, 
     value: string
   ) => {
-    const newFonts = { ...fonts }
+    const newFonts = { ...safeFonts }
     if (!newFonts[category]) newFonts[category] = {}
     newFonts[category]![key as keyof typeof newFonts[typeof category]] = value || undefined
     
@@ -195,12 +210,12 @@ export function BrandAssetsSection({
       delete newFonts[category]
     }
     
-    onChange(colors, newFonts)
+    onChange(safeColors, newFonts)
   }
 
-  // Calculate completion
-  const filledColors = [colors.primary, colors.secondary, colors.accent].filter(Boolean).length
-  const filledFonts = [fonts.corporate?.heading, fonts.web?.heading].filter(Boolean).length
+  // Calculate completion - with safety
+  const filledColors = [safeColors.primary, safeColors.secondary, safeColors.accent].filter(Boolean).length
+  const filledFonts = [safeFonts.corporate?.heading, safeFonts.web?.heading].filter(Boolean).length
   const totalFilled = filledColors + filledFonts
   const isComplete = totalFilled >= 3
 
@@ -258,19 +273,19 @@ export function BrandAssetsSection({
               <div className="grid grid-cols-3 gap-4 mb-4">
                 <ColorInput
                   label="Ana Renk (Primary)"
-                  value={colors.primary}
+                  value={safeColors.primary}
                   onChange={(v) => updateColor('primary', v)}
                   placeholder="#6366F1"
                 />
                 <ColorInput
                   label="İkincil Renk (Secondary)"
-                  value={colors.secondary}
+                  value={safeColors.secondary}
                   onChange={(v) => updateColor('secondary', v)}
                   placeholder="#8B5CF6"
                 />
                 <ColorInput
                   label="Vurgu Rengi (Accent)"
-                  value={colors.accent}
+                  value={safeColors.accent}
                   onChange={(v) => updateColor('accent', v)}
                   placeholder="#22D3EE"
                 />
@@ -280,19 +295,19 @@ export function BrandAssetsSection({
               <div className="grid grid-cols-3 gap-4 mb-4">
                 <ColorInput
                   label="Açık Ton"
-                  value={colors.light}
+                  value={safeColors.light}
                   onChange={(v) => updateColor('light', v)}
                   placeholder="#F8FAFC"
                 />
                 <ColorInput
                   label="Koyu Ton"
-                  value={colors.dark}
+                  value={safeColors.dark}
                   onChange={(v) => updateColor('dark', v)}
                   placeholder="#0F172A"
                 />
                 <ColorInput
                   label="Nötr"
-                  value={colors.neutral}
+                  value={safeColors.neutral}
                   onChange={(v) => updateColor('neutral', v)}
                   placeholder="#64748B"
                 />
@@ -300,7 +315,7 @@ export function BrandAssetsSection({
               
               {/* Extra colors */}
               <ExtraColorsList
-                colors={colors.extra || []}
+                colors={Array.isArray(safeColors.extra) ? safeColors.extra : []}
                 onChange={updateExtraColors}
               />
             </div>
@@ -323,7 +338,7 @@ export function BrandAssetsSection({
                     <Label className="text-xs text-zinc-600 dark:text-zinc-400">Başlık Fontu</Label>
                     <Input
                       type="text"
-                      value={fonts.corporate?.heading || ''}
+                      value={safeString(safeFonts.corporate?.heading)}
                       onChange={(e) => updateFont('corporate', 'heading', e.target.value)}
                       placeholder="Montserrat"
                       className="h-10 text-zinc-900 dark:text-white placeholder:text-zinc-400"
@@ -333,7 +348,7 @@ export function BrandAssetsSection({
                     <Label className="text-xs text-zinc-600 dark:text-zinc-400">Gövde Fontu</Label>
                     <Input
                       type="text"
-                      value={fonts.corporate?.body || ''}
+                      value={safeString(safeFonts.corporate?.body)}
                       onChange={(e) => updateFont('corporate', 'body', e.target.value)}
                       placeholder="Open Sans"
                       className="h-10 text-zinc-900 dark:text-white placeholder:text-zinc-400"
@@ -350,7 +365,7 @@ export function BrandAssetsSection({
                     <Label className="text-xs text-zinc-600 dark:text-zinc-400">Başlık</Label>
                     <Input
                       type="text"
-                      value={fonts.web?.heading || ''}
+                      value={safeString(safeFonts.web?.heading)}
                       onChange={(e) => updateFont('web', 'heading', e.target.value)}
                       placeholder="Inter"
                       className="h-10 text-zinc-900 dark:text-white placeholder:text-zinc-400"
@@ -360,7 +375,7 @@ export function BrandAssetsSection({
                     <Label className="text-xs text-zinc-600 dark:text-zinc-400">Gövde</Label>
                     <Input
                       type="text"
-                      value={fonts.web?.body || ''}
+                      value={safeString(safeFonts.web?.body)}
                       onChange={(e) => updateFont('web', 'body', e.target.value)}
                       placeholder="Inter"
                       className="h-10 text-zinc-900 dark:text-white placeholder:text-zinc-400"
@@ -370,7 +385,7 @@ export function BrandAssetsSection({
                     <Label className="text-xs text-zinc-600 dark:text-zinc-400">Yedek (Fallback)</Label>
                     <Input
                       type="text"
-                      value={fonts.web?.fallback || ''}
+                      value={safeString(safeFonts.web?.fallback)}
                       onChange={(e) => updateFont('web', 'fallback', e.target.value)}
                       placeholder="system-ui, sans-serif"
                       className="h-10 text-zinc-900 dark:text-white placeholder:text-zinc-400"
