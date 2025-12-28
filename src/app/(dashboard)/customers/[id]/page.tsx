@@ -103,8 +103,8 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
-  // Tab state
-  const [activeTab, setActiveTab] = useState('brief')
+  // Tab state - Default: Dashboard
+  const [activeTab, setActiveTab] = useState('dashboard')
 
   // Fetch customer
   useEffect(() => {
