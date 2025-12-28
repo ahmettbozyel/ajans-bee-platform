@@ -4,19 +4,18 @@
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
-  ArrowLeft, Building2, Globe, Users, FileText, Clock, 
-  Sparkles, X, Loader2, LayoutDashboard, Calendar, 
-  BarChart3, FolderOpen, Settings
+  ArrowLeft, Building2, Globe, Users, FileText, 
+  Sparkles, Loader2, LayoutDashboard, Calendar, 
+  BarChart3, FolderOpen, Save, Instagram, Megaphone, Mail,
+  History, CalendarHeart, ClipboardList
 } from 'lucide-react'
 import { CustomerBriefForm } from '@/components/customers/customer-brief-form'
-import { CustomerViewMode } from '@/components/customers/customer-view-mode'
 import type { Customer, CustomerFormData } from '@/lib/customer-types'
-import { SECTORS, BRAND_VOICES, calculateBriefCompletion, CUSTOMER_TYPES, CUSTOMER_STATUSES } from '@/lib/customer-types'
+import { SECTORS, BRAND_VOICES, calculateBriefCompletion, CUSTOMER_TYPES } from '@/lib/customer-types'
+import { cn } from '@/lib/utils'
 
 // Helper functions
 function getSectorLabel(value: string): string {
@@ -29,6 +28,56 @@ function getBrandVoiceLabel(value: string): string {
 
 function getCustomerTypeLabel(value: string): string {
   return CUSTOMER_TYPES.find(t => t.value === value)?.label || value
+}
+
+// Progress Ring Component
+function ProgressRing({ percentage }: { percentage: number }) {
+  const circumference = 2 * Math.PI * 20
+  const strokeDashoffset = circumference - (percentage / 100) * circumference
+  
+  let colorClass = 'text-rose-500'
+  let textColorClass = 'text-rose-600 dark:text-rose-400'
+  if (percentage >= 71) {
+    colorClass = 'text-cyan-500'
+    textColorClass = 'text-cyan-600 dark:text-cyan-400'
+  } else if (percentage >= 31) {
+    colorClass = 'text-amber-500'
+    textColorClass = 'text-amber-600 dark:text-amber-400'
+  }
+  
+  return (
+    <div className="relative">
+      <svg className="w-12 h-12" style={{ transform: 'rotate(-90deg)' }}>
+        <circle 
+          className="text-zinc-200 dark:text-white/10" 
+          stroke="currentColor" 
+          strokeWidth="3" 
+          fill="transparent" 
+          r="20" 
+          cx="24" 
+          cy="24"
+        />
+        <circle 
+          className={cn("transition-all duration-500", colorClass)}
+          stroke="currentColor" 
+          strokeWidth="3" 
+          fill="transparent" 
+          r="20" 
+          cx="24" 
+          cy="24"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+        />
+      </svg>
+      <span className={cn(
+        "absolute inset-0 flex items-center justify-center text-xs font-bold",
+        textColorClass
+      )}>
+        {percentage}%
+      </span>
+    </div>
+  )
 }
 
 interface CustomerDetailPageProps {
@@ -45,11 +94,8 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
-  // Karar #14: Yeni tab yapisi - Marka Workspace
-  const [activeTab, setActiveTab] = useState('dashboard')
-  
-  // Brief modu (view/edit)
-  const [briefMode, setBriefMode] = useState<'view' | 'edit'>('view')
+  // Tab state
+  const [activeTab, setActiveTab] = useState('brief')
 
   // Fetch customer
   useEffect(() => {
@@ -137,45 +183,11 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
       if (error) throw error
       
       setCustomer(data)
-      setBriefMode('view')
     } catch (err) {
       console.error('Error saving customer:', err)
       throw err
     } finally {
       setSaving(false)
-    }
-  }
-
-  // Delete customer handler
-  async function handleDeleteCustomer() {
-    if (!customer) return
-    
-    const confirmed = window.confirm('Bu markayı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')
-    if (!confirmed) return
-
-    try {
-      const { data: files } = await supabase.storage
-        .from('brand-assets')
-        .list(customer.id)
-
-      if (files && files.length > 0) {
-        const filesToDelete = files.map(f => `${customer.id}/${f.name}`)
-        await supabase.storage
-          .from('brand-assets')
-          .remove(filesToDelete)
-      }
-
-      const { error } = await supabase
-        .from('customers')
-        .delete()
-        .eq('id', customer.id)
-
-      if (error) throw error
-
-      router.push('/musteriler')
-    } catch (err) {
-      console.error('Error deleting customer:', err)
-      alert('Marka silinirken bir hata oluştu')
     }
   }
 
@@ -196,359 +208,522 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
           <ArrowLeft className="h-4 w-4 mr-2" />
           Geri
         </Button>
-        <Card className="glass-card border-glow-rose">
-          <CardContent className="text-center py-8">
-            <p className="text-muted-foreground">{error || 'Marka bulunamadı'}</p>
-            <Button className="mt-4" onClick={() => router.push('/musteriler')}>
-              Marka Listesine Dön
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="glass-card rounded-2xl p-8 text-center border border-zinc-200 dark:border-white/10">
+          <p className="text-muted-foreground">{error || 'Marka bulunamadı'}</p>
+          <Button className="mt-4" onClick={() => router.push('/musteriler')}>
+            Marka Listesine Dön
+          </Button>
+        </div>
       </div>
     )
   }
 
   const completion = calculateBriefCompletion(customer)
+  
+  // Website hostname helper
+  const getHostname = (url: string) => {
+    try { return new URL(url).hostname } 
+    catch { return url }
+  }
 
   return (
-    <div className="space-y-0">
-      {/* Workspace Header */}
-      <div className="glass-card rounded-2xl p-4 mb-4 border border-border/40">
-        <div className="flex items-center justify-between">
-          {/* Left: Back + Brand Info */}
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => router.push('/musteriler')} 
-              className="h-9 w-9 rounded-lg hover:bg-muted/50"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center">
-              <Building2 className="h-5 w-5 text-white" />
-            </div>
-            
-            <div>
-              <h1 className="text-lg font-semibold">{customer.name}</h1>
-              <div className="flex items-center gap-2 mt-0.5">
-                {customer.customer_type && (
-                  <Badge 
-                    variant="outline" 
-                    className={customer.customer_type === 'retainer' 
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' 
-                      : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
-                    }
-                  >
-                    {getCustomerTypeLabel(customer.customer_type)}
-                  </Badge>
-                )}
-                {customer.sector && (
-                  <Badge variant="secondary" className="text-xs">
-                    {getSectorLabel(customer.sector)}
-                  </Badge>
-                )}
-                {customer.status === 'inactive' && (
-                  <Badge variant="outline" className="bg-zinc-500/10 text-zinc-500">
-                    Pasif
-                  </Badge>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Right: Progress + Actions */}
-          <div className="flex items-center gap-4">
-            {/* Brief Completion */}
-            <div className="hidden sm:flex flex-col items-end gap-1">
-              <span className="text-xs text-muted-foreground">Brief</span>
-              <div className="flex items-center gap-2">
-                <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full rounded-full transition-all ${
-                      completion < 30 ? 'bg-rose-500' :
-                      completion < 60 ? 'bg-amber-500' :
-                      completion < 90 ? 'bg-indigo-500' : 'bg-emerald-500'
-                    }`}
-                    style={{ width: `${completion}%` }}
-                  />
-                </div>
-                <span className="text-sm font-mono font-medium">%{completion}</span>
-              </div>
-            </div>
-            
-            {/* Settings */}
-            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg">
-              <Settings className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Workspace Tabs - Karar #14 */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="glass-card rounded-t-2xl border border-border/40 border-b-0">
-          <TabsList className="w-full justify-start gap-0 bg-transparent p-0 h-auto">
-            <TabsTrigger 
-              value="dashboard" 
-              className="flex items-center gap-2 px-5 py-3 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-indigo-500 data-[state=active]:bg-indigo-500/5 data-[state=active]:text-indigo-600 dark:data-[state=active]:text-indigo-400 transition-all"
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              Dashboard
-            </TabsTrigger>
-            <TabsTrigger 
-              value="brief" 
-              className="flex items-center gap-2 px-5 py-3 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-indigo-500 data-[state=active]:bg-indigo-500/5 data-[state=active]:text-indigo-600 dark:data-[state=active]:text-indigo-400 transition-all"
-            >
-              <FileText className="h-4 w-4" />
-              Brief
-            </TabsTrigger>
-            <TabsTrigger 
-              value="icerik-uret" 
-              className="flex items-center gap-2 px-5 py-3 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-fuchsia-500 data-[state=active]:bg-fuchsia-500/5 data-[state=active]:text-fuchsia-600 dark:data-[state=active]:text-fuchsia-400 transition-all"
-            >
-              <Sparkles className="h-4 w-4" />
-              İçerik Üret
-            </TabsTrigger>
-            <TabsTrigger 
-              value="takvim" 
-              className="flex items-center gap-2 px-5 py-3 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-indigo-500 data-[state=active]:bg-indigo-500/5 transition-all"
-              disabled
-            >
-              <Calendar className="h-4 w-4" />
-              Takvim
-              <Badge className="text-[10px] px-1.5 py-0 bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400">Yakında</Badge>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="performans" 
-              className="flex items-center gap-2 px-5 py-3 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-indigo-500 data-[state=active]:bg-indigo-500/5 transition-all"
-              disabled
-            >
-              <BarChart3 className="h-4 w-4" />
-              Performans
-              <Badge className="text-[10px] px-1.5 py-0 bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400">Yakında</Badge>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="dosyalar" 
-              className="flex items-center gap-2 px-5 py-3 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-indigo-500 data-[state=active]:bg-indigo-500/5 data-[state=active]:text-indigo-600 dark:data-[state=active]:text-indigo-400 transition-all"
-            >
-              <FolderOpen className="h-4 w-4" />
-              Dosyalar
-            </TabsTrigger>
-          </TabsList>
-        </div>
-
-        {/* Tab Contents */}
-        <div className="glass-card rounded-b-2xl rounded-t-none border border-border/40 border-t-0 p-6">
+    <div className="space-y-0 -m-6">
+      
+      {/* ==================== HEADER ==================== */}
+      <header className="sticky top-0 z-40 glass border-b border-zinc-200 dark:border-white/5">
+        <div className="px-6 py-4">
           
-          {/* Dashboard Tab */}
-          <TabsContent value="dashboard" className="mt-0">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Quick Stats */}
-              <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="glass-card rounded-xl p-4 border-glow-indigo card-hover cursor-pointer">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-lg bg-indigo-500/10">
-                      <FileText className="h-4 w-4 text-indigo-500" />
-                    </div>
-                  </div>
-                  <p className="text-2xl font-bold">{completion}%</p>
-                  <p className="text-xs text-muted-foreground">Brief Tamamlanma</p>
+          {/* Back + Brand Info + Progress + Save */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              {/* Back Button */}
+              <button 
+                onClick={() => router.push('/musteriler')}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5 transition-all"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span className="text-sm">Markalar</span>
+              </button>
+              
+              <div className="h-6 w-px bg-zinc-200 dark:bg-white/10" />
+              
+              {/* Brand Info */}
+              <div className="flex items-center gap-3">
+                <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-500/20 dark:to-purple-500/20 border border-violet-200 dark:border-violet-500/20 flex items-center justify-center">
+                  <Building2 className="w-6 h-6 text-violet-600 dark:text-violet-400" />
                 </div>
-                <div className="glass-card rounded-xl p-4 border-glow-fuchsia card-hover cursor-pointer">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-lg bg-fuchsia-500/10">
-                      <Sparkles className="h-4 w-4 text-fuchsia-500" />
-                    </div>
+                <div>
+                  <h1 className="font-bold text-zinc-900 dark:text-white">{customer.name}</h1>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {customer.customer_type && (
+                      <span className={cn(
+                        "text-xs px-2 py-0.5 rounded-full font-medium",
+                        customer.customer_type === 'retainer' 
+                          ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
+                          : "bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-400"
+                      )}>
+                        {getCustomerTypeLabel(customer.customer_type)}
+                      </span>
+                    )}
+                    {customer.website_url && (
+                      <span className="text-xs text-zinc-500 font-mono">
+                        {getHostname(customer.website_url)}
+                      </span>
+                    )}
                   </div>
-                  <p className="text-2xl font-bold">0</p>
-                  <p className="text-xs text-muted-foreground">Toplam İçerik</p>
                 </div>
-                <div className="glass-card rounded-xl p-4 border-glow-emerald card-hover cursor-pointer">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-lg bg-emerald-500/10">
-                      <Calendar className="h-4 w-4 text-emerald-500" />
-                    </div>
-                  </div>
-                  <p className="text-2xl font-bold">-</p>
-                  <p className="text-xs text-muted-foreground">Bu Ay Planlanan</p>
+              </div>
+            </div>
+            
+            {/* Progress + Save */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <ProgressRing percentage={completion} />
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-white">Brief Durumu</p>
+                  <p className="text-xs text-zinc-500">{Math.round(completion * 0.25)}/25 alan dolu</p>
                 </div>
-                <div className="glass-card rounded-xl p-4 border-glow-amber card-hover cursor-pointer">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-lg bg-amber-500/10">
-                      <FolderOpen className="h-4 w-4 text-amber-500" />
+              </div>
+              <Button 
+                onClick={() => {
+                  // Trigger form submit
+                  const form = document.querySelector('form')
+                  if (form) form.requestSubmit()
+                }}
+                disabled={saving}
+                className="btn-press px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-sm font-medium shadow-lg shadow-indigo-500/25"
+              >
+                {saving ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4 mr-2" />
+                )}
+                Kaydet
+              </Button>
+            </div>
+          </div>
+          
+          {/* Tabs */}
+          <nav className="flex items-center gap-1 -mb-4 pt-2">
+            <button 
+              onClick={() => setActiveTab('dashboard')}
+              className={cn(
+                "flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-t-lg transition-all",
+                activeTab === 'dashboard' 
+                  ? "text-indigo-600 dark:text-indigo-400 tab-active" 
+                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
+              )}
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              Dashboard
+            </button>
+            
+            <button 
+              onClick={() => setActiveTab('brief')}
+              className={cn(
+                "flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-t-lg transition-all",
+                activeTab === 'brief' 
+                  ? "text-indigo-600 dark:text-indigo-400 tab-active" 
+                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
+              )}
+            >
+              <FileText className="w-4 h-4" />
+              Brief
+            </button>
+            
+            <button 
+              onClick={() => setActiveTab('icerik-uret')}
+              className={cn(
+                "flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-t-lg transition-all",
+                activeTab === 'icerik-uret' 
+                  ? "text-indigo-600 dark:text-indigo-400 tab-active" 
+                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
+              )}
+            >
+              <Sparkles className="w-4 h-4" />
+              İçerik Üret
+              <span className="text-[10px] bg-fuchsia-500/20 text-fuchsia-400 px-1.5 py-0.5 rounded border border-fuchsia-500/20">AI</span>
+            </button>
+            
+            <button 
+              disabled
+              className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-zinc-400 dark:text-zinc-600 cursor-not-allowed rounded-t-lg"
+            >
+              <Calendar className="w-4 h-4" />
+              Takvim
+              <span className="text-[10px] bg-zinc-200 dark:bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded">Yakında</span>
+            </button>
+            
+            <button 
+              disabled
+              className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-zinc-400 dark:text-zinc-600 cursor-not-allowed rounded-t-lg"
+            >
+              <BarChart3 className="w-4 h-4" />
+              Performans
+              <span className="text-[10px] bg-zinc-200 dark:bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded">Yakında</span>
+            </button>
+            
+            <button 
+              onClick={() => setActiveTab('dosyalar')}
+              className={cn(
+                "flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-t-lg transition-all",
+                activeTab === 'dosyalar' 
+                  ? "text-indigo-600 dark:text-indigo-400 tab-active" 
+                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
+              )}
+            >
+              <FolderOpen className="w-4 h-4" />
+              Dosyalar
+            </button>
+          </nav>
+        </div>
+      </header>
+      
+      {/* ==================== CONTENT ==================== */}
+      <div className="p-6 content-bg min-h-screen">
+        
+        {/* Dashboard Tab */}
+        {activeTab === 'dashboard' && (
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-3 gap-6">
+              
+              {/* LEFT (2/3) */}
+              <div className="col-span-2 space-y-6">
+                
+                {/* Stats */}
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="glass-card rounded-xl p-4 glow-indigo card-hover">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-500/10">
+                        <FileText className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                      </div>
                     </div>
+                    <p className="text-2xl font-bold text-zinc-900 dark:text-white">{completion}%</p>
+                    <p className="text-xs text-zinc-500">Brief</p>
                   </div>
-                  <p className="text-2xl font-bold">-</p>
-                  <p className="text-xs text-muted-foreground">Dosya Sayısı</p>
+                  <div className="glass-card rounded-xl p-4 glow-violet card-hover">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-lg bg-violet-100 dark:bg-violet-500/10">
+                        <Sparkles className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+                      </div>
+                    </div>
+                    <p className="text-2xl font-bold text-zinc-900 dark:text-white">0</p>
+                    <p className="text-xs text-zinc-500">İçerik</p>
+                  </div>
+                  <div className="glass-card rounded-xl p-4 glow-cyan card-hover">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-lg bg-cyan-100 dark:bg-cyan-500/10">
+                        <Calendar className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+                      </div>
+                    </div>
+                    <p className="text-2xl font-bold text-zinc-900 dark:text-white">—</p>
+                    <p className="text-xs text-zinc-500">Bu Ay</p>
+                  </div>
+                  <div className="glass-card rounded-xl p-4 glow-amber card-hover">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-500/10">
+                        <FolderOpen className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                      </div>
+                    </div>
+                    <p className="text-2xl font-bold text-zinc-900 dark:text-white">—</p>
+                    <p className="text-xs text-zinc-500">Dosya</p>
+                  </div>
+                </div>
+                
+                {/* Info Cards */}
+                <div className="grid grid-cols-3 gap-4">
+                  {customer.website_url && (
+                    <a 
+                      href={customer.website_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="glass-card rounded-xl p-4 border border-zinc-200 dark:border-white/10 card-hover"
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="p-2 rounded-lg bg-cyan-100 dark:bg-cyan-500/10">
+                          <Globe className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                        </div>
+                        <span className="text-xs font-medium text-zinc-500">Website</span>
+                      </div>
+                      <p className="text-sm font-medium text-zinc-900 dark:text-white font-mono">
+                        {getHostname(customer.website_url)}
+                      </p>
+                    </a>
+                  )}
+                  {customer.target_audience && (
+                    <div className="glass-card rounded-xl p-4 border border-zinc-200 dark:border-white/10 card-hover">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="p-2 rounded-lg bg-violet-100 dark:bg-violet-500/10">
+                          <Users className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                        </div>
+                        <span className="text-xs font-medium text-zinc-500">Hedef Kitle</span>
+                      </div>
+                      <p className="text-sm text-zinc-900 dark:text-white truncate">
+                        {customer.target_audience.length > 40 
+                          ? customer.target_audience.substring(0, 40) + '...' 
+                          : customer.target_audience}
+                      </p>
+                    </div>
+                  )}
+                  {customer.brand_voice && (
+                    <div className="glass-card rounded-xl p-4 border border-zinc-200 dark:border-white/10 card-hover">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="p-2 rounded-lg bg-fuchsia-100 dark:bg-fuchsia-500/10">
+                          <FileText className="w-4 h-4 text-fuchsia-600 dark:text-fuchsia-400" />
+                        </div>
+                        <span className="text-xs font-medium text-zinc-500">Marka Sesi</span>
+                      </div>
+                      <p className="text-sm text-zinc-900 dark:text-white">
+                        {getBrandVoiceLabel(customer.brand_voice)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Hızlı Aksiyonlar */}
+                <div className="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10">
+                  <h3 className="text-sm font-semibold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    Hızlı Aksiyonlar
+                  </h3>
+                  <div className="grid grid-cols-4 gap-3">
+                    <button 
+                      onClick={() => setActiveTab('icerik-uret')}
+                      className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-br from-fuchsia-50 to-violet-50 dark:from-fuchsia-500/10 dark:to-violet-500/10 border border-fuchsia-200 dark:border-fuchsia-500/20 hover:border-fuchsia-300 dark:hover:border-fuchsia-500/40 transition-all group"
+                    >
+                      <div className="p-2 rounded-lg bg-fuchsia-100 dark:bg-fuchsia-500/20 group-hover:scale-110 transition-transform">
+                        <Instagram className="w-5 h-5 text-fuchsia-600 dark:text-fuchsia-400" />
+                      </div>
+                      <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Instagram</span>
+                    </button>
+                    <button className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-500/10 dark:to-indigo-500/10 border border-blue-200 dark:border-blue-500/20 hover:border-blue-300 dark:hover:border-blue-500/40 transition-all group">
+                      <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-500/20 group-hover:scale-110 transition-transform">
+                        <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Blog</span>
+                    </button>
+                    <button className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-500/10 dark:to-orange-500/10 border border-amber-200 dark:border-amber-500/20 hover:border-amber-300 dark:hover:border-amber-500/40 transition-all group">
+                      <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-500/20 group-hover:scale-110 transition-transform">
+                        <Megaphone className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                      </div>
+                      <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Reklam</span>
+                    </button>
+                    <button className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-500/10 dark:to-teal-500/10 border border-emerald-200 dark:border-emerald-500/20 hover:border-emerald-300 dark:hover:border-emerald-500/40 transition-all group">
+                      <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 group-hover:scale-110 transition-transform">
+                        <Mail className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                      <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">E-posta</span>
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Son İçerikler (Empty) */}
+                <div className="glass-card rounded-2xl border border-zinc-200 dark:border-white/10 overflow-hidden">
+                  <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-200 dark:border-white/5">
+                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
+                      <History className="w-4 h-4 text-violet-500" />
+                      Son Üretilen İçerikler
+                    </h3>
+                    <a href="#" className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1">
+                      Tümünü Gör <ArrowLeft className="w-3 h-3 rotate-180" />
+                    </a>
+                  </div>
+                  <div className="p-8 flex flex-col items-center text-center">
+                    <div className="w-14 h-14 rounded-2xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 flex items-center justify-center mb-4 float-animation">
+                      <FileText className="w-7 h-7 text-zinc-400" />
+                    </div>
+                    <h3 className="font-semibold text-zinc-900 dark:text-white mb-2">Henüz içerik yok</h3>
+                    <p className="text-sm text-zinc-500 mb-4">İlk içeriği oluşturmak için yukarıdaki butonları kullan 🚀</p>
+                  </div>
                 </div>
               </div>
               
-              {/* AI Insight Box */}
-              <div className="glass-card rounded-xl p-5 border-glow-violet bg-gradient-to-br from-indigo-500/5 to-violet-500/5">
-                <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="h-5 w-5 text-indigo-500" />
-                  <h3 className="text-sm font-semibold">AI İçgörüsü</h3>
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {completion < 50 
-                    ? "Brief tamamlanma oranı düşük. Daha iyi içerik üretimi için brief'i tamamlayın."
-                    : completion < 80
-                    ? "Brief büyük ölçüde hazır. Birkaç alanı daha doldurarak kaliteyi artırabilirsiniz."
-                    : "Brief hazır! İçerik üretmeye başlayabilirsiniz."
-                  }
-                </p>
-                <Button 
-                  className="mt-4 w-full bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white"
-                  onClick={() => setActiveTab('icerik-uret')}
-                >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  İçerik Üret
-                </Button>
-              </div>
-            </div>
-            
-            {/* Quick Info */}
-            <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {customer.website_url && (
-                <a 
-                  href={customer.website_url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="glass-card rounded-xl p-4 flex items-center gap-3 hover:border-indigo-500/30 transition-all"
-                >
-                  <div className="p-2 rounded-lg bg-cyan-500/10">
-                    <Globe className="h-4 w-4 text-cyan-500" />
+              {/* RIGHT (1/3) */}
+              <div className="space-y-6">
+                
+                {/* AI Insight */}
+                <div className="glass-card rounded-2xl p-5 glow-violet bg-gradient-to-br from-indigo-50/50 dark:from-indigo-950/30 to-violet-50/50 dark:to-violet-950/20">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">AI İçgörüsü</h3>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Website</p>
-                    <p className="text-sm font-medium truncate">
-                      {(() => {
-                        try { return new URL(customer.website_url).hostname } 
-                        catch { return customer.website_url }
-                      })()}
-                    </p>
-                  </div>
-                </a>
-              )}
-              {customer.target_audience && (
-                <div className="glass-card rounded-xl p-4 flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-violet-500/10">
-                    <Users className="h-4 w-4 text-violet-500" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Hedef Kitle</p>
-                    <p className="text-sm font-medium truncate">
-                      {customer.target_audience.length > 40 
-                        ? customer.target_audience.substring(0, 40) + '...' 
-                        : customer.target_audience
-                      }
-                    </p>
-                  </div>
-                </div>
-              )}
-              {customer.brand_voice && (
-                <div className="glass-card rounded-xl p-4 flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-emerald-500/10">
-                    <FileText className="h-4 w-4 text-emerald-500" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Marka Sesi</p>
-                    <p className="text-sm font-medium">{getBrandVoiceLabel(customer.brand_voice)}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-
-          {/* Brief Tab */}
-          <TabsContent value="brief" className="mt-0">
-            {briefMode === 'view' ? (
-              <CustomerViewMode
-                customer={customer}
-                onEdit={() => setBriefMode('edit')}
-                onDelete={handleDeleteCustomer}
-              />
-            ) : (
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="text-lg font-semibold">Brief Düzenleme</h2>
-                    <p className="text-sm text-muted-foreground">Marka hakkında detaylı bilgileri düzenleyin</p>
-                  </div>
+                  <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed mb-4">
+                    {completion < 50 
+                      ? "Brief tamamlanma oranı düşük. Daha iyi içerik üretimi için brief'i tamamla."
+                      : completion < 80
+                      ? "Brief büyük ölçüde hazır. Birkaç alanı daha doldurarak içerik kalitesini artırabilirsin."
+                      : "Brief hazır! İçerik üretmeye başlayabilirsin. 🎉"
+                    }
+                  </p>
                   <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setBriefMode('view')}
+                    onClick={() => setActiveTab('icerik-uret')}
+                    className="btn-press w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-sm font-medium shadow-lg shadow-indigo-500/25 transition-all"
                   >
-                    <X className="h-4 w-4 mr-2" />
-                    İptal
+                    <Sparkles className="w-4 h-4" />
+                    İçerik Üret
                   </Button>
                 </div>
-                <CustomerBriefForm
-                  customer={customer}
-                  onSave={handleSaveCustomer}
-                  onCancel={() => setBriefMode('view')}
-                  isLoading={saving}
-                />
+                
+                {/* Yaklaşan Özel Günler */}
+                <div className="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
+                      <CalendarHeart className="w-4 h-4 text-rose-500" />
+                      Yaklaşan Özel Günler
+                    </h3>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="p-3 rounded-xl bg-gradient-to-br from-rose-50 dark:from-rose-500/10 to-pink-50 dark:to-pink-500/10 border border-rose-200 dark:border-rose-500/20">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-semibold text-rose-600 dark:text-rose-400 uppercase tracking-wider">4 Gün Kaldı</span>
+                        <span className="text-xs text-rose-600 dark:text-rose-400 font-mono">31 Ara</span>
+                      </div>
+                      <p className="text-sm font-medium text-zinc-900 dark:text-white">Yılbaşı</p>
+                      <p className="text-xs text-zinc-500 mt-1">Kampanya içeriği hazırla!</p>
+                    </div>
+                    <div className="p-3 rounded-xl border border-zinc-200 dark:border-white/5 hover:border-zinc-300 dark:hover:border-white/10 transition-all">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs text-zinc-500">45 Gün</span>
+                        <span className="text-xs text-zinc-400 font-mono">14 Şub</span>
+                      </div>
+                      <p className="text-sm font-medium text-zinc-900 dark:text-white">Sevgililer Günü</p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Brief Özeti */}
+                <div className="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
+                      <ClipboardList className="w-4 h-4 text-cyan-500" />
+                      Brief Özeti
+                    </h3>
+                    <button 
+                      onClick={() => setActiveTab('brief')}
+                      className="text-xs text-indigo-600 dark:text-indigo-400"
+                    >
+                      Düzenle
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-zinc-500">Marka Kimliği</span>
+                      <span className={cn(
+                        "text-xs px-2 py-0.5 rounded-full",
+                        customer.brand_values?.length 
+                          ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
+                          : "bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400"
+                      )}>
+                        {customer.brand_values?.length ? 'Tamamlandı' : 'Eksik'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-zinc-500">Hedef Kitle</span>
+                      <span className={cn(
+                        "text-xs px-2 py-0.5 rounded-full",
+                        customer.target_audience 
+                          ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
+                          : "bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400"
+                      )}>
+                        {customer.target_audience ? 'Tamamlandı' : 'Eksik'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-zinc-500">Ürün/Hizmet</span>
+                      <span className={cn(
+                        "text-xs px-2 py-0.5 rounded-full",
+                        customer.top_products?.length 
+                          ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
+                          : "bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400"
+                      )}>
+                        {customer.top_products?.length ? 'Tamamlandı' : 'Eksik'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-zinc-500">Rakip Analizi</span>
+                      <span className={cn(
+                        "text-xs px-2 py-0.5 rounded-full",
+                        customer.competitors?.length 
+                          ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
+                          : "bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400"
+                      )}>
+                        {customer.competitors?.length ? 'Tamamlandı' : 'Eksik'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
               </div>
-            )}
-          </TabsContent>
-
-          {/* İçerik Üret Tab */}
-          <TabsContent value="icerik-uret" className="mt-0">
-            <div className="text-center py-12">
-              <div className="inline-flex items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-fuchsia-500/10 to-pink-500/10 border border-fuchsia-500/20 mb-4">
-                <Sparkles className="h-8 w-8 text-fuchsia-500" />
+            </div>
+          </div>
+        )}
+        
+        {/* Brief Tab */}
+        {activeTab === 'brief' && (
+          <div className="max-w-4xl mx-auto">
+            <CustomerBriefForm
+              customer={customer}
+              onSave={handleSaveCustomer}
+              onCancel={() => router.push('/musteriler')}
+              isLoading={saving}
+            />
+          </div>
+        )}
+        
+        {/* İçerik Üret Tab */}
+        {activeTab === 'icerik-uret' && (
+          <div className="max-w-4xl mx-auto">
+            <div className="glass-card rounded-2xl border border-zinc-200 dark:border-white/10 p-12 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-fuchsia-100 to-violet-100 dark:from-fuchsia-500/10 dark:to-violet-500/10 border border-fuchsia-200 dark:border-fuchsia-500/20 flex items-center justify-center mx-auto mb-4 float-animation">
+                <Sparkles className="w-8 h-8 text-fuchsia-600 dark:text-fuchsia-400" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">İçerik Üretimi</h3>
-              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                Sosyal medya postları, blog yazıları, reklam metinleri ve daha fazlasını AI ile üretin.
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">İçerik Üretimi</h3>
+              <p className="text-sm text-zinc-500 mb-6 max-w-md mx-auto">
+                Sosyal medya postları, blog yazıları, reklam metinleri ve daha fazlasını AI ile üret.
               </p>
               
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 max-w-2xl mx-auto mb-8">
+              <div className="grid grid-cols-5 gap-3 max-w-2xl mx-auto mb-8">
                 {[
-                  { icon: '📱', label: 'Sosyal Medya', color: 'fuchsia' },
-                  { icon: '📝', label: 'Blog', color: 'indigo' },
-                  { icon: '📢', label: 'Reklam', color: 'amber' },
-                  { icon: '📧', label: 'E-posta', color: 'cyan' },
-                  { icon: '🔍', label: 'SEO', color: 'emerald' },
+                  { icon: '📱', label: 'Sosyal Medya' },
+                  { icon: '📝', label: 'Blog' },
+                  { icon: '📢', label: 'Reklam' },
+                  { icon: '📧', label: 'E-posta' },
+                  { icon: '🔍', label: 'SEO' },
                 ].map((item) => (
                   <button 
                     key={item.label}
-                    className="glass-card rounded-xl p-4 flex flex-col items-center gap-2 hover:border-fuchsia-500/30 transition-all group"
+                    className="glass-card rounded-xl p-4 flex flex-col items-center gap-2 border border-zinc-200 dark:border-white/10 hover:border-fuchsia-300 dark:hover:border-fuchsia-500/30 transition-all group"
                   >
                     <span className="text-2xl group-hover:scale-110 transition-transform">{item.icon}</span>
-                    <span className="text-xs font-medium">{item.label}</span>
+                    <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{item.label}</span>
                   </button>
                 ))}
               </div>
               
-              <p className="text-sm text-muted-foreground">
-                Sprint 2'de aktif olacak
-              </p>
+              <p className="text-sm text-zinc-400">Sprint 2'de aktif olacak</p>
             </div>
-          </TabsContent>
-
-          {/* Dosyalar Tab */}
-          <TabsContent value="dosyalar" className="mt-0">
-            <div className="text-center py-12">
-              <div className="inline-flex items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 mb-4">
-                <FolderOpen className="h-8 w-8 text-amber-500" />
+          </div>
+        )}
+        
+        {/* Dosyalar Tab */}
+        {activeTab === 'dosyalar' && (
+          <div className="max-w-4xl mx-auto">
+            <div className="glass-card rounded-2xl border border-zinc-200 dark:border-white/10 p-12 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-500/10 dark:to-orange-500/10 border border-amber-200 dark:border-amber-500/20 flex items-center justify-center mx-auto mb-4 float-animation">
+                <FolderOpen className="w-8 h-8 text-amber-600 dark:text-amber-400" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">Marka Dosyaları</h3>
-              <p className="text-muted-foreground mb-6">
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">Marka Dosyaları</h3>
+              <p className="text-sm text-zinc-500 mb-6">
                 Logolar, görseller, brand guide ve diğer dosyalar
               </p>
-              <Button variant="outline">
+              <Button variant="outline" className="btn-press">
                 Dosya Yükle
               </Button>
             </div>
-          </TabsContent>
-
-        </div>
-      </Tabs>
+          </div>
+        )}
+        
+      </div>
     </div>
   )
 }
