@@ -15,26 +15,46 @@ import {
 } from 'lucide-react'
 import type { Customer } from '@/lib/customer-types'
 
-// Glow style helpers
-const glowStyles = {
-  indigo: {
-    border: '1px solid rgba(99, 102, 241, 0.4)',
-    boxShadow: '0 0 20px -5px rgba(99, 102, 241, 0.4), inset 0 0 20px -10px rgba(99, 102, 241, 0.1)'
-  },
-  violet: {
-    border: '1px solid rgba(139, 92, 246, 0.4)',
-    boxShadow: '0 0 20px -5px rgba(139, 92, 246, 0.4), inset 0 0 20px -10px rgba(139, 92, 246, 0.1)'
-  },
-  cyan: {
-    border: '1px solid rgba(34, 211, 238, 0.4)',
-    boxShadow: '0 0 20px -5px rgba(34, 211, 238, 0.4), inset 0 0 20px -10px rgba(34, 211, 238, 0.1)'
-  }
-}
+// ==========================================
+// UI Kit'ten birebir stiller
+// ==========================================
 
+// glass-card: background + backdrop-filter
 const glassCardStyle = {
   background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
   backdropFilter: 'blur(20px)',
   WebkitBackdropFilter: 'blur(20px)'
+}
+
+// glow-* stilleri
+const glowStyles = {
+  indigo: {
+    border: '1px solid rgba(99,102,241,0.4)',
+    boxShadow: '0 0 20px -5px rgba(99,102,241,0.4)'
+  },
+  violet: {
+    border: '1px solid rgba(139,92,246,0.4)',
+    boxShadow: '0 0 20px -5px rgba(139,92,246,0.4)'
+  },
+  cyan: {
+    border: '1px solid rgba(34,211,238,0.4)',
+    boxShadow: '0 0 20px -5px rgba(34,211,238,0.4)'
+  }
+}
+
+// card-hover efekti
+const getHoverStyle = (color: 'indigo' | 'violet' | 'cyan', isHovered: boolean) => {
+  if (!isHovered) return {}
+  const colors = {
+    indigo: 'rgba(139,92,246,0.6)',
+    violet: 'rgba(139,92,246,0.6)',
+    cyan: 'rgba(139,92,246,0.6)'
+  }
+  return {
+    transform: 'translateY(-2px)',
+    borderColor: colors[color],
+    boxShadow: `0 0 30px -5px ${colors[color]}`
+  }
 }
 
 export default function DashboardPage() {
@@ -68,64 +88,74 @@ export default function DashboardPage() {
 
   const activeCustomers = customers.filter(c => c.status !== 'inactive')
 
-  // Hızlı İşlemler
+  // Hızlı İşlemler - UI Kit'ten birebir
   const quickActions = [
     {
+      id: 'icerik',
       title: 'İçerik Üret',
       description: 'AI ile içerik oluştur',
       icon: Sparkles,
       href: '/icerik-uret',
-      gradient: 'linear-gradient(135deg, rgba(217, 70, 239, 0.08) 0%, rgba(139, 92, 246, 0.05) 100%)',
-      iconBg: 'linear-gradient(135deg, rgba(217, 70, 239, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%)',
-      iconColor: '#d946ef',
-      borderColor: 'rgba(217, 70, 239, 0.3)'
+      colors: {
+        from: 'rgba(217,70,239,0.1)',
+        to: 'rgba(139,92,246,0.1)',
+        border: 'rgba(217,70,239,0.2)',
+        icon: '#d946ef'
+      }
     },
     {
+      id: 'gorseller',
       title: 'Görseller',
       description: 'AI ile görsel oluştur',
       icon: Image,
       href: '/gorseller',
-      gradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(20, 184, 166, 0.05) 100%)',
-      iconBg: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(20, 184, 166, 0.1) 100%)',
-      iconColor: '#10b981',
-      borderColor: 'rgba(16, 185, 129, 0.3)'
+      colors: {
+        from: 'rgba(16,185,129,0.1)',
+        to: 'rgba(20,184,166,0.1)',
+        border: 'rgba(16,185,129,0.2)',
+        icon: '#10b981'
+      }
     },
     {
+      id: 'gecmis',
       title: 'Geçmiş',
       description: 'Önceki içerikler',
       icon: History,
       href: '/gecmis',
-      gradient: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(99, 102, 241, 0.05) 100%)',
-      iconBg: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%)',
-      iconColor: '#3b82f6',
-      borderColor: 'rgba(59, 130, 246, 0.3)'
+      colors: {
+        from: 'rgba(59,130,246,0.1)',
+        to: 'rgba(99,102,241,0.1)',
+        border: 'rgba(59,130,246,0.2)',
+        icon: '#3b82f6'
+      }
     },
     {
+      id: 'musteriler',
       title: 'Müşteriler',
       description: "Brief'leri yönet",
       icon: Users,
       href: '/musteriler',
-      gradient: 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(249, 115, 22, 0.05) 100%)',
-      iconBg: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(249, 115, 22, 0.1) 100%)',
-      iconColor: '#f59e0b',
-      borderColor: 'rgba(245, 158, 11, 0.3)'
+      colors: {
+        from: 'rgba(245,158,11,0.1)',
+        to: 'rgba(249,115,22,0.1)',
+        border: 'rgba(245,158,11,0.2)',
+        icon: '#f59e0b'
+      }
     }
   ]
 
   return (
-    <div className="p-6 space-y-8">
-      {/* Stats Cards - 3 kolonlu, glow efektli */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {/* Toplam İçerik - Indigo Glow */}
+    <>
+      {/* Stats Cards - grid grid-cols-3 gap-5 mb-8 */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+        
+        {/* Toplam İçerik - glow-indigo */}
         <div 
           className="rounded-2xl p-5 cursor-pointer transition-all duration-300"
           style={{
             ...glassCardStyle,
             ...glowStyles.indigo,
-            transform: hoveredCard === 'content' ? 'translateY(-2px)' : 'none',
-            boxShadow: hoveredCard === 'content' 
-              ? '0 0 30px -5px rgba(99, 102, 241, 0.5), inset 0 0 30px -10px rgba(99, 102, 241, 0.15)'
-              : glowStyles.indigo.boxShadow
+            ...(hoveredCard === 'content' ? getHoverStyle('indigo', true) : {})
           }}
           onMouseEnter={() => setHoveredCard('content')}
           onMouseLeave={() => setHoveredCard(null)}
@@ -133,26 +163,23 @@ export default function DashboardPage() {
           <div 
             className="p-3 rounded-xl w-fit mb-4"
             style={{
-              background: 'rgba(99, 102, 241, 0.1)',
-              border: '1px solid rgba(99, 102, 241, 0.2)'
+              background: 'rgba(99,102,241,0.1)',
+              border: '1px solid rgba(99,102,241,0.2)'
             }}
           >
-            <FileText className="w-6 h-6" style={{ color: '#818cf8' }} />
+            <FileText className="w-6 h-6 text-indigo-400" />
           </div>
           <p className="text-3xl font-bold text-white mb-1">0</p>
           <p className="text-sm text-zinc-500">Toplam İçerik</p>
         </div>
 
-        {/* Müşteri Sayısı - Violet Glow */}
+        {/* Müşteri Sayısı - glow-violet */}
         <div 
           className="rounded-2xl p-5 cursor-pointer transition-all duration-300"
           style={{
             ...glassCardStyle,
             ...glowStyles.violet,
-            transform: hoveredCard === 'customers' ? 'translateY(-2px)' : 'none',
-            boxShadow: hoveredCard === 'customers' 
-              ? '0 0 30px -5px rgba(139, 92, 246, 0.5), inset 0 0 30px -10px rgba(139, 92, 246, 0.15)'
-              : glowStyles.violet.boxShadow
+            ...(hoveredCard === 'customers' ? getHoverStyle('violet', true) : {})
           }}
           onMouseEnter={() => setHoveredCard('customers')}
           onMouseLeave={() => setHoveredCard(null)}
@@ -161,11 +188,11 @@ export default function DashboardPage() {
           <div 
             className="p-3 rounded-xl w-fit mb-4"
             style={{
-              background: 'rgba(139, 92, 246, 0.1)',
-              border: '1px solid rgba(139, 92, 246, 0.2)'
+              background: 'rgba(139,92,246,0.1)',
+              border: '1px solid rgba(139,92,246,0.2)'
             }}
           >
-            <Building2 className="w-6 h-6" style={{ color: '#a78bfa' }} />
+            <Building2 className="w-6 h-6 text-violet-400" />
           </div>
           <p className="text-3xl font-bold text-white mb-1">
             {loading ? '...' : activeCustomers.length}
@@ -173,16 +200,13 @@ export default function DashboardPage() {
           <p className="text-sm text-zinc-500">Müşteri Sayısı</p>
         </div>
 
-        {/* Bu Hafta - Cyan Glow */}
+        {/* Bu Hafta - glow-cyan */}
         <div 
           className="rounded-2xl p-5 cursor-pointer transition-all duration-300"
           style={{
             ...glassCardStyle,
             ...glowStyles.cyan,
-            transform: hoveredCard === 'week' ? 'translateY(-2px)' : 'none',
-            boxShadow: hoveredCard === 'week' 
-              ? '0 0 30px -5px rgba(34, 211, 238, 0.5), inset 0 0 30px -10px rgba(34, 211, 238, 0.15)'
-              : glowStyles.cyan.boxShadow
+            ...(hoveredCard === 'week' ? getHoverStyle('cyan', true) : {})
           }}
           onMouseEnter={() => setHoveredCard('week')}
           onMouseLeave={() => setHoveredCard(null)}
@@ -190,81 +214,86 @@ export default function DashboardPage() {
           <div 
             className="p-3 rounded-xl w-fit mb-4"
             style={{
-              background: 'rgba(34, 211, 238, 0.1)',
-              border: '1px solid rgba(34, 211, 238, 0.2)'
+              background: 'rgba(34,211,238,0.1)',
+              border: '1px solid rgba(34,211,238,0.2)'
             }}
           >
-            <Calendar className="w-6 h-6" style={{ color: '#22d3ee' }} />
+            <Calendar className="w-6 h-6 text-cyan-400" />
           </div>
           <p className="text-3xl font-bold text-white mb-1">0</p>
           <p className="text-sm text-zinc-500">Bu Hafta</p>
         </div>
       </div>
 
-      {/* Hızlı İşlemler */}
-      <div>
-        <h2 className="text-lg font-semibold text-white mb-4">Hızlı İşlemler</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {quickActions.map((action) => (
-            <div
-              key={action.title}
-              className="rounded-2xl p-5 cursor-pointer transition-all duration-300 group"
+      {/* Hızlı İşlemler - h2 + grid grid-cols-4 gap-4 mb-8 */}
+      <h2 className="text-lg font-semibold text-white mb-4">Hızlı İşlemler</h2>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        {quickActions.map((action) => (
+          <div
+            key={action.id}
+            className="rounded-2xl p-5 cursor-pointer transition-all duration-300 group"
+            style={{
+              ...glassCardStyle,
+              border: `1px solid rgba(255,255,255,0.1)`,
+              ...(hoveredCard === action.id ? { transform: 'translateY(-2px)', borderColor: 'rgba(139,92,246,0.6)', boxShadow: '0 0 30px -5px rgba(139,92,246,0.5)' } : {})
+            }}
+            onClick={() => router.push(action.href)}
+            onMouseEnter={() => setHoveredCard(action.id)}
+            onMouseLeave={() => setHoveredCard(null)}
+          >
+            <div 
+              className="p-3 rounded-xl w-fit mb-4 transition-transform group-hover:scale-110"
               style={{
-                background: action.gradient,
-                border: `1px solid ${action.borderColor}`,
-                transform: hoveredCard === action.title ? 'translateY(-2px)' : 'none'
+                background: `linear-gradient(135deg, ${action.colors.from} 0%, ${action.colors.to} 100%)`,
+                border: `1px solid ${action.colors.border}`
               }}
-              onClick={() => router.push(action.href)}
-              onMouseEnter={() => setHoveredCard(action.title)}
-              onMouseLeave={() => setHoveredCard(null)}
             >
-              <div 
-                className="p-3 rounded-xl w-fit mb-4 transition-transform group-hover:scale-110"
-                style={{
-                  background: action.iconBg,
-                  border: `1px solid ${action.borderColor}`
-                }}
-              >
-                <action.icon className="w-6 h-6" style={{ color: action.iconColor }} />
-              </div>
-              <h3 className="font-semibold text-white mb-1">{action.title}</h3>
-              <p className="text-sm text-zinc-500">{action.description}</p>
+              <action.icon className="w-6 h-6" style={{ color: action.colors.icon }} />
             </div>
-          ))}
-        </div>
+            <h3 className="font-semibold text-white mb-1">{action.title}</h3>
+            <p className="text-sm text-zinc-500">{action.description}</p>
+          </div>
+        ))}
       </div>
 
-      {/* Son Aktiviteler - Empty State */}
+      {/* Son Aktiviteler - glass-card + empty state */}
       <div 
         className="rounded-2xl"
         style={{
           ...glassCardStyle,
-          border: '1px solid rgba(255, 255, 255, 0.1)'
+          border: '1px solid rgba(255,255,255,0.1)'
         }}
       >
+        {/* Header */}
         <div 
           className="px-5 py-4"
-          style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
         >
           <h2 className="font-semibold text-white">Son Aktiviteler</h2>
         </div>
+        
+        {/* Empty State - p-12 flex flex-col items-center text-center */}
         <div className="p-12 flex flex-col items-center text-center">
+          {/* float-animation icon */}
           <div 
             className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
             style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.1)'
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              animation: 'float 3s ease-in-out infinite'
             }}
           >
             <Inbox className="w-8 h-8 text-zinc-400" />
           </div>
           <h3 className="font-semibold text-white mb-2">Henüz aktivite yok</h3>
           <p className="text-sm text-zinc-500 mb-6">İlk içeriği üretmek için bir marka seç! 🚀</p>
+          
+          {/* btn-press gradient button */}
           <button 
-            className="px-5 py-2.5 rounded-xl text-white text-sm font-medium flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+            className="px-5 py-2.5 rounded-xl text-white text-sm font-medium flex items-center gap-2 transition-all active:scale-95"
             style={{
               background: 'linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%)',
-              boxShadow: '0 4px 20px -5px rgba(99, 102, 241, 0.5)'
+              boxShadow: '0 8px 20px -5px rgba(99, 102, 241, 0.4)'
             }}
             onClick={() => router.push('/icerik-uret')}
           >
@@ -273,6 +302,14 @@ export default function DashboardPage() {
           </button>
         </div>
       </div>
-    </div>
+
+      {/* Float animation */}
+      <style jsx global>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-5px); }
+        }
+      `}</style>
+    </>
   )
 }
