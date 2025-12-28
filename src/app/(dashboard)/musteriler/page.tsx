@@ -6,14 +6,13 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Plus, Search, Pencil, Trash2, Building2, Eye, EyeOff, Sparkles, PauseCircle } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Plus, Search, Pencil, Trash2, Building2, Eye, EyeOff, Sparkles, PauseCircle, Loader2 } from 'lucide-react'
 import { getRecentCustomers, addToRecentCustomers, type RecentCustomer } from '@/lib/local-storage'
-import { CustomerBriefForm } from '@/components/customers/customer-brief-form'
-import type { Customer, CustomerFormData } from '@/lib/customer-types'
+import type { Customer } from '@/lib/customer-types'
 import { SECTORS, calculateBriefCompletion, getCustomerTypeLabel } from '@/lib/customer-types'
 
 function getSectorLabel(value: string): string {
@@ -38,17 +37,26 @@ const cardGradients = [
   { bg: 'from-indigo-100 to-violet-100 dark:from-indigo-500/20 dark:to-violet-500/20', border: 'border-indigo-200 dark:border-indigo-500/20', icon: 'text-indigo-600 dark:text-indigo-400' },
 ]
 
+// Yeni marka formu için initial state
+const initialNewBrandForm = {
+  name: '',
+  website_url: '',
+  customer_type: 'project' as 'retainer' | 'project',
+  sector: ''
+}
+
 export default function MusterilerPage() {
   const router = useRouter()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [recentCustomers, setRecentCustomers] = useState<RecentCustomer[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
-  const [sheetOpen, setSheetOpen] = useState(false)
+  const [newBrandDialogOpen, setNewBrandDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null)
   const [formLoading, setFormLoading] = useState(false)
   const [showInactive, setShowInactive] = useState(false)
+  const [newBrandForm, setNewBrandForm] = useState(initialNewBrandForm)
 
   const supabase = createClient()
 
@@ -97,11 +105,14 @@ export default function MusterilerPage() {
     router.push(`/customers/${customer.id}`)
   }
 
-  function handleNewCustomer() {
-    setSheetOpen(true)
+  function handleNewBrandDialogOpen() {
+    setNewBrandForm(initialNewBrandForm)
+    setNewBrandDialogOpen(true)
   }
 
-  async function handleSaveCustomer(formData: CustomerFormData) {
+  async function handleCreateBrand() {
+    if (!newBrandForm.name.trim()) return
+    
     setFormLoading(true)
 
     try {
@@ -109,45 +120,46 @@ export default function MusterilerPage() {
       if (!user) throw new Error('Oturum bulunamadı')
 
       const customerData = {
-        name: formData.name,
-        brand_name: formData.brand_name || null,
-        website_url: formData.website_url || null,
-        sector: formData.sector || null,
-        sub_sector: formData.sub_sector || null,
-        business_type: formData.business_type || null,
-        brand_voice: formData.brand_voice || null,
-        customer_type: formData.customer_type || 'project',
-        status: formData.status || 'active',
-        email: formData.email || null,
-        phone: formData.phone || null,
-        location: formData.location || null,
-        social_media: formData.social_media || {},
-        brand_description: formData.brand_description || null,
-        mission: formData.mission || null,
-        vision: formData.vision || null,
-        slogan: formData.slogan || null,
-        usp: formData.usp || null,
-        target_audience: formData.target_audience || null,
-        target_age_range: formData.target_age_range || null,
-        target_geography: formData.target_geography || null,
-        product_categories: formData.product_categories || [],
-        top_products: formData.top_products || [],
-        price_segment: formData.price_segment || null,
-        competitors: formData.competitors || [],
-        do_not_do: formData.do_not_do || [],
-        must_emphasize: formData.must_emphasize || [],
-        special_events: formData.special_events || [],
-        brand_values: formData.brand_values || [],
-        buying_motivations: formData.buying_motivations || [],
-        content_pillars: formData.content_pillars || [],
-        platform_rules: formData.platform_rules || {},
-        example_captions: formData.example_captions || {},
-        word_mapping: formData.word_mapping || [],
-        brand_colors: formData.brand_colors || {},
-        brand_fonts: formData.brand_fonts || {},
-        brand_assets: formData.brand_assets || {},
-        integrations: formData.integrations || {},
-        user_id: user.id
+        name: newBrandForm.name.trim(),
+        website_url: newBrandForm.website_url.trim() || null,
+        customer_type: newBrandForm.customer_type,
+        sector: newBrandForm.sector || null,
+        status: 'active',
+        user_id: user.id,
+        // Diğer alanlar boş/default
+        brand_name: null,
+        sub_sector: null,
+        business_type: null,
+        brand_voice: null,
+        email: null,
+        phone: null,
+        location: null,
+        social_media: {},
+        brand_description: null,
+        mission: null,
+        vision: null,
+        slogan: null,
+        usp: null,
+        target_audience: null,
+        target_age_range: null,
+        target_geography: null,
+        product_categories: [],
+        top_products: [],
+        price_segment: null,
+        competitors: [],
+        do_not_do: [],
+        must_emphasize: [],
+        special_events: [],
+        brand_values: [],
+        buying_motivations: [],
+        content_pillars: [],
+        platform_rules: {},
+        example_captions: {},
+        word_mapping: [],
+        brand_colors: {},
+        brand_fonts: {},
+        brand_assets: {},
+        integrations: {}
       }
 
       const { data, error } = await supabase
@@ -158,7 +170,7 @@ export default function MusterilerPage() {
 
       if (error) throw error
 
-      setSheetOpen(false)
+      setNewBrandDialogOpen(false)
       
       if (data) {
         router.push(`/customers/${data.id}`)
@@ -166,8 +178,7 @@ export default function MusterilerPage() {
         fetchCustomers()
       }
     } catch (error) {
-      console.error('Error saving customer:', error)
-      throw error
+      console.error('Error creating brand:', error)
     } finally {
       setFormLoading(false)
     }
@@ -196,34 +207,13 @@ export default function MusterilerPage() {
     <div className="space-y-6">
       {/* Action Bar - Yeni Marka butonu */}
       <div className="flex items-center justify-end">
-        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-          <SheetTrigger asChild>
-            <Button 
-              onClick={handleNewCustomer}
-              className="btn-press px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-medium shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-shadow"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Yeni Marka
-            </Button>
-          </SheetTrigger>
-          <SheetContent className="w-full sm:max-w-xl overflow-y-auto glass">
-            <SheetHeader>
-              <SheetTitle>Yeni Marka Ekle</SheetTitle>
-              <SheetDescription>
-                Marka brief bilgilerini girin. AI içerik üretirken bu bilgileri kullanacak.
-              </SheetDescription>
-            </SheetHeader>
-            
-            <div className="mt-6">
-              <CustomerBriefForm
-                customer={null}
-                onSave={handleSaveCustomer}
-                onCancel={() => setSheetOpen(false)}
-                isLoading={formLoading}
-              />
-            </div>
-          </SheetContent>
-        </Sheet>
+        <Button 
+          onClick={handleNewBrandDialogOpen}
+          className="btn-press px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-medium shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-shadow"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Yeni Marka
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -317,7 +307,7 @@ export default function MusterilerPage() {
           </p>
           {!searchQuery && (
             <Button 
-              onClick={handleNewCustomer}
+              onClick={handleNewBrandDialogOpen}
               className="btn-press px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-medium shadow-lg shadow-indigo-500/25"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -423,6 +413,143 @@ export default function MusterilerPage() {
           })}
         </div>
       )}
+
+      {/* New Brand Dialog - Centered Popup */}
+      <Dialog open={newBrandDialogOpen} onOpenChange={setNewBrandDialogOpen}>
+        <DialogContent className="sm:max-w-md glass-card border border-zinc-200 dark:border-white/10">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-500/20 dark:to-violet-500/20">
+                <Building2 className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              Yeni Marka Ekle
+            </DialogTitle>
+            <DialogDescription className="text-zinc-500">
+              Temel bilgileri gir, detayları sonra Brief'ten doldurursun.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Marka Adı */}
+            <div className="space-y-2">
+              <Label htmlFor="brand-name" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                Marka Adı <span className="text-rose-500">*</span>
+              </Label>
+              <Input
+                id="brand-name"
+                placeholder="Örn: AJANS BEE"
+                value={newBrandForm.name}
+                onChange={(e) => setNewBrandForm(prev => ({ ...prev, name: e.target.value }))}
+                className="input-glow bg-zinc-100 dark:bg-white/5 border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white"
+              />
+            </div>
+
+            {/* Website */}
+            <div className="space-y-2">
+              <Label htmlFor="website" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                Website
+              </Label>
+              <Input
+                id="website"
+                placeholder="https://example.com"
+                value={newBrandForm.website_url}
+                onChange={(e) => setNewBrandForm(prev => ({ ...prev, website_url: e.target.value }))}
+                className="input-glow bg-zinc-100 dark:bg-white/5 border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white font-mono text-sm"
+              />
+            </div>
+
+            {/* Müşteri Tipi */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                Müşteri Tipi
+              </Label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setNewBrandForm(prev => ({ ...prev, customer_type: 'retainer' }))}
+                  className={`p-3 rounded-xl border-2 transition-all text-center ${
+                    newBrandForm.customer_type === 'retainer'
+                      ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10'
+                      : 'border-zinc-200 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20'
+                  }`}
+                >
+                  <span className="text-lg mb-1 block">🤝</span>
+                  <span className={`text-sm font-medium ${
+                    newBrandForm.customer_type === 'retainer' 
+                      ? 'text-emerald-700 dark:text-emerald-400' 
+                      : 'text-zinc-700 dark:text-zinc-300'
+                  }`}>Retainer</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNewBrandForm(prev => ({ ...prev, customer_type: 'project' }))}
+                  className={`p-3 rounded-xl border-2 transition-all text-center ${
+                    newBrandForm.customer_type === 'project'
+                      ? 'border-violet-500 bg-violet-50 dark:bg-violet-500/10'
+                      : 'border-zinc-200 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20'
+                  }`}
+                >
+                  <span className="text-lg mb-1 block">📋</span>
+                  <span className={`text-sm font-medium ${
+                    newBrandForm.customer_type === 'project' 
+                      ? 'text-violet-700 dark:text-violet-400' 
+                      : 'text-zinc-700 dark:text-zinc-300'
+                  }`}>Proje</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Sektör */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                Sektör
+              </Label>
+              <Select 
+                value={newBrandForm.sector} 
+                onValueChange={(value) => setNewBrandForm(prev => ({ ...prev, sector: value }))}
+              >
+                <SelectTrigger className="input-glow bg-zinc-100 dark:bg-white/5 border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white">
+                  <SelectValue placeholder="Sektör seç..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {SECTORS.map((sector) => (
+                    <SelectItem key={sector.value} value={sector.value}>
+                      {sector.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setNewBrandDialogOpen(false)}
+              className="rounded-xl"
+            >
+              İptal
+            </Button>
+            <Button 
+              onClick={handleCreateBrand}
+              disabled={!newBrandForm.name.trim() || formLoading}
+              className="btn-press rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25"
+            >
+              {formLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Oluşturuluyor...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Oluştur
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
