@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
-import type { ServiceProviderUpdate } from '@/lib/types'
 
 // Zod schema for validation
 const serviceProviderUpdateSchema = z.object({
@@ -75,14 +74,14 @@ export async function PATCH(
       return NextResponse.json({ error: parsed.error.issues }, { status: 400 })
     }
 
-    const updateData: ServiceProviderUpdate = {
+    const updateData = {
       ...parsed.data,
       updated_at: new Date().toISOString()
     }
 
     const { data, error } = await supabase
       .from('service_providers')
-      .update(updateData)
+      .update(updateData as Record<string, unknown>)
       .eq('id', id)
       .select()
       .single()
