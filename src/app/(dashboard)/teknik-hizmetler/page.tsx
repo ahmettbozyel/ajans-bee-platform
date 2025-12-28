@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { 
   Server, Globe, ShieldCheck, Mail, Building2, Calendar, AlertTriangle,
-  Search, Plus, Loader2, Settings, RefreshCw
+  Search, Plus, Loader2, Settings, RefreshCw, Pencil, Trash2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,6 +13,7 @@ import { SERVICE_TYPES, SERVICE_TYPE_COLORS } from '@/lib/service-provider-types
 import type { TechnicalServiceWithRelations } from '@/lib/technical-service-types-new'
 import { SERVICE_STATUSES } from '@/lib/technical-service-types-new'
 import Link from 'next/link'
+import { ServiceModal } from './components/service-modal'
 
 // Helper: Gün farkı hesapla
 function getDaysDiff(date: string | null): number | null {
@@ -49,6 +50,10 @@ export default function TeknikHizmetlerPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilter, setActiveFilter] = useState<ServiceType | 'all'>('all')
+  
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingService, setEditingService] = useState<TechnicalServiceWithRelations | null>(null)
 
   useEffect(() => {
     loadData()
@@ -67,6 +72,38 @@ export default function TeknikHizmetlerPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  function handleAddNew() {
+    setEditingService(null)
+    setIsModalOpen(true)
+  }
+
+  function handleEdit(service: TechnicalServiceWithRelations) {
+    setEditingService(service)
+    setIsModalOpen(true)
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm('Bu hizmeti silmek istediğinize emin misiniz?')) return
+    
+    try {
+      const res = await fetch(`/api/technical-services/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        await loadData()
+      }
+    } catch (error) {
+      console.error('Error deleting service:', error)
+    }
+  }
+
+  function handleModalClose() {
+    setIsModalOpen(false)
+    setEditingService(null)
+  }
+
+  function handleModalSave() {
+    loadData()
   }
 
   // Filtrele
@@ -183,6 +220,13 @@ export default function TeknikHizmetlerPage() {
               Fiyatlar
             </Button>
           </Link>
+          <Button 
+            onClick={handleAddNew}
+            className="bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Yeni Hizmet
+          </Button>
         </div>
       </div>
       
@@ -201,7 +245,10 @@ export default function TeknikHizmetlerPage() {
               : 'Farklı bir arama terimi veya filtre deneyin.'}
           </p>
           {services.length === 0 && (
-            <Button className="bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white">
+            <Button 
+              onClick={handleAddNew}
+              className="bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white"
+            >
               <Plus className="w-4 h-4 mr-2" />
               İlk Hizmeti Ekle
             </Button>
@@ -235,7 +282,7 @@ export default function TeknikHizmetlerPage() {
               <div 
                 key={service.id}
                 className={cn(
-                  "p-4 border-b border-zinc-200 dark:border-white/5 transition-colors",
+                  "p-4 border-b border-zinc-200 dark:border-white/5 transition-colors group",
                   isOverdue && "bg-rose-50/50 dark:bg-rose-950/20",
                   isUpcoming && !isOverdue && "bg-amber-50/30 dark:bg-amber-950/10",
                   !isOverdue && !isUpcoming && "hover:bg-zinc-50 dark:hover:bg-white/[0.02]"
@@ -317,6 +364,24 @@ export default function TeknikHizmetlerPage() {
                     ) : (
                       <span className="text-xs text-zinc-400">Tarih yok</span>
                     )}
+                    
+                    {/* Action Buttons */}
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleEdit(service)}
+                      >
+                        <Pencil className="w-4 h-4 text-zinc-400" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleDelete(service.id)}
+                      >
+                        <Trash2 className="w-4 h-4 text-rose-400" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -324,6 +389,14 @@ export default function TeknikHizmetlerPage() {
           })}
         </div>
       )}
+
+      {/* Service Modal */}
+      <ServiceModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        onSave={handleModalSave}
+        editingService={editingService}
+      />
       
     </div>
   )
