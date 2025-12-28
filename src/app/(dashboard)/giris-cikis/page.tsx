@@ -50,7 +50,7 @@ export default function AdminGirisCikisPage() {
       if (usersData) setUsers(usersData as AppUser[])
 
       // Seçili tarihteki tüm kayıtlar
-      const { data: recordsData } = await supabase
+      const { data: recordsData } = await (supabase as any)
         .from('attendance')
         .select('*, user:users(*)')
         .eq('date', selectedDate)
@@ -77,12 +77,12 @@ export default function AdminGirisCikisPage() {
       const today = new Date().toISOString().split('T')[0]
       
       if (myRecord) {
-        await supabase
+        await (supabase as any)
           .from('attendance')
           .update({ check_in: now, updated_at: now })
           .eq('id', myRecord.id)
       } else {
-        await supabase
+        await (supabase as any)
           .from('attendance')
           .insert({
             user_id: appUser.id,
@@ -105,7 +105,7 @@ export default function AdminGirisCikisPage() {
     try {
       const now = new Date().toISOString()
       
-      await supabase
+      await (supabase as any)
         .from('attendance')
         .update({ check_out: now, updated_at: now })
         .eq('id', myRecord.id)
