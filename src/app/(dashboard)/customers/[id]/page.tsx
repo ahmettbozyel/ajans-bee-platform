@@ -10,7 +10,7 @@ import {
   ArrowLeft, Building2, Globe, Users, FileText, 
   Sparkles, Loader2, LayoutDashboard, Calendar, 
   BarChart3, FolderOpen, Save, Instagram, Megaphone, Mail,
-  History, CalendarHeart, ClipboardList, CheckCircle, Circle, CircleDot
+  History, CalendarHeart, ClipboardList, CheckCircle, Circle, CircleDot, Settings
 } from 'lucide-react'
 import { CustomerBriefForm } from '@/components/customers/customer-brief-form'
 import type { Customer, CustomerFormData } from '@/lib/customer-types'
@@ -268,12 +268,12 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
   return (
     <div className="space-y-0 -m-6">
       
-      {/* ==================== HEADER (Temizlenmiş) ==================== */}
+      {/* ==================== HEADER - TEK SATIR ==================== */}
       <header className="sticky top-0 z-40 glass border-b border-zinc-200 dark:border-white/5">
-        <div className="px-6 py-4">
-          
-          {/* Back + Brand Info */}
-          <div className="flex items-center justify-between mb-4">
+        <div className="px-6 py-3">
+          <div className="flex items-center justify-between">
+            
+            {/* Left: Back + Brand Info */}
             <div className="flex items-center gap-4">
               {/* Back Button */}
               <button 
@@ -286,17 +286,17 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
               
               <div className="h-6 w-px bg-zinc-200 dark:bg-white/10" />
               
-              {/* Brand Info */}
+              {/* Brand Info - Compact */}
               <div className="flex items-center gap-3">
-                <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-500/20 dark:to-purple-500/20 border border-violet-200 dark:border-violet-500/20 flex items-center justify-center">
-                  <Building2 className="w-6 h-6 text-violet-600 dark:text-violet-400" />
+                <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-500/20 dark:to-purple-500/20 border border-violet-200 dark:border-violet-500/20 flex items-center justify-center">
+                  <Building2 className="w-5 h-5 text-violet-600 dark:text-violet-400" />
                 </div>
                 <div>
-                  <h1 className="font-bold text-zinc-900 dark:text-white">{customer.name}</h1>
-                  <div className="flex items-center gap-2 mt-0.5">
+                  <div className="flex items-center gap-2">
+                    <h1 className="font-bold text-zinc-900 dark:text-white text-sm">{customer.name}</h1>
                     {customer.customer_type && (
                       <span className={cn(
-                        "text-xs px-2 py-0.5 rounded-full font-medium",
+                        "text-[10px] px-1.5 py-0.5 rounded-full font-medium",
                         customer.customer_type === 'retainer' 
                           ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
                           : "bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-400"
@@ -304,90 +304,96 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
                         {getCustomerTypeLabel(customer.customer_type)}
                       </span>
                     )}
-                    {customer.website_url && (
-                      <span className="text-xs text-zinc-500 font-mono">
-                        {getHostname(customer.website_url)}
-                      </span>
-                    )}
                   </div>
+                  {customer.website_url && (
+                    <span className="text-[11px] text-zinc-500 font-mono">
+                      {getHostname(customer.website_url)}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
+            
+            {/* Center/Right: Tabs */}
+            <nav className="flex items-center gap-1">
+              <button 
+                onClick={() => setActiveTab('dashboard')}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-all",
+                  activeTab === 'dashboard' 
+                    ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10" 
+                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
+                )}
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span className="hidden lg:inline">Dashboard</span>
+              </button>
+              
+              <button 
+                onClick={() => setActiveTab('brief')}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-all",
+                  activeTab === 'brief' 
+                    ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10" 
+                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
+                )}
+              >
+                <FileText className="w-4 h-4" />
+                Brief
+              </button>
+              
+              <button 
+                onClick={() => setActiveTab('icerik-uret')}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-all",
+                  activeTab === 'icerik-uret' 
+                    ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10" 
+                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
+                )}
+              >
+                <Sparkles className="w-4 h-4" />
+                <span className="hidden lg:inline">İçerik Üret</span>
+                <span className="text-[10px] bg-fuchsia-500/20 text-fuchsia-400 px-1.5 py-0.5 rounded border border-fuchsia-500/20">AI</span>
+              </button>
+              
+              <button 
+                disabled
+                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-zinc-400 dark:text-zinc-600 cursor-not-allowed rounded-lg"
+              >
+                <Calendar className="w-4 h-4" />
+                <span className="hidden lg:inline">Takvim</span>
+                <span className="text-[10px] bg-zinc-200 dark:bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded">Yakında</span>
+              </button>
+              
+              <button 
+                disabled
+                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-zinc-400 dark:text-zinc-600 cursor-not-allowed rounded-lg"
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span className="hidden xl:inline">Performans</span>
+                <span className="text-[10px] bg-zinc-200 dark:bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded">Yakında</span>
+              </button>
+              
+              <button 
+                onClick={() => setActiveTab('dosyalar')}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-all",
+                  activeTab === 'dosyalar' 
+                    ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10" 
+                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
+                )}
+              >
+                <FolderOpen className="w-4 h-4" />
+                <span className="hidden lg:inline">Dosyalar</span>
+              </button>
+            </nav>
+            
+            {/* Right: Settings */}
+            <button className="p-2 rounded-lg bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-white/10 transition-all">
+              <Settings className="w-4 h-4" />
+            </button>
+            
           </div>
-          
-          {/* Tabs */}
-          <nav className="flex items-center gap-1 -mb-4 pt-2">
-            <button 
-              onClick={() => setActiveTab('dashboard')}
-              className={cn(
-                "flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-t-lg transition-all",
-                activeTab === 'dashboard' 
-                  ? "text-indigo-600 dark:text-indigo-400 tab-active" 
-                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
-              )}
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              Dashboard
-            </button>
-            
-            <button 
-              onClick={() => setActiveTab('brief')}
-              className={cn(
-                "flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-t-lg transition-all",
-                activeTab === 'brief' 
-                  ? "text-indigo-600 dark:text-indigo-400 tab-active" 
-                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
-              )}
-            >
-              <FileText className="w-4 h-4" />
-              Brief
-            </button>
-            
-            <button 
-              onClick={() => setActiveTab('icerik-uret')}
-              className={cn(
-                "flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-t-lg transition-all",
-                activeTab === 'icerik-uret' 
-                  ? "text-indigo-600 dark:text-indigo-400 tab-active" 
-                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
-              )}
-            >
-              <Sparkles className="w-4 h-4" />
-              İçerik Üret
-              <span className="text-[10px] bg-fuchsia-500/20 text-fuchsia-400 px-1.5 py-0.5 rounded border border-fuchsia-500/20">AI</span>
-            </button>
-            
-            <button 
-              disabled
-              className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-zinc-400 dark:text-zinc-600 cursor-not-allowed rounded-t-lg"
-            >
-              <Calendar className="w-4 h-4" />
-              Takvim
-              <span className="text-[10px] bg-zinc-200 dark:bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded">Yakında</span>
-            </button>
-            
-            <button 
-              disabled
-              className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-zinc-400 dark:text-zinc-600 cursor-not-allowed rounded-t-lg"
-            >
-              <BarChart3 className="w-4 h-4" />
-              Performans
-              <span className="text-[10px] bg-zinc-200 dark:bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded">Yakında</span>
-            </button>
-            
-            <button 
-              onClick={() => setActiveTab('dosyalar')}
-              className={cn(
-                "flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-t-lg transition-all",
-                activeTab === 'dosyalar' 
-                  ? "text-indigo-600 dark:text-indigo-400 tab-active" 
-                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
-              )}
-            >
-              <FolderOpen className="w-4 h-4" />
-              Dosyalar
-            </button>
-          </nav>
         </div>
       </header>
       
@@ -639,7 +645,7 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
           </div>
         )}
         
-        {/* Brief Tab - YENİ 2/3 + 1/3 LAYOUT */}
+        {/* Brief Tab - 2/3 + 1/3 LAYOUT + STICKY BOTTOM SAVE */}
         {activeTab === 'brief' && (
           <div className="max-w-6xl mx-auto">
             <div className="grid grid-cols-3 gap-6">
@@ -655,89 +661,95 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
               </div>
               
               {/* RIGHT (1/3) - Brief Sidebar */}
-              <div className="space-y-6">
-                
-                {/* Brief Progress */}
-                <div className="glass-card rounded-2xl p-5 glow-cyan bg-gradient-to-br from-cyan-50/50 dark:from-cyan-950/30 to-blue-50/50 dark:to-blue-950/20">
-                  <div className="flex items-center gap-4 mb-4">
-                    <ProgressRing percentage={completion} size="large" />
-                    <div>
-                      <p className="text-lg font-bold text-zinc-900 dark:text-white">Brief Durumu</p>
-                      <p className="text-sm text-zinc-500">{Math.round(completion * 0.25)}/25 alan dolu</p>
+              <div className="relative">
+                {/* Normal Scroll Content */}
+                <div className="space-y-6 pb-48">
+                  
+                  {/* AI Insight for Brief */}
+                  <div className="glass-card rounded-2xl p-5 glow-violet bg-gradient-to-br from-indigo-50/50 dark:from-indigo-950/30 to-violet-50/50 dark:to-violet-950/20">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                      <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">AI İçgörüsü</h3>
+                    </div>
+                    <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                      {completion < 50 
+                        ? "Brief tamamlanma oranı düşük. Eksik alanları doldurarak AI'ın daha iyi içerik üretmesini sağla."
+                        : completion < 80
+                        ? "Güzel ilerleme! Birkaç alan daha doldurup %80 üzerine çıkarsan AI harikalar yaratır."
+                        : "Mükemmel! Brief hazır. İçerik Üret sekmesine geçebilirsin. 🚀"
+                      }
+                    </p>
+                  </div>
+                  
+                  {/* Brief Sections Status */}
+                  <div className="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
+                        <ClipboardList className="w-4 h-4 text-cyan-500" />
+                        Bölüm Durumları
+                      </h3>
+                    </div>
+                    <div className="space-y-2">
+                      {getBriefSectionStatus().map((section, i) => (
+                        <div key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors">
+                          {section.complete ? (
+                            <CheckCircle className="w-4 h-4 text-emerald-500" />
+                          ) : (
+                            <Circle className="w-4 h-4 text-amber-500" />
+                          )}
+                          <span className={cn(
+                            "text-sm",
+                            section.complete ? "text-zinc-700 dark:text-zinc-300" : "text-zinc-500"
+                          )}>
+                            {section.label}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  <Button 
-                    onClick={() => {
-                      const form = document.querySelector('form')
-                      if (form) form.requestSubmit()
-                    }}
-                    disabled={saving}
-                    className="btn-press w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-sm font-medium shadow-lg shadow-indigo-500/25"
-                  >
-                    {saving ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Kaydediliyor...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-4 h-4" />
-                        Kaydet
-                      </>
-                    )}
-                  </Button>
+                  
+                  {/* Quick Tips */}
+                  <div className="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10">
+                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-white mb-3">💡 İpucu</h3>
+                    <p className="text-xs text-zinc-500 leading-relaxed">
+                      Brief ne kadar detaylı olursa, AI o kadar kaliteli ve markaya uygun içerik üretir. 
+                      Özellikle "Marka Sesi" ve "Kullanılmaması Gereken Kelimeler" alanları çok önemli!
+                    </p>
+                  </div>
+                  
                 </div>
                 
-                {/* AI Insight for Brief */}
-                <div className="glass-card rounded-2xl p-5 glow-violet bg-gradient-to-br from-indigo-50/50 dark:from-indigo-950/30 to-violet-50/50 dark:to-violet-950/20">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">AI İçgörüsü</h3>
-                  </div>
-                  <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                    {completion < 50 
-                      ? "Brief tamamlanma oranı düşük. Eksik alanları doldurarak AI'ın daha iyi içerik üretmesini sağla."
-                      : completion < 80
-                      ? "Güzel ilerleme! Birkaç alan daha doldurup %80 üzerine çıkarsan AI harikalar yaratır."
-                      : "Mükemmel! Brief hazır. İçerik Üret sekmesine geçebilirsin. 🚀"
-                    }
-                  </p>
-                </div>
-                
-                {/* Brief Sections Status */}
-                <div className="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
-                      <ClipboardList className="w-4 h-4 text-cyan-500" />
-                      Bölüm Durumları
-                    </h3>
-                  </div>
-                  <div className="space-y-2">
-                    {getBriefSectionStatus().map((section, i) => (
-                      <div key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors">
-                        {section.complete ? (
-                          <CheckCircle className="w-4 h-4 text-emerald-500" />
-                        ) : (
-                          <Circle className="w-4 h-4 text-amber-500" />
-                        )}
-                        <span className={cn(
-                          "text-sm",
-                          section.complete ? "text-zinc-700 dark:text-zinc-300" : "text-zinc-500"
-                        )}>
-                          {section.label}
-                        </span>
+                {/* STICKY BOTTOM - Brief Progress + Save */}
+                <div className="fixed bottom-6 right-6 w-[calc(33.333%-3rem)] max-w-[340px]">
+                  <div className="glass-card rounded-2xl p-5 glow-cyan bg-gradient-to-br from-cyan-50/95 dark:from-cyan-950/95 to-blue-50/95 dark:to-blue-950/95 backdrop-blur-xl shadow-2xl border border-cyan-200 dark:border-cyan-500/30">
+                    <div className="flex items-center gap-4 mb-4">
+                      <ProgressRing percentage={completion} size="large" />
+                      <div>
+                        <p className="text-lg font-bold text-zinc-900 dark:text-white">Brief Durumu</p>
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400">{Math.round(completion * 0.25)}/25 alan dolu</p>
                       </div>
-                    ))}
+                    </div>
+                    <Button 
+                      onClick={() => {
+                        const form = document.querySelector('form')
+                        if (form) form.requestSubmit()
+                      }}
+                      disabled={saving}
+                      className="btn-press w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-sm font-medium shadow-lg shadow-indigo-500/25"
+                    >
+                      {saving ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Kaydediliyor...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4" />
+                          Kaydet
+                        </>
+                      )}
+                    </Button>
                   </div>
-                </div>
-                
-                {/* Quick Tips */}
-                <div className="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10">
-                  <h3 className="text-sm font-semibold text-zinc-900 dark:text-white mb-3">💡 İpucu</h3>
-                  <p className="text-xs text-zinc-500 leading-relaxed">
-                    Brief ne kadar detaylı olursa, AI o kadar kaliteli ve markaya uygun içerik üretir. 
-                    Özellikle "Marka Sesi" ve "Kullanılmaması Gereken Kelimeler" alanları çok önemli!
-                  </p>
                 </div>
                 
               </div>
