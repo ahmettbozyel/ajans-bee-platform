@@ -417,17 +417,20 @@ export default function MusterilerPage() {
         </div>
       )}
 
-      {/* New Brand Dialog - Centered Popup */}
+      {/* New Brand Dialog - Solid Background */}
       <Dialog open={newBrandDialogOpen} onOpenChange={setNewBrandDialogOpen}>
-        <DialogContent className="sm:max-w-md glass-card border border-zinc-200 dark:border-white/10">
+        <DialogContent 
+          className="sm:max-w-md border border-zinc-700 rounded-2xl shadow-2xl"
+          style={{ backgroundColor: '#18181b' }}
+        >
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-500/20 dark:to-violet-500/20">
-                <Building2 className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-indigo-500/20 to-violet-500/20">
+                <Building2 className="w-5 h-5 text-indigo-400" />
               </div>
               Yeni Marka Ekle
             </DialogTitle>
-            <DialogDescription className="text-zinc-500">
+            <DialogDescription className="text-zinc-400">
               Temel bilgileri gir, detayları sonra Brief'ten doldurursun.
             </DialogDescription>
           </DialogHeader>
@@ -435,7 +438,7 @@ export default function MusterilerPage() {
           <div className="space-y-4 py-4">
             {/* Marka Adı */}
             <div className="space-y-2">
-              <Label htmlFor="brand-name" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <Label htmlFor="brand-name" className="text-sm font-medium text-zinc-300">
                 Marka Adı <span className="text-rose-500">*</span>
               </Label>
               <Input
@@ -443,13 +446,13 @@ export default function MusterilerPage() {
                 placeholder="Örn: AJANS BEE"
                 value={newBrandForm.name}
                 onChange={(e) => setNewBrandForm(prev => ({ ...prev, name: e.target.value }))}
-                className="input-glow bg-zinc-100 dark:bg-white/5 border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white"
+                className="input-glow bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
               />
             </div>
 
             {/* Website */}
             <div className="space-y-2">
-              <Label htmlFor="website" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <Label htmlFor="website" className="text-sm font-medium text-zinc-300">
                 Website
               </Label>
               <Input
@@ -457,13 +460,13 @@ export default function MusterilerPage() {
                 placeholder="https://example.com"
                 value={newBrandForm.website_url}
                 onChange={(e) => setNewBrandForm(prev => ({ ...prev, website_url: e.target.value }))}
-                className="input-glow bg-zinc-100 dark:bg-white/5 border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white font-mono text-sm"
+                className="input-glow bg-zinc-800 border-zinc-700 text-white font-mono text-sm placeholder:text-zinc-500"
               />
             </div>
 
             {/* Müşteri Tipi */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <Label className="text-sm font-medium text-zinc-300">
                 Müşteri Tipi
               </Label>
               <div className="grid grid-cols-2 gap-3">
@@ -472,15 +475,15 @@ export default function MusterilerPage() {
                   onClick={() => setNewBrandForm(prev => ({ ...prev, customer_type: 'retainer' }))}
                   className={`p-3 rounded-xl border-2 transition-all text-center ${
                     newBrandForm.customer_type === 'retainer'
-                      ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10'
-                      : 'border-zinc-200 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20'
+                      ? 'border-emerald-500 bg-emerald-500/10'
+                      : 'border-zinc-700 hover:border-zinc-600'
                   }`}
                 >
                   <span className="text-lg mb-1 block">🤝</span>
                   <span className={`text-sm font-medium ${
                     newBrandForm.customer_type === 'retainer' 
-                      ? 'text-emerald-700 dark:text-emerald-400' 
-                      : 'text-zinc-700 dark:text-zinc-300'
+                      ? 'text-emerald-400' 
+                      : 'text-zinc-300'
                   }`}>Retainer</span>
                 </button>
                 <button
@@ -488,15 +491,15 @@ export default function MusterilerPage() {
                   onClick={() => setNewBrandForm(prev => ({ ...prev, customer_type: 'project' }))}
                   className={`p-3 rounded-xl border-2 transition-all text-center ${
                     newBrandForm.customer_type === 'project'
-                      ? 'border-violet-500 bg-violet-50 dark:bg-violet-500/10'
-                      : 'border-zinc-200 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20'
+                      ? 'border-violet-500 bg-violet-500/10'
+                      : 'border-zinc-700 hover:border-zinc-600'
                   }`}
                 >
                   <span className="text-lg mb-1 block">📋</span>
                   <span className={`text-sm font-medium ${
                     newBrandForm.customer_type === 'project' 
-                      ? 'text-violet-700 dark:text-violet-400' 
-                      : 'text-zinc-700 dark:text-zinc-300'
+                      ? 'text-violet-400' 
+                      : 'text-zinc-300'
                   }`}>Proje</span>
                 </button>
               </div>
@@ -504,7 +507,7 @@ export default function MusterilerPage() {
 
             {/* Sektör - Combobox with Search */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <Label className="text-sm font-medium text-zinc-300">
                 Sektör
               </Label>
               <Popover open={sectorPopoverOpen} onOpenChange={setSectorPopoverOpen}>
@@ -513,7 +516,7 @@ export default function MusterilerPage() {
                     variant="outline"
                     role="combobox"
                     aria-expanded={sectorPopoverOpen}
-                    className="w-full justify-between input-glow bg-zinc-100 dark:bg-white/5 border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
+                    className="w-full justify-between bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700 hover:text-white"
                   >
                     {newBrandForm.sector
                       ? getSectorLabel(newBrandForm.sector)
@@ -522,21 +525,20 @@ export default function MusterilerPage() {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent 
-                  className="w-[var(--radix-popover-trigger-width)] p-0 !bg-zinc-900 border-zinc-700 shadow-2xl rounded-xl overflow-hidden" 
+                  className="w-[var(--radix-popover-trigger-width)] p-0 border-zinc-700 shadow-2xl rounded-xl overflow-hidden" 
                   align="start"
                   style={{ backgroundColor: '#18181b' }}
                 >
-                  <Command className="bg-zinc-900" style={{ backgroundColor: '#18181b' }}>
+                  <Command style={{ backgroundColor: '#18181b' }}>
                     <CommandInput 
                       placeholder="Sektör ara..." 
-                      className="h-11 border-b border-zinc-700 bg-zinc-900 text-white placeholder:text-zinc-500" 
-                      style={{ backgroundColor: '#18181b' }}
+                      className="h-11 border-b border-zinc-700 text-white placeholder:text-zinc-500" 
                     />
-                    <CommandList className="max-h-64 overflow-auto bg-zinc-900" style={{ backgroundColor: '#18181b' }}>
+                    <CommandList className="max-h-64 overflow-auto" style={{ backgroundColor: '#18181b' }}>
                       <CommandEmpty className="py-6 text-center text-sm text-zinc-500">
                         Sektör bulunamadı.
                       </CommandEmpty>
-                      <CommandGroup className="bg-zinc-900" style={{ backgroundColor: '#18181b' }}>
+                      <CommandGroup style={{ backgroundColor: '#18181b' }}>
                         {SECTORS.map((sector) => (
                           <CommandItem
                             key={sector.value}
@@ -575,7 +577,7 @@ export default function MusterilerPage() {
             <Button 
               variant="outline" 
               onClick={() => setNewBrandDialogOpen(false)}
-              className="rounded-xl"
+              className="rounded-xl border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
             >
               İptal
             </Button>
@@ -602,16 +604,23 @@ export default function MusterilerPage() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="glass">
+        <DialogContent 
+          className="border border-zinc-700 rounded-2xl shadow-2xl"
+          style={{ backgroundColor: '#18181b' }}
+        >
           <DialogHeader>
-            <DialogTitle>Markayı Sil</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-white">Markayı Sil</DialogTitle>
+            <DialogDescription className="text-zinc-400">
               &quot;{customerToDelete?.name}&quot; markasını silmek istediğinize emin misiniz? 
               Bu işlem geri alınamaz.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteDialogOpen(false)}
+              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+            >
               İptal
             </Button>
             <Button variant="destructive" onClick={handleDeleteCustomer}>
