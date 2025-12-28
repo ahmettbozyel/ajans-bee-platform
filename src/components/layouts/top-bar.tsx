@@ -91,7 +91,7 @@ export function TopBar() {
         
         {/* Sağ: Aksiyonlar */}
         <div className="flex items-center gap-3">
-          {/* Search */}
+          {/* Search with Keyboard Shortcut */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
             <input 
@@ -99,6 +99,7 @@ export function TopBar() {
               placeholder="Ara..." 
               className="input-glow w-56 pl-10 pr-12 py-2 rounded-lg bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 transition-all"
             />
+            {/* Keyboard Shortcut - UI Kit */}
             <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-zinc-400 dark:text-zinc-600 bg-zinc-200 dark:bg-white/10 px-1.5 py-0.5 rounded font-mono">⌘K</kbd>
           </div>
           
@@ -114,10 +115,11 @@ export function TopBar() {
             )}
           </button>
           
-          {/* Notifications */}
+          {/* Notifications with Dot - UI Kit */}
           <button className="relative p-2.5 rounded-lg bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-white/10 transition-all">
             <Bell className="h-5 w-5" />
-            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-rose-500" />
+            {/* Notification Dot with ring */}
+            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-zinc-900" />
           </button>
         </div>
       </div>
