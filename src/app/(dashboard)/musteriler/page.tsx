@@ -521,12 +521,20 @@ export default function MusterilerPage() {
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Sektör ara..." className="h-10" />
-                    <CommandList>
-                      <CommandEmpty>Sektör bulunamadı.</CommandEmpty>
-                      <CommandGroup className="max-h-64 overflow-auto">
+                <PopoverContent 
+                  className="w-[var(--radix-popover-trigger-width)] p-0 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-indigo-500/30 shadow-xl dark:shadow-indigo-500/10 rounded-xl overflow-hidden" 
+                  align="start"
+                >
+                  <Command className="bg-transparent">
+                    <CommandInput 
+                      placeholder="Sektör ara..." 
+                      className="h-11 border-b border-zinc-200 dark:border-white/10 bg-transparent text-zinc-900 dark:text-white placeholder:text-zinc-400" 
+                    />
+                    <CommandList className="max-h-64 overflow-auto">
+                      <CommandEmpty className="py-6 text-center text-sm text-zinc-500">
+                        Sektör bulunamadı.
+                      </CommandEmpty>
+                      <CommandGroup>
                         {SECTORS.map((sector) => (
                           <CommandItem
                             key={sector.value}
@@ -538,14 +546,19 @@ export default function MusterilerPage() {
                               }))
                               setSectorPopoverOpen(false)
                             }}
+                            className="px-3 py-2.5 cursor-pointer text-zinc-700 dark:text-zinc-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 aria-selected:bg-indigo-50 dark:aria-selected:bg-indigo-500/10 data-[selected=true]:bg-indigo-50 dark:data-[selected=true]:bg-indigo-500/10"
                           >
                             <Check
                               className={cn(
-                                "mr-2 h-4 w-4",
+                                "mr-2 h-4 w-4 text-indigo-600 dark:text-indigo-400",
                                 newBrandForm.sector === sector.value ? "opacity-100" : "opacity-0"
                               )}
                             />
-                            {sector.label}
+                            <span className={cn(
+                              newBrandForm.sector === sector.value && "text-indigo-700 dark:text-indigo-400 font-medium"
+                            )}>
+                              {sector.label}
+                            </span>
                           </CommandItem>
                         ))}
                       </CommandGroup>
