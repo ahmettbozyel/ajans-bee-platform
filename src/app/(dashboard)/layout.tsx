@@ -1,19 +1,21 @@
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 import { 
   LayoutDashboard, 
   Building2,
   Server,
   Settings,
   LogOut,
-  Menu
+  Menu,
+  Loader2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { TopBar } from '@/components/layouts/top-bar'
-
-// Force dynamic rendering (cookies kullanıldığı için)
-export const dynamic = 'force-dynamic'
+import type { User } from '@supabase/supabase-js'
 
 // Karar #15: Sidebar menü yapısı
 const navigation = [
@@ -34,16 +36,57 @@ function AjansBeeLogoSVG({ className }: { className?: string }) {
   )
 }
 
-export default async function DashboardLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const router = useRouter()
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  
+  const supabase = createClient()
 
+  useEffect(() => {
+    async function getUser() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          router.push('/login')
+          return
+        }
+        setUser(user)
+      } catch (error) {
+        console.error('Auth error:', error)
+        router.push('/login')
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    getUser()
+  }, [router, supabase.auth])
+
+  async function handleSignOut() {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+          <p className="text-sm text-zinc-500">Yükleniyor...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // No user (shouldn't happen as we redirect)
   if (!user) {
-    redirect('/login')
+    return null
   }
 
   return (
@@ -128,11 +171,14 @@ export default async function DashboardLayout({
                     </p>
                     <p className="text-[11px] text-zinc-500 font-mono">Admin</p>
                   </div>
-                  <form action="/api/auth/signout" method="post">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
-                      <LogOut className="h-4 w-4" />
-                    </Button>
-                  </form>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
+                    onClick={handleSignOut}
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             </div>
