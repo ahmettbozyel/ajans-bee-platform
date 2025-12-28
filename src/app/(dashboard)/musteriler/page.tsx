@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
@@ -194,246 +193,236 @@ export default function MusterilerPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Header - Sticky */}
-      <header className="sticky top-0 z-40 glass border-b border-zinc-200 dark:border-white/5">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div>
-            <h1 className="text-xl font-bold text-violet-600 dark:text-violet-400">Markalar</h1>
-            <p className="text-sm text-zinc-500 mt-0.5">Marka brief&apos;lerini yönetin</p>
-          </div>
-          
-          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-            <SheetTrigger asChild>
-              <Button 
-                onClick={handleNewCustomer}
-                className="btn-press px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-medium shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-shadow"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Yeni Marka
-              </Button>
-            </SheetTrigger>
-            <SheetContent className="w-full sm:max-w-xl overflow-y-auto glass">
-              <SheetHeader>
-                <SheetTitle>Yeni Marka Ekle</SheetTitle>
-                <SheetDescription>
-                  Marka brief bilgilerini girin. AI içerik üretirken bu bilgileri kullanacak.
-                </SheetDescription>
-              </SheetHeader>
-              
-              <div className="mt-6">
-                <CustomerBriefForm
-                  customer={null}
-                  onSave={handleSaveCustomer}
-                  onCancel={() => setSheetOpen(false)}
-                  isLoading={formLoading}
-                />
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
-      </header>
-
-      {/* Content */}
-      <div className="p-6 content-bg min-h-screen">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-6">
-          {/* Toplam Marka */}
-          <div className="glass-card rounded-2xl p-5 glow-indigo card-hover">
-            <div className="p-3 rounded-xl bg-indigo-100 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 w-fit mb-4">
-              <Building2 className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">{customers.length}</p>
-            <p className="text-sm text-zinc-500">Toplam Marka</p>
-          </div>
-
-          {/* Aktif */}
-          <div className="glass-card rounded-2xl p-5 glow-emerald card-hover">
-            <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 w-fit mb-4">
-              <Eye className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">{activeCount}</p>
-            <p className="text-sm text-zinc-500">Aktif</p>
-          </div>
-
-          {/* Pasif */}
-          <div className="glass-card rounded-2xl p-5 glow-amber card-hover">
-            <div className="p-3 rounded-xl bg-amber-100 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 w-fit mb-4">
-              <PauseCircle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-            </div>
-            <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">{inactiveCount}</p>
-            <p className="text-sm text-zinc-500">Pasif</p>
-          </div>
-
-          {/* İçerik Üretildi */}
-          <div className="glass-card rounded-2xl p-5 glow-violet card-hover">
-            <div className="p-3 rounded-xl bg-violet-100 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 w-fit mb-4">
-              <Sparkles className="w-6 h-6 text-violet-600 dark:text-violet-400" />
-            </div>
-            <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">0</p>
-            <p className="text-sm text-zinc-500">İçerik Üretildi</p>
-          </div>
-        </div>
-
-        {/* Search and Filter */}
-        <div className="glass-card rounded-2xl p-4 border border-zinc-200 dark:border-white/10 mb-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-              <Input
-                placeholder="Marka ara..."
-                className="pl-10 input-glow bg-zinc-100 dark:bg-white/5 border-zinc-200 dark:border-white/10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+    <div className="space-y-6">
+      {/* Action Bar - Yeni Marka butonu */}
+      <div className="flex items-center justify-end">
+        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+          <SheetTrigger asChild>
+            <Button 
+              onClick={handleNewCustomer}
+              className="btn-press px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-medium shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-shadow"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Yeni Marka
+            </Button>
+          </SheetTrigger>
+          <SheetContent className="w-full sm:max-w-xl overflow-y-auto glass">
+            <SheetHeader>
+              <SheetTitle>Yeni Marka Ekle</SheetTitle>
+              <SheetDescription>
+                Marka brief bilgilerini girin. AI içerik üretirken bu bilgileri kullanacak.
+              </SheetDescription>
+            </SheetHeader>
+            
+            <div className="mt-6">
+              <CustomerBriefForm
+                customer={null}
+                onSave={handleSaveCustomer}
+                onCancel={() => setSheetOpen(false)}
+                isLoading={formLoading}
               />
             </div>
-            
-            {inactiveCount > 0 && (
-              <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10">
-                <Switch
-                  id="show-inactive"
-                  checked={showInactive}
-                  onCheckedChange={setShowInactive}
-                />
-                <Label htmlFor="show-inactive" className="text-sm cursor-pointer flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
-                  {showInactive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                  Pasif ({inactiveCount})
-                </Label>
-              </div>
-            )}
+          </SheetContent>
+        </Sheet>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+        {/* Toplam Marka */}
+        <div className="glass-card rounded-2xl p-5 glow-indigo card-hover">
+          <div className="p-3 rounded-xl bg-indigo-100 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 w-fit mb-4">
+            <Building2 className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
           </div>
+          <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">{customers.length}</p>
+          <p className="text-sm text-zinc-500">Toplam Marka</p>
         </div>
 
-        {/* Section Title */}
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-white mb-4">
-          {showInactive ? 'Tüm Markalar' : 'Aktif Markalar'} ({filteredCustomers.length})
-        </h2>
-
-        {/* Customer Cards */}
-        {loading ? (
-          <div className="glass-card rounded-2xl p-12 text-center text-zinc-500">
-            <div className="animate-pulse">Yükleniyor...</div>
+        {/* Aktif */}
+        <div className="glass-card rounded-2xl p-5 glow-emerald card-hover">
+          <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 w-fit mb-4">
+            <Eye className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
           </div>
-        ) : filteredCustomers.length === 0 ? (
-          <div className="glass-card rounded-2xl p-12 text-center border border-zinc-200 dark:border-white/10">
-            <div className="w-16 h-16 rounded-2xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 flex items-center justify-center mx-auto mb-4 float-animation">
-              <Building2 className="w-8 h-8 text-zinc-400" />
+          <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">{activeCount}</p>
+          <p className="text-sm text-zinc-500">Aktif</p>
+        </div>
+
+        {/* Pasif */}
+        <div className="glass-card rounded-2xl p-5 glow-amber card-hover">
+          <div className="p-3 rounded-xl bg-amber-100 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 w-fit mb-4">
+            <PauseCircle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+          </div>
+          <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">{inactiveCount}</p>
+          <p className="text-sm text-zinc-500">Pasif</p>
+        </div>
+
+        {/* İçerik Üretildi */}
+        <div className="glass-card rounded-2xl p-5 glow-violet card-hover">
+          <div className="p-3 rounded-xl bg-violet-100 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 w-fit mb-4">
+            <Sparkles className="w-6 h-6 text-violet-600 dark:text-violet-400" />
+          </div>
+          <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">0</p>
+          <p className="text-sm text-zinc-500">İçerik Üretildi</p>
+        </div>
+      </div>
+
+      {/* Search and Filter */}
+      <div className="glass-card rounded-2xl p-4 border border-zinc-200 dark:border-white/10">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+            <Input
+              placeholder="Marka ara..."
+              className="pl-10 input-glow bg-zinc-100 dark:bg-white/5 border-zinc-200 dark:border-white/10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          
+          {inactiveCount > 0 && (
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10">
+              <Switch
+                id="show-inactive"
+                checked={showInactive}
+                onCheckedChange={setShowInactive}
+              />
+              <Label htmlFor="show-inactive" className="text-sm cursor-pointer flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+                {showInactive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                Pasif ({inactiveCount})
+              </Label>
             </div>
-            <h3 className="font-semibold text-zinc-900 dark:text-white mb-2">
-              {searchQuery ? 'Marka bulunamadı' : 'Henüz marka eklenmedi'}
-            </h3>
-            <p className="text-sm text-zinc-500 mb-6">
-              {searchQuery ? 'Aramanızla eşleşen marka yok.' : 'İlk markayı ekleyerek başla! 🐝'}
-            </p>
-            {!searchQuery && (
-              <Button 
-                onClick={handleNewCustomer}
-                className="btn-press px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-medium shadow-lg shadow-indigo-500/25"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                İlk Markayı Ekle
-              </Button>
-            )}
+          )}
+        </div>
+      </div>
+
+      {/* Section Title */}
+      <h2 className="text-base font-semibold text-zinc-900 dark:text-white">
+        {showInactive ? 'Tüm Markalar' : 'Aktif Markalar'} ({filteredCustomers.length})
+      </h2>
+
+      {/* Customer Cards */}
+      {loading ? (
+        <div className="glass-card rounded-2xl p-12 text-center text-zinc-500">
+          <div className="animate-pulse">Yükleniyor...</div>
+        </div>
+      ) : filteredCustomers.length === 0 ? (
+        <div className="glass-card rounded-2xl p-12 text-center border border-zinc-200 dark:border-white/10">
+          <div className="w-16 h-16 rounded-2xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 flex items-center justify-center mx-auto mb-4 float-animation">
+            <Building2 className="w-8 h-8 text-zinc-400" />
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredCustomers.map((customer, index) => {
-              const completion = calculateBriefCompletion(customer)
-              const isInactive = customer.status === 'inactive'
-              const colors = getProgressColor(completion)
-              const gradient = cardGradients[index % cardGradients.length]
-              
-              return (
-                <div 
-                  key={customer.id} 
-                  className={`glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10 card-hover cursor-pointer group ${
-                    isInactive ? 'opacity-60' : ''
-                  }`}
-                  onClick={() => handleCustomerClick(customer)}
-                >
-                  {/* Header */}
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${gradient.bg} border ${gradient.border} flex items-center justify-center flex-shrink-0`}>
-                      <Building2 className={`w-6 h-6 ${gradient.icon}`} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-zinc-900 dark:text-white truncate">{customer.name}</h3>
-                      {customer.website_url && (
-                        <p className="text-xs text-zinc-500 font-mono truncate">
-                          {(() => {
-                            try { return new URL(customer.website_url).hostname } 
-                            catch { return customer.website_url }
-                          })()}
-                        </p>
-                      )}
-                    </div>
-                    
-                    {/* Actions - Hover */}
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          router.push(`/customers/${customer.id}`)
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-lg text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setCustomerToDelete(customer)
-                          setDeleteDialogOpen(true)
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+          <h3 className="font-semibold text-zinc-900 dark:text-white mb-2">
+            {searchQuery ? 'Marka bulunamadı' : 'Henüz marka eklenmedi'}
+          </h3>
+          <p className="text-sm text-zinc-500 mb-6">
+            {searchQuery ? 'Aramanızla eşleşen marka yok.' : 'İlk markayı ekleyerek başla! 🐝'}
+          </p>
+          {!searchQuery && (
+            <Button 
+              onClick={handleNewCustomer}
+              className="btn-press px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-medium shadow-lg shadow-indigo-500/25"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              İlk Markayı Ekle
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredCustomers.map((customer, index) => {
+            const completion = calculateBriefCompletion(customer)
+            const isInactive = customer.status === 'inactive'
+            const colors = getProgressColor(completion)
+            const gradient = cardGradients[index % cardGradients.length]
+            
+            return (
+              <div 
+                key={customer.id} 
+                className={`glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10 card-hover cursor-pointer group ${
+                  isInactive ? 'opacity-60' : ''
+                }`}
+                onClick={() => handleCustomerClick(customer)}
+              >
+                {/* Header */}
+                <div className="flex items-start gap-4 mb-4">
+                  <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${gradient.bg} border ${gradient.border} flex items-center justify-center flex-shrink-0`}>
+                    <Building2 className={`w-6 h-6 ${gradient.icon}`} />
                   </div>
-
-                  {/* Badges */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {customer.customer_type && (
-                      <span className="text-xs px-2.5 py-1 rounded-full bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-400 font-medium border border-violet-200 dark:border-violet-500/20">
-                        {getCustomerTypeLabel(customer.customer_type)}
-                      </span>
-                    )}
-                    {customer.sector && (
-                      <span className="text-xs px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
-                        {getSectorLabel(customer.sector)}
-                      </span>
-                    )}
-                    {isInactive && (
-                      <span className="text-xs px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-500">
-                        Pasif
-                      </span>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-zinc-900 dark:text-white truncate">{customer.name}</h3>
+                    {customer.website_url && (
+                      <p className="text-xs text-zinc-500 font-mono truncate">
+                        {(() => {
+                          try { return new URL(customer.website_url).hostname } 
+                          catch { return customer.website_url }
+                        })()}
+                      </p>
                     )}
                   </div>
-
-                  {/* Progress Bar */}
-                  <div>
-                    <div className="flex justify-between mb-1.5">
-                      <span className="text-xs text-zinc-500">Brief</span>
-                      <span className={`text-xs font-mono font-semibold ${colors.text}`}>%{completion}</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-zinc-200 dark:bg-white/10">
-                      <div 
-                        className={`h-full rounded-full bg-gradient-to-r ${colors.bar} transition-all duration-500`}
-                        style={{ width: `${completion}%` }}
-                      />
-                    </div>
+                  
+                  {/* Actions - Hover */}
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        router.push(`/customers/${customer.id}`)
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-lg text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setCustomerToDelete(customer)
+                        setDeleteDialogOpen(true)
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
+
+                {/* Badges */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {customer.customer_type && (
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-400 font-medium border border-violet-200 dark:border-violet-500/20">
+                      {getCustomerTypeLabel(customer.customer_type)}
+                    </span>
+                  )}
+                  {customer.sector && (
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                      {getSectorLabel(customer.sector)}
+                    </span>
+                  )}
+                  {isInactive && (
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-500">
+                      Pasif
+                    </span>
+                  )}
+                </div>
+
+                {/* Progress Bar */}
+                <div>
+                  <div className="flex justify-between mb-1.5">
+                    <span className="text-xs text-zinc-500">Brief</span>
+                    <span className={`text-xs font-mono font-semibold ${colors.text}`}>%{completion}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-zinc-200 dark:bg-white/10">
+                    <div 
+                      className={`h-full rounded-full bg-gradient-to-r ${colors.bar} transition-all duration-500`}
+                      style={{ width: `${completion}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
