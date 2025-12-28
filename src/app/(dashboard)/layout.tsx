@@ -462,20 +462,24 @@ export default function DashboardLayout({
                 <span className="text-sm font-medium">Giriş/Çıkış</span>
               </Link>
 
-              {/* Ayarlar - sadece admin */}
+              {/* Ayarlar - sadece admin, ayrı bölüm */}
               {isAdmin && (
-                <Link
-                  href="/ayarlar"
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
-                  style={{
-                    background: isActive('/ayarlar') ? styles.menuActiveBg : 'transparent',
-                    borderLeft: isActive('/ayarlar') ? '3px solid #6366f1' : '3px solid transparent',
-                    color: isActive('/ayarlar') ? styles.textPrimary : styles.textSecondary
-                  }}
-                >
-                  <Settings className="w-5 h-5" />
-                  <span className="text-sm font-medium">Ayarlar</span>
-                </Link>
+                <>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 mt-5" style={{ color: styles.textMuted }}>Sistem</p>
+                  
+                  <Link
+                    href="/ayarlar"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
+                    style={{
+                      background: isActive('/ayarlar') ? styles.menuActiveBg : 'transparent',
+                      borderLeft: isActive('/ayarlar') ? '3px solid #6366f1' : '3px solid transparent',
+                      color: isActive('/ayarlar') ? styles.textPrimary : styles.textSecondary
+                    }}
+                  >
+                    <Settings className="w-5 h-5" />
+                    <span className="text-sm font-medium">Ayarlar</span>
+                  </Link>
+                </>
               )}
             </nav>
 
