@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { 
@@ -17,22 +17,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { TopBar } from '@/components/layouts/top-bar'
 import type { User } from '@supabase/supabase-js'
-
-// Karar #18: Sidebar w-64 (256px)
-// Karar #15: Sidebar menü yapısı
-const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard, comingSoon: false },
-  { name: 'Markalar', href: '/musteriler', icon: Building2, comingSoon: false },
-  { name: 'Teknik Hizmetler', href: '/teknik-hizmetler', icon: Server, comingSoon: false },
-]
-
-const tools = [
-  { name: 'İçerik Üret', href: '/icerik-uret', icon: Sparkles, badge: 'AI', comingSoon: false },
-]
-
-const system = [
-  { name: 'Ayarlar', href: '/ayarlar', icon: Settings, comingSoon: true },
-]
 
 // Ajans Bee Logo SVG Component
 function AjansBeeLogoSVG({ className }: { className?: string }) {
@@ -51,8 +35,10 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const router = useRouter()
+  const pathname = usePathname()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [counts, setCounts] = useState({ customers: 0, services: 0 })
   
   const supabase = createClient()
 
@@ -65,6 +51,16 @@ export default function DashboardLayout({
           return
         }
         setUser(user)
+        
+        // Counts yükle
+        const [customersRes, servicesRes] = await Promise.all([
+          supabase.from('customers').select('id', { count: 'exact', head: true }),
+          supabase.from('technical_services').select('id', { count: 'exact', head: true })
+        ])
+        setCounts({
+          customers: customersRes.count || 0,
+          services: servicesRes.count || 0
+        })
       } catch (error) {
         console.error('Auth error:', error)
         router.push('/login')
@@ -74,11 +70,19 @@ export default function DashboardLayout({
     }
     
     getUser()
-  }, [router, supabase.auth])
+  }, [router, supabase])
 
   async function handleSignOut() {
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  // Aktif sayfa kontrolü
+  const isActive = (href: string) => {
+    if (href === '/dashboard' || href === '/') {
+      return pathname === '/' || pathname === '/dashboard'
+    }
+    return pathname.startsWith(href)
   }
 
   // Loading state
@@ -124,7 +128,7 @@ export default function DashboardLayout({
                   <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-amber-400/20 to-yellow-500/10 border border-amber-500/30 flex items-center justify-center shadow-lg shadow-amber-500/10">
                     <AjansBeeLogoSVG className="w-7 h-7" />
                   </div>
-                  {/* Online Status Dot */}
+                  {/* Online Status Dot - UI Kit */}
                   <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-zinc-900 pulse-status"></div>
                 </div>
                 <div>
@@ -140,84 +144,85 @@ export default function DashboardLayout({
               <div className="mb-4">
                 <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-600 uppercase tracking-widest px-3 mb-2">Ana Menü</p>
                 
-                {navigation.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.comingSoon ? '#' : item.href}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
-                      item.comingSoon 
-                        ? 'text-zinc-400 dark:text-zinc-500 opacity-50 cursor-not-allowed' 
-                        : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'
-                    }`}
-                    onClick={item.comingSoon ? (e) => e.preventDefault() : undefined}
-                  >
-                    <item.icon className={`h-5 w-5 ${
-                      item.comingSoon 
-                        ? '' 
-                        : 'group-hover:text-indigo-500 dark:group-hover:text-indigo-400'
-                    } transition-colors`} />
-                    <span className="text-sm font-medium">{item.name}</span>
-                    {item.comingSoon && (
-                      <span className="ml-auto text-[10px] bg-zinc-200 dark:bg-zinc-800 text-zinc-500 px-2 py-0.5 rounded">Yakında</span>
-                    )}
-                  </Link>
-                ))}
+                {/* Dashboard */}
+                <Link
+                  href="/dashboard"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
+                    isActive('/dashboard') 
+                      ? 'menu-active text-zinc-900 dark:text-white' 
+                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'
+                  }`}
+                >
+                  <LayoutDashboard className={`h-5 w-5 ${isActive('/dashboard') ? 'text-indigo-500' : 'group-hover:text-indigo-500 dark:group-hover:text-indigo-400'} transition-colors`} />
+                  <span className="text-sm font-medium">Dashboard</span>
+                </Link>
+
+                {/* Markalar */}
+                <Link
+                  href="/musteriler"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
+                    isActive('/musteriler') 
+                      ? 'menu-active text-zinc-900 dark:text-white' 
+                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Building2 className={`h-5 w-5 ${isActive('/musteriler') ? 'text-violet-500' : 'group-hover:text-violet-500 dark:group-hover:text-violet-400'} transition-colors`} />
+                  <span className="text-sm font-medium">Markalar</span>
+                  {counts.customers > 0 && (
+                    <span className="ml-auto text-[11px] bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400 px-2 py-0.5 rounded-full font-mono">{counts.customers}</span>
+                  )}
+                </Link>
+
+                {/* Teknik Hizmetler */}
+                <Link
+                  href="/teknik-hizmetler"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
+                    isActive('/teknik-hizmetler') 
+                      ? 'menu-active text-zinc-900 dark:text-white' 
+                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Server className={`h-5 w-5 ${isActive('/teknik-hizmetler') ? 'text-amber-500' : 'group-hover:text-amber-500 dark:group-hover:text-amber-400'} transition-colors`} />
+                  <span className="text-sm font-medium">Teknik Hizmetler</span>
+                  {counts.services > 0 && (
+                    <span className="ml-auto text-[11px] bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full font-mono">{counts.services}</span>
+                  )}
+                </Link>
               </div>
 
               {/* Araçlar */}
               <div className="mb-4">
                 <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-600 uppercase tracking-widest px-3 mb-2 mt-5">Araçlar</p>
                 
-                {tools.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.comingSoon ? '#' : item.href}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
-                      item.comingSoon 
-                        ? 'text-zinc-400 dark:text-zinc-500 opacity-50 cursor-not-allowed' 
-                        : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'
-                    }`}
-                    onClick={item.comingSoon ? (e) => e.preventDefault() : undefined}
-                  >
-                    <item.icon className={`h-5 w-5 ${
-                      item.comingSoon 
-                        ? '' 
-                        : 'group-hover:text-fuchsia-500 dark:group-hover:text-fuchsia-400'
-                    } transition-colors`} />
-                    <span className="text-sm font-medium">{item.name}</span>
-                    {item.badge && (
-                      <span className="ml-auto text-[10px] bg-fuchsia-500/20 text-fuchsia-400 px-2 py-0.5 rounded border border-fuchsia-500/20">{item.badge}</span>
-                    )}
-                  </Link>
-                ))}
+                {/* İçerik Üret */}
+                <Link
+                  href="/icerik-uret"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
+                    isActive('/icerik-uret') 
+                      ? 'menu-active text-zinc-900 dark:text-white' 
+                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Sparkles className={`h-5 w-5 ${isActive('/icerik-uret') ? 'text-fuchsia-500' : 'group-hover:text-fuchsia-500 dark:group-hover:text-fuchsia-400'} transition-colors`} />
+                  <span className="text-sm font-medium">İçerik Üret</span>
+                  <span className="ml-auto text-[10px] bg-fuchsia-500/20 text-fuchsia-400 px-2 py-0.5 rounded border border-fuchsia-500/20">AI</span>
+                </Link>
               </div>
 
               {/* Sistem */}
               <div>
                 <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-600 uppercase tracking-widest px-3 mb-2 mt-5">Sistem</p>
                 
-                {system.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.comingSoon ? '#' : item.href}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
-                      item.comingSoon 
-                        ? 'text-zinc-400 dark:text-zinc-500 opacity-50 cursor-not-allowed' 
-                        : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'
-                    }`}
-                    onClick={item.comingSoon ? (e) => e.preventDefault() : undefined}
-                  >
-                    <item.icon className={`h-5 w-5 ${
-                      item.comingSoon 
-                        ? '' 
-                        : 'group-hover:text-indigo-500 dark:group-hover:text-indigo-400'
-                    } transition-colors`} />
-                    <span className="text-sm font-medium">{item.name}</span>
-                    {item.comingSoon && (
-                      <span className="ml-auto text-[10px] bg-zinc-200 dark:bg-zinc-800 text-zinc-500 px-2 py-0.5 rounded">Yakında</span>
-                    )}
-                  </Link>
-                ))}
+                {/* Ayarlar */}
+                <Link
+                  href="#"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 dark:text-zinc-500 opacity-50 cursor-not-allowed"
+                  onClick={(e) => e.preventDefault()}
+                >
+                  <Settings className="h-5 w-5" />
+                  <span className="text-sm font-medium">Ayarlar</span>
+                  <span className="ml-auto text-[10px] bg-zinc-200 dark:bg-zinc-800 text-zinc-500 px-2 py-0.5 rounded">Yakında</span>
+                </Link>
               </div>
             </nav>
 
@@ -258,9 +263,7 @@ export default function DashboardLayout({
           </div>
           
           <div className="content-bg min-h-screen transition-colors duration-300">
-            <div className="p-6">
-              {children}
-            </div>
+            {children}
           </div>
         </main>
       </div>
