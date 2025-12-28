@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { z } from 'zod'
 
@@ -13,17 +12,9 @@ const serviceProviderSchema = z.object({
   notes: z.string().optional().nullable()
 })
 
-// GET - List all service providers
+// GET - List all service providers (public - no auth needed)
 export async function GET() {
   try {
-    const supabase = await createClient()
-    
-    // Auth kontrolü
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const adminClient = createAdminClient()
     const { data, error } = await adminClient
       .from('service_providers')
@@ -32,6 +23,7 @@ export async function GET() {
       .order('name')
 
     if (error) {
+      console.error('GET /api/service-providers error:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
@@ -45,14 +37,6 @@ export async function GET() {
 // POST - Create new service provider
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    
-    // Auth kontrolü
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const body = await request.json()
     
     // Validation

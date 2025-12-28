@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { z } from 'zod'
 
@@ -24,15 +23,8 @@ export async function GET(
 ) {
   try {
     const { id } = await context.params
-    const supabase = await createClient()
-    
-    // Auth kontrolü
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const adminClient = createAdminClient()
+    
     const { data, error } = await adminClient
       .from('service_providers')
       .select('*')
@@ -60,14 +52,6 @@ export async function PATCH(
 ) {
   try {
     const { id } = await context.params
-    const supabase = await createClient()
-    
-    // Auth kontrolü
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const body = await request.json()
     
     // Validation
@@ -110,14 +94,6 @@ export async function DELETE(
 ) {
   try {
     const { id } = await context.params
-    const supabase = await createClient()
-    
-    // Auth kontrolü
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const adminClient = createAdminClient()
     
     // Önce bu sağlayıcıya bağlı servis var mı kontrol et
