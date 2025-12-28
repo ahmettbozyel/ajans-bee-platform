@@ -203,16 +203,13 @@ function SectionHeader({ section, isOpen, onToggle, completion }: SectionHeaderP
 }
 
 // Progress Overview Grid - UI Kit HTML ile UYUMLU
-// Artık tıklanabilir ve ilgili section'a scroll ediyor
+// 4 sütunlu grid - 2 satır halinde (4 + 3)
 interface ProgressOverviewProps {
   sections: { label: string; filled: number; total: number; id: string }[]
   onSectionClick: (sectionId: string) => void
 }
 
 function ProgressOverview({ sections, onSectionClick }: ProgressOverviewProps) {
-  // 7 section olduğunda grid ayarı
-  const gridCols = sections.length <= 6 ? 'grid-cols-6' : 'grid-cols-7'
-  
   return (
     <div className="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900/50">
       <div className="flex items-center justify-between mb-4">
@@ -222,7 +219,8 @@ function ProgressOverview({ sections, onSectionClick }: ProgressOverviewProps) {
         </h2>
         <span className="text-xs text-zinc-500 dark:text-zinc-400">{sections.length} bölüm</span>
       </div>
-      <div className={cn("grid gap-3", gridCols)}>
+      {/* 4 sütunlu grid - 7 item için 2 satır olacak (4 üst, 3 alt) */}
+      <div className="grid grid-cols-4 gap-3">
         {sections.map((section, i) => {
           const isComplete = section.filled === section.total
           const percentage = section.total > 0 ? Math.round((section.filled / section.total) * 100) : 0
