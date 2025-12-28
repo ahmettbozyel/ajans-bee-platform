@@ -678,3 +678,345 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
                   className="input-glow"
                 />
               </div>
+              
+              {/* Cinsiyet */}
+              <div>
+                <Label className="mb-2 block">Cinsiyet</Label>
+                <div className="flex gap-3">
+                  <label className="flex-1 relative cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="peer sr-only" 
+                      checked={targetGender.includes('female')}
+                      onChange={() => {
+                        if (targetGender.includes('female')) {
+                          setTargetGender(targetGender.filter(g => g !== 'female'))
+                        } else {
+                          setTargetGender([...targetGender, 'female'])
+                        }
+                      }}
+                    />
+                    <div className="p-3 rounded-xl border-2 border-zinc-200 dark:border-white/10 peer-checked:border-violet-500 peer-checked:bg-violet-50 dark:peer-checked:bg-violet-500/10 text-center transition-all">
+                      <span className="text-sm font-medium text-zinc-900 dark:text-white">Kadın</span>
+                    </div>
+                  </label>
+                  <label className="flex-1 relative cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="peer sr-only" 
+                      checked={targetGender.includes('male')}
+                      onChange={() => {
+                        if (targetGender.includes('male')) {
+                          setTargetGender(targetGender.filter(g => g !== 'male'))
+                        } else {
+                          setTargetGender([...targetGender, 'male'])
+                        }
+                      }}
+                    />
+                    <div className="p-3 rounded-xl border-2 border-zinc-200 dark:border-white/10 peer-checked:border-violet-500 peer-checked:bg-violet-50 dark:peer-checked:bg-violet-500/10 text-center transition-all">
+                      <span className="text-sm font-medium text-zinc-900 dark:text-white">Erkek</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+              
+              {/* Hedef Kitle Açıklaması */}
+              <div>
+                <Label className="mb-2 block">Hedef Kitle Açıklaması</Label>
+                <Textarea 
+                  value={formData.target_audience || ''} 
+                  onChange={(e) => setFormData({ ...formData, target_audience: e.target.value })}
+                  placeholder="Örn: Kadınlar ve hediye alma potansiyeli olan erkekler. Orta-üst gelir grubu..."
+                  className="input-glow resize-none"
+                  rows={3}
+                />
+              </div>
+              
+              {/* Lokasyon */}
+              <div>
+                <Label className="mb-2 block">Lokasyon</Label>
+                <Input 
+                  value={formData.target_geography || ''} 
+                  onChange={(e) => setFormData({ ...formData, target_geography: e.target.value })}
+                  placeholder="Örn: Türkiye geneli, özellikle büyükşehirler"
+                  className="input-glow"
+                />
+              </div>
+              
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* ==================== SECTION 3: ÜRÜN/HİZMET ==================== */}
+      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5">
+        <SectionHeader 
+          section={BRIEF_SECTIONS_CONFIG.urunHizmet}
+          isOpen={openSections.includes('urun-hizmet')}
+          onToggle={() => toggleSection('urun-hizmet')}
+          completion={getSectionCompletion('urun-hizmet')}
+        />
+        {openSections.includes('urun-hizmet') && (
+          <div className="px-5 pb-5">
+            <div className="pt-4 border-t border-zinc-200 dark:border-white/5 space-y-5">
+              
+              {/* Ana Ürünler */}
+              <div>
+                <Label className="flex items-center gap-1 mb-2">
+                  Ana Ürün/Hizmetler <span className="text-rose-500">*</span>
+                </Label>
+                <TagInput 
+                  value={formData.top_products || []}
+                  onChange={(v) => setFormData({ ...formData, top_products: v })}
+                  placeholder="+ Yeni ürün ekle..."
+                  colorClass="cyan"
+                />
+              </div>
+              
+              {/* Fiyat Aralığı */}
+              <div>
+                <Label className="mb-2 block">Fiyat Aralığı</Label>
+                <div className="flex gap-3 items-center">
+                  <div className="flex-1 relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">₺</span>
+                    <Input 
+                      value={priceRange.min} 
+                      onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
+                      placeholder="Min"
+                      className="input-glow pl-8"
+                    />
+                  </div>
+                  <span className="text-zinc-400">—</span>
+                  <div className="flex-1 relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">₺</span>
+                    <Input 
+                      value={priceRange.max} 
+                      onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
+                      placeholder="Max"
+                      className="input-glow pl-8"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {/* En Çok Satan */}
+              <div>
+                <Label className="mb-2 block">En Çok Satan Ürünler</Label>
+                <Textarea 
+                  value={bestSellers} 
+                  onChange={(e) => setBestSellers(e.target.value)}
+                  placeholder="Hangi ürünler en çok satıyor? İçerik üretiminde öncelik verilebilir."
+                  className="input-glow resize-none"
+                  rows={2}
+                />
+              </div>
+              
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* ==================== SECTION 4: RAKİPLER ==================== */}
+      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5">
+        <SectionHeader 
+          section={BRIEF_SECTIONS_CONFIG.rakipler}
+          isOpen={openSections.includes('rakipler')}
+          onToggle={() => toggleSection('rakipler')}
+          completion={getSectionCompletion('rakipler')}
+        />
+        {openSections.includes('rakipler') && (
+          <div className="px-5 pb-5">
+            <div className="pt-4 border-t border-zinc-200 dark:border-white/5 space-y-5">
+              
+              {/* Rakipler */}
+              <div>
+                <Label className="mb-2 block">Ana Rakipler</Label>
+                <TagInput 
+                  value={(formData.competitors || []).map(c => typeof c === 'string' ? c : c.name)}
+                  onChange={(v) => setFormData({ ...formData, competitors: v.map(name => ({ name, website: '', notes: '' })) })}
+                  placeholder="+ Rakip ekle..."
+                  colorClass="amber"
+                />
+              </div>
+              
+              {/* Rakiplerden Farkınız */}
+              <div>
+                <Label className="mb-2 block">Rakiplerden Farkınız</Label>
+                <Textarea 
+                  value={differentiation} 
+                  onChange={(e) => setDifferentiation(e.target.value)}
+                  placeholder="Rakiplerinizden sizi ayıran özellikler neler?"
+                  className="input-glow resize-none"
+                  rows={2}
+                />
+              </div>
+              
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* ==================== SECTION 5: KURALLAR ==================== */}
+      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5">
+        <SectionHeader 
+          section={BRIEF_SECTIONS_CONFIG.kurallar}
+          isOpen={openSections.includes('kurallar')}
+          onToggle={() => toggleSection('kurallar')}
+          completion={getSectionCompletion('kurallar')}
+        />
+        {openSections.includes('kurallar') && (
+          <div className="px-5 pb-5">
+            <div className="pt-4 border-t border-zinc-200 dark:border-white/5 space-y-5">
+              
+              {/* Kullanılmaması Gereken Kelimeler */}
+              <div>
+                <Label className="mb-2 block">Kullanılmaması Gereken Kelimeler</Label>
+                <TagInput 
+                  value={formData.do_not_do || []}
+                  onChange={(v) => setFormData({ ...formData, do_not_do: v })}
+                  placeholder="+ Kelime ekle..."
+                  colorClass="rose"
+                />
+              </div>
+              
+              {/* Hashtag Tercihi */}
+              <div>
+                <Label className="mb-2 block">Hashtag Tercihi</Label>
+                <Select value={hashtagPreference} onValueChange={setHashtagPreference}>
+                  <SelectTrigger className="input-glow">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="few">Az hashtag (3-5 adet)</SelectItem>
+                    <SelectItem value="medium">Orta (5-10 adet)</SelectItem>
+                    <SelectItem value="many">Çok (10+ adet)</SelectItem>
+                    <SelectItem value="none">Hashtag kullanma</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Emoji Tercihi */}
+              <div>
+                <Label className="mb-2 block">Emoji Kullanımı</Label>
+                <div className="grid grid-cols-3 gap-3">
+                  <OptionCard
+                    label="Hiç"
+                    selected={emojiPreference === 'none'}
+                    onChange={() => setEmojiPreference('none')}
+                    colorClass="rose"
+                  />
+                  <OptionCard
+                    label="Az"
+                    selected={emojiPreference === 'moderate'}
+                    onChange={() => setEmojiPreference('moderate')}
+                    colorClass="rose"
+                  />
+                  <OptionCard
+                    label="Çok"
+                    selected={emojiPreference === 'many'}
+                    onChange={() => setEmojiPreference('many')}
+                    colorClass="rose"
+                  />
+                </div>
+              </div>
+              
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* ==================== SECTION 6: ÖZEL GÜNLER ==================== */}
+      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5">
+        <SectionHeader 
+          section={BRIEF_SECTIONS_CONFIG.ozelGunler}
+          isOpen={openSections.includes('ozel-gunler')}
+          onToggle={() => toggleSection('ozel-gunler')}
+          completion={getSectionCompletion('ozel-gunler')}
+        />
+        {openSections.includes('ozel-gunler') && (
+          <div className="px-5 pb-5">
+            <div className="pt-4 border-t border-zinc-200 dark:border-white/5 space-y-5">
+              
+              {/* Genel Özel Günler */}
+              <div>
+                <Label className="mb-2 block">İçerik Üretilecek Özel Günler</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {GENERAL_HOLIDAYS.map((holiday) => (
+                    <label key={holiday.id} className="relative cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="peer sr-only" 
+                        checked={selectedHolidays.includes(holiday.id)}
+                        onChange={() => {
+                          if (selectedHolidays.includes(holiday.id)) {
+                            setSelectedHolidays(selectedHolidays.filter(h => h !== holiday.id))
+                          } else {
+                            setSelectedHolidays([...selectedHolidays, holiday.id])
+                          }
+                        }}
+                      />
+                      <div className="p-2.5 rounded-lg border border-zinc-200 dark:border-white/10 peer-checked:border-fuchsia-500 peer-checked:bg-fuchsia-50 dark:peer-checked:bg-fuchsia-500/10 text-center text-xs font-medium text-zinc-700 dark:text-zinc-300 peer-checked:text-fuchsia-700 dark:peer-checked:text-fuchsia-400 transition-all">
+                        {holiday.label}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Markaya Özel Tarihler */}
+              <div>
+                <Label className="mb-2 block">Markaya Özel Tarihler</Label>
+                <Textarea 
+                  value={(formData.special_events || []).map(e => typeof e === 'string' ? e : e.name).join('\n')} 
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    special_events: e.target.value.split('\n').filter(Boolean).map(name => ({ name, date: '', description: '' }))
+                  })}
+                  placeholder="Örn: Kuruluş yıldönümü (15 Mart), mağaza açılışları..."
+                  className="input-glow resize-none"
+                  rows={2}
+                />
+              </div>
+              
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* Bottom Actions */}
+      <div className="flex items-center justify-between pt-4">
+        <p className="text-sm text-zinc-500">
+          <span className="text-emerald-600 dark:text-emerald-400 font-medium">{totalFilled}</span> / {totalFields} alan dolduruldu
+        </p>
+        <div className="flex gap-3">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onCancel}
+            className="btn-press"
+          >
+            İptal
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={isLoading}
+            className="btn-press bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-500/25"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Kaydediliyor...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                Kaydet
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+      
+    </form>
+  )
+}
