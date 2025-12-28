@@ -1,7 +1,7 @@
 // @ts-nocheck
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, use, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,7 @@ import {
   History, CalendarHeart, ClipboardList, CheckCircle, Circle, CircleDot, Settings
 } from 'lucide-react'
 import { CustomerBriefForm } from '@/components/customers/customer-brief-form'
+import { CustomerFilesTab } from '@/components/customers/customer-files-tab'
 import type { Customer, CustomerFormData } from '@/lib/customer-types'
 import { SECTORS, BRAND_VOICES, calculateBriefCompletion, CUSTOMER_TYPES } from '@/lib/customer-types'
 import { cn } from '@/lib/utils'
@@ -102,37 +103,46 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [fileCount, setFileCount] = useState(0)
   
   // Tab state - Default: Dashboard
   const [activeTab, setActiveTab] = useState('dashboard')
 
   // Fetch customer
-  useEffect(() => {
-    async function fetchCustomer() {
-      setLoading(true)
-      setError(null)
+  const fetchCustomer = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('id', id)
+        .single()
+
+      if (error) throw error
+      if (!data) throw new Error('Marka bulunamadı')
       
-      try {
-        const { data, error } = await supabase
-          .from('customers')
-          .select('*')
-          .eq('id', id)
-          .single()
-
-        if (error) throw error
-        if (!data) throw new Error('Marka bulunamadı')
-        
-        setCustomer(data)
-      } catch (err) {
-        console.error('Error fetching customer:', err)
-        setError('Marka yüklenirken bir hata oluştu')
-      } finally {
-        setLoading(false)
-      }
+      setCustomer(data)
+      
+      // Fetch file count
+      const { count } = await supabase
+        .from('customer_files')
+        .select('*', { count: 'exact', head: true })
+        .eq('customer_id', id)
+      
+      setFileCount(count || 0)
+    } catch (err) {
+      console.error('Error fetching customer:', err)
+      setError('Marka yüklenirken bir hata oluştu')
+    } finally {
+      setLoading(false)
     }
-
-    fetchCustomer()
   }, [id, supabase])
+
+  useEffect(() => {
+    fetchCustomer()
+  }, [fetchCustomer])
 
   // Save customer
   async function handleSaveCustomer(formData: CustomerFormData) {
@@ -385,6 +395,9 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
               >
                 <FolderOpen className="w-4 h-4" />
                 <span className="hidden lg:inline">Dosyalar</span>
+                {fileCount > 0 && (
+                  <span className="text-[10px] bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-full font-mono">{fileCount}</span>
+                )}
               </button>
             </nav>
             
@@ -437,13 +450,16 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
                     <p className="text-2xl font-bold text-zinc-900 dark:text-white">—</p>
                     <p className="text-xs text-zinc-500">Bu Ay</p>
                   </div>
-                  <div className="glass-card rounded-xl p-4 glow-amber card-hover">
+                  <div 
+                    className="glass-card rounded-xl p-4 glow-amber card-hover cursor-pointer"
+                    onClick={() => setActiveTab('dosyalar')}
+                  >
                     <div className="flex items-center gap-3 mb-3">
                       <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-500/10">
                         <FolderOpen className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                       </div>
                     </div>
-                    <p className="text-2xl font-bold text-zinc-900 dark:text-white">—</p>
+                    <p className="text-2xl font-bold text-zinc-900 dark:text-white">{fileCount || '—'}</p>
                     <p className="text-xs text-zinc-500">Dosya</p>
                   </div>
                 </div>
@@ -795,18 +811,10 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
         {/* Dosyalar Tab */}
         {activeTab === 'dosyalar' && (
           <div className="max-w-4xl mx-auto">
-            <div className="glass-card rounded-2xl border border-zinc-200 dark:border-white/10 p-12 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-500/10 dark:to-orange-500/10 border border-amber-200 dark:border-amber-500/20 flex items-center justify-center mx-auto mb-4 float-animation">
-                <FolderOpen className="w-8 h-8 text-amber-600 dark:text-amber-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">Marka Dosyaları</h3>
-              <p className="text-sm text-zinc-500 mb-6">
-                Logolar, görseller, brand guide ve diğer dosyalar
-              </p>
-              <Button variant="outline" className="btn-press">
-                Dosya Yükle
-              </Button>
-            </div>
+            <CustomerFilesTab 
+              customer={customer} 
+              onUpdate={fetchCustomer}
+            />
           </div>
         )}
         
