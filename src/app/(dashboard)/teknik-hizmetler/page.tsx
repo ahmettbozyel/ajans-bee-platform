@@ -7,12 +7,34 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
-import type { TechnicalService, ServiceType, Customer } from '@/lib/customer-types'
+import type { ServiceType } from '@/lib/customer-types'
 import { SERVICE_TYPE_COLORS, SERVICE_TYPES } from '@/lib/customer-types'
-import Link from 'next/link'
+
+// Types
+interface TechnicalServiceRow {
+  id: string
+  user_id: string
+  customer_id: string | null
+  service_type: ServiceType
+  provider: string | null
+  name: string
+  renewal_date: string
+  price: number | null
+  payment_status: string | null
+  notes: string | null
+  created_at: string
+}
+
+interface CustomerRow {
+  id: string
+  name: string
+}
+
+interface ServiceWithCustomer extends TechnicalServiceRow {
+  customer?: CustomerRow
+}
 
 // Helper: Gün farkı hesapla
 function getDaysDiff(date: string): number {
@@ -36,8 +58,7 @@ function ServiceIcon({ type, className }: { type: ServiceType; className?: strin
 
 export default function TeknikHizmetlerPage() {
   const supabase = createClient()
-  const [services, setServices] = useState<(TechnicalService & { customer?: Customer })[]>([])
-  const [customers, setCustomers] = useState<Customer[]>([])
+  const [services, setServices] = useState<ServiceWithCustomer[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilter, setActiveFilter] = useState<ServiceType | 'all'>('all')
@@ -55,19 +76,16 @@ export default function TeknikHizmetlerPage() {
       supabase.from('customers').select('id, name')
     ])
     
-    if (customersRes.data) {
-      setCustomers(customersRes.data as Customer[])
-    }
+    const customersData = (customersRes.data || []) as CustomerRow[]
+    const servicesData = (servicesRes.data || []) as TechnicalServiceRow[]
     
-    if (servicesRes.data) {
-      // Müşteri bilgilerini eşleştir
-      const servicesWithCustomers = servicesRes.data.map(service => ({
-        ...service,
-        customer: customersRes.data?.find(c => c.id === service.customer_id)
-      }))
-      setServices(servicesWithCustomers as (TechnicalService & { customer?: Customer })[])
-    }
+    // Müşteri bilgilerini eşleştir
+    const servicesWithCustomers: ServiceWithCustomer[] = servicesData.map(service => ({
+      ...service,
+      customer: customersData.find(c => c.id === service.customer_id)
+    }))
     
+    setServices(servicesWithCustomers)
     setIsLoading(false)
   }
 
@@ -236,9 +254,7 @@ export default function TeknikHizmetlerPage() {
                     <div className={cn(
                       "h-12 w-12 rounded-xl flex items-center justify-center border",
                       colors.bg,
-                      isOverdue ? "border-rose-200 dark:border-rose-500/20" : 
-                      isUpcoming ? "border-amber-200 dark:border-amber-500/20" :
-                      `border-${service.service_type === 'hosting' ? 'cyan' : service.service_type === 'domain' ? 'amber' : service.service_type === 'ssl' ? 'emerald' : 'violet'}-200 dark:border-${service.service_type === 'hosting' ? 'cyan' : service.service_type === 'domain' ? 'amber' : service.service_type === 'ssl' ? 'emerald' : 'violet'}-500/20`
+                      "border-zinc-200 dark:border-white/10"
                     )}>
                       <ServiceIcon type={service.service_type} className={cn("w-6 h-6", colors.text)} />
                     </div>
