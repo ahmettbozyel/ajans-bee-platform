@@ -6,22 +6,16 @@ import { User } from '@supabase/supabase-js'
 import { AppUser, UserRole, canAccess, canEdit, getDefaultRoute, ModuleSlug } from './auth-types'
 
 interface AuthContextType {
-  // Supabase auth user
   authUser: User | null
-  // App user (public.users)
   appUser: AppUser | null
-  // Loading state
   loading: boolean
-  // Role shortcuts
   role: UserRole | null
   isAdmin: boolean
   isOperasyon: boolean
   isPersonel: boolean
-  // Access functions
   canAccess: (module: ModuleSlug) => boolean
   canEdit: (module: ModuleSlug) => boolean
   getDefaultRoute: () => string
-  // Actions
   signOut: () => Promise<void>
   refreshUser: () => Promise<void>
 }
@@ -36,23 +30,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const supabase = createClient()
 
   const fetchAppUser = async (userId: string): Promise<AppUser | null> => {
-    console.log('[AuthContext] Fetching app user for:', userId)
     try {
-      const { data, error } = await supabase
-        .from('users')
+      const { data, error } = await (supabase
+        .from('users') as any)
         .select('*')
         .eq('id', userId)
         .single()
       
       if (error) {
-        console.error('[AuthContext] Supabase error fetching app user:', error.message, error.code, error.details)
+        console.error('[Auth] Error:', error.message)
         return null
       }
       
-      console.log('[AuthContext] App user fetched successfully:', data)
       return data as AppUser
     } catch (err) {
-      console.error('[AuthContext] Exception fetching app user:', err)
+      console.error('[Auth] Exception:', err)
       return null
     }
   }
@@ -67,37 +59,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
+    let isMounted = true
+    
+    // Timeout: 3 saniye sonra loading'i kapat
+    const timeout = setTimeout(() => {
+      if (isMounted && loading) {
+        console.log('[Auth] Timeout - forcing load complete')
+        setLoading(false)
+      }
+    }, 3000)
+
     const initAuth = async () => {
       try {
-        console.log('[AuthContext] Initializing auth...')
-        const { data: { user }, error } = await supabase.auth.getUser()
+        const { data: { user } } = await supabase.auth.getUser()
         
-        console.log('[AuthContext] Auth user:', user?.email, 'Error:', error?.message)
-        
-        if (user) {
+        if (user && isMounted) {
           setAuthUser(user)
           const appUserData = await fetchAppUser(user.id)
-          console.log('[AuthContext] Setting appUser:', appUserData)
-          setAppUser(appUserData)
+          if (isMounted) setAppUser(appUserData)
         }
       } catch (error) {
-        console.error('[AuthContext] Auth init error:', error)
+        console.error('[Auth] Init error:', error)
       } finally {
-        console.log('[AuthContext] Setting loading to false')
-        setLoading(false)
+        if (isMounted) setLoading(false)
       }
     }
 
     initAuth()
 
-    // Auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('[AuthContext] Auth state changed:', event, session?.user?.email)
         if (event === 'SIGNED_IN' && session?.user) {
           setAuthUser(session.user)
           const appUserData = await fetchAppUser(session.user.id)
-          console.log('[AuthContext] After SIGNED_IN, appUser:', appUserData)
           setAppUser(appUserData)
           setLoading(false)
         } else if (event === 'SIGNED_OUT') {
@@ -108,7 +102,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      isMounted = false
+      clearTimeout(timeout)
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signOut = async () => {
@@ -133,9 +131,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOut,
     refreshUser
   }
-
-  // Debug log
-  console.log('[AuthContext] Render state:', { loading, authUser: authUser?.email, appUser: appUser?.email, role })
 
   return (
     <AuthContext.Provider value={value}>
