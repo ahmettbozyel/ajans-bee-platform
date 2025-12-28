@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 // Sayfa başlıkları
 const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/': { title: 'Hoş geldin, {name} 👋', subtitle: 'Hemen içerik üretmeye başla' },
+  '/dashboard': { title: 'Hoş geldin, {name} 👋', subtitle: 'Hemen içerik üretmeye başla' },
   '/musteriler': { title: 'Markalar', subtitle: "Marka brief'lerini yönetin" },
   '/teknik-hizmetler': { title: 'Teknik Hizmetler', subtitle: 'Hosting, domain ve SSL yönetimi' },
   '/icerik-uret': { title: 'İçerik Üret', subtitle: 'AI ile içerik oluştur' },
