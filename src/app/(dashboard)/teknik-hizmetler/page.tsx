@@ -110,7 +110,8 @@ export default function TeknikHizmetlerPage() {
   }
 
   async function handleRenew(service: TechnicalServiceWithRelations) {
-    const billingCycle = service.provider?.billing_cycle || 'yearly'
+    const rawCycle = service.provider?.billing_cycle || 'yearly'
+    const billingCycle = (rawCycle === 'monthly' ? 'monthly' : 'yearly') as 'monthly' | 'yearly'
     const newDate = getNextRenewalDate(service.renewal_date, billingCycle)
     
     if (!confirm(`Yenileme tarihi ${newDate} olarak güncellenecek. Onaylıyor musunuz?`)) return
