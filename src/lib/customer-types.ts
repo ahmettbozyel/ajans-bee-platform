@@ -1,6 +1,6 @@
 // =====================================================
 // Customer Types - Genişletilmiş Brief Sistemi
-// Version: 2.3 - Genişletilmiş Sektör Listesi
+// Version: 2.4 - Genişletilmiş Renk ve Font Yapısı
 // =====================================================
 
 // Sosyal medya platform tipi
@@ -71,17 +71,40 @@ export interface WordMapping {
   use_instead: string;
 }
 
-// Marka Renkleri
+// =====================================================
+// Marka Renkleri - Genişletilmiş (v2.4)
+// =====================================================
 export interface BrandColors {
-  primary?: string;
-  secondary?: string;
-  accent?: string;
+  // Ana Renkler (max 3)
+  primary?: string;      // Ana marka rengi
+  secondary?: string;    // İkincil renk
+  accent?: string;       // Vurgu rengi
+
+  // Yardımcı Renkler (max 3)
+  light?: string;        // Açık ton
+  dark?: string;         // Koyu ton
+  neutral?: string;      // Nötr renk
+
+  // Extra (kullanıcı ekler)
+  extra?: string[];
 }
 
-// Marka Fontları
+// =====================================================
+// Marka Fontları - Genişletilmiş (v2.4)
+// =====================================================
 export interface BrandFonts {
-  heading?: string;
-  body?: string;
+  // Kurumsal (Ofset, basılı materyaller)
+  corporate?: {
+    heading?: string;    // Başlık fontu
+    body?: string;       // Gövde fontu
+  };
+  
+  // Web / Dijital
+  web?: {
+    heading?: string;    // Web başlık
+    body?: string;       // Web gövde
+    fallback?: string;   // Yedek font (system-ui vb)
+  };
 }
 
 // Marka Varlıkları
@@ -136,6 +159,45 @@ export interface SeasonalEvent {
   content_ideas?: string[];
   hashtags?: string[];
 }
+
+// =====================================================
+// Müşteri Dosyaları Tipleri (v2.4)
+// =====================================================
+
+export type FileCategory = 'logo' | 'product' | 'post';
+export type LogoSubCategory = 'primary' | 'white' | 'black' | 'icon' | 'vertical' | 'horizontal';
+
+export interface CustomerFile {
+  id: string;
+  created_at: string;
+  user_id: string;
+  customer_id: string;
+  category: FileCategory;
+  sub_category?: LogoSubCategory | null;
+  file_name: string;
+  file_url: string;
+  file_size?: number;
+  mime_type?: string;
+  is_primary?: boolean;
+  notes?: string;
+}
+
+// Logo kategorileri
+export const LOGO_CATEGORIES = [
+  { value: 'primary', label: 'Ana Logo', description: 'Renkli, tam versiyon' },
+  { value: 'white', label: 'Tek Renk (Beyaz)', description: 'Dark arka plan için' },
+  { value: 'black', label: 'Tek Renk (Siyah)', description: 'Light arka plan için' },
+  { value: 'icon', label: 'İkon/Favicon', description: 'Sadece sembol' },
+  { value: 'vertical', label: 'Dikey', description: 'Dikey layout' },
+  { value: 'horizontal', label: 'Yatay', description: 'Yatay layout' }
+] as const;
+
+// Dosya kategorileri
+export const FILE_CATEGORIES = [
+  { value: 'logo', label: 'Logolar', icon: 'Image', description: 'Tüm logo varyasyonları' },
+  { value: 'product', label: 'Ürün Görselleri', icon: 'Package', description: 'Ürün fotoğrafları' },
+  { value: 'post', label: 'Örnek Postlar', icon: 'FileImage', description: 'Beğenilen içerik örnekleri' }
+] as const;
 
 // =====================================================
 // Enum Types
@@ -285,7 +347,7 @@ export interface Customer {
   // Faz 2 - Kelime Haritası
   word_mapping?: WordMapping[] | null;
 
-  // Faz 2 - Marka Görselleri
+  // Faz 2 - Marka Görselleri (Genişletilmiş v2.4)
   brand_colors?: BrandColors | null;
   brand_fonts?: BrandFonts | null;
   brand_assets?: BrandAssets | null;
