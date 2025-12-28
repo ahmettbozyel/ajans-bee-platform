@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
+import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase/client'
 import { 
   LayoutDashboard, 
@@ -16,7 +17,10 @@ import {
   Sun,
   Moon,
   Search,
-  Bell
+  Bell,
+  ClipboardList,
+  Clock,
+  Users
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { User } from '@supabase/supabase-js'
@@ -46,7 +50,7 @@ export default function DashboardLayout({
 }) {
   const router = useRouter()
   const pathname = usePathname()
-  const [user, setUser] = useState<User | null>(null)
+  const { appUser, loading: authLoading, isAdmin, signOut } = useAuth()
   const [loading, setLoading] = useState(true)
   const [counts, setCounts] = useState({ customers: 0, services: 0 })
   const [isDark, setIsDark] = useState(true)
@@ -69,16 +73,27 @@ export default function DashboardLayout({
       const isDarkMode = document.documentElement.classList.contains('dark')
       setIsDark(isDarkMode)
     }
+  }, [])
+
+  useEffect(() => {
+    // Auth loading bitmeden bekle
+    if (authLoading) return
     
-    async function getUser() {
+    // Kullanıcı yoksa login'e yönlendir
+    if (!appUser) {
+      router.push('/login')
+      return
+    }
+    
+    // Admin değilse staff paneline yönlendir
+    if (!isAdmin) {
+      router.push('/gunluk-isler')
+      return
+    }
+    
+    // Admin ise verileri çek
+    async function fetchData() {
       try {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) {
-          router.push('/login')
-          return
-        }
-        setUser(user)
-        
         const [customersRes, servicesRes] = await Promise.all([
           supabase.from('customers').select('id', { count: 'exact', head: true }),
           supabase.from('technical_services').select('id', { count: 'exact', head: true })
@@ -88,15 +103,14 @@ export default function DashboardLayout({
           services: servicesRes.count || 0
         })
       } catch (error) {
-        console.error('Auth error:', error)
-        router.push('/login')
+        console.error('Fetch error:', error)
       } finally {
         setLoading(false)
       }
     }
     
-    getUser()
-  }, [router, supabase])
+    fetchData()
+  }, [authLoading, appUser, isAdmin, router, supabase])
 
   const toggleTheme = () => {
     const newIsDark = !isDark
@@ -106,7 +120,7 @@ export default function DashboardLayout({
   }
 
   async function handleSignOut() {
-    await supabase.auth.signOut()
+    await signOut()
     router.push('/login')
   }
 
@@ -125,10 +139,10 @@ export default function DashboardLayout({
   }
 
   const getUserName = () => {
-    if (user?.user_metadata?.full_name) {
-      return user.user_metadata.full_name.split(' ')[0]
-    } else if (user?.email) {
-      const name = user.email.split('@')[0]
+    if (appUser?.full_name) {
+      return appUser.full_name.split(' ')[0]
+    } else if (appUser?.email) {
+      const name = appUser.email.split('@')[0]
       return name.charAt(0).toUpperCase() + name.slice(1)
     }
     return 'Kullanıcı'
@@ -190,7 +204,7 @@ export default function DashboardLayout({
     logoBorder: isDark ? 'rgba(245, 158, 11, 0.3)' : 'rgba(245, 158, 11, 0.4)',
   }
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: styles.bodyBg }}>
         <div className="flex flex-col items-center gap-4">
@@ -201,7 +215,7 @@ export default function DashboardLayout({
     )
   }
 
-  if (!user) return null
+  if (!appUser || !isAdmin) return null
 
   const TOP_BAR_HEIGHT = 48
 
@@ -387,6 +401,50 @@ export default function DashboardLayout({
                   AI
                 </span>
               </Link>
+
+              <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 mt-5" style={{ color: styles.textMuted }}>Personel</p>
+              
+              {/* Günlük İşler */}
+              <Link
+                href="/gunluk-isler"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
+                style={{
+                  background: isActive('/gunluk-isler') ? styles.menuActiveBg : 'transparent',
+                  borderLeft: isActive('/gunluk-isler') ? '3px solid #6366f1' : '3px solid transparent',
+                  color: isActive('/gunluk-isler') ? styles.textPrimary : styles.textSecondary
+                }}
+              >
+                <ClipboardList className="w-5 h-5" />
+                <span className="text-sm font-medium">Günlük İşler</span>
+              </Link>
+
+              {/* Giriş/Çıkış */}
+              <Link
+                href="/giris-cikis"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
+                style={{
+                  background: isActive('/giris-cikis') ? styles.menuActiveBg : 'transparent',
+                  borderLeft: isActive('/giris-cikis') ? '3px solid #6366f1' : '3px solid transparent',
+                  color: isActive('/giris-cikis') ? styles.textPrimary : styles.textSecondary
+                }}
+              >
+                <Clock className="w-5 h-5" />
+                <span className="text-sm font-medium">Giriş/Çıkış</span>
+              </Link>
+
+              {/* Ayarlar */}
+              <Link
+                href="/ayarlar"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
+                style={{
+                  background: isActive('/ayarlar') ? styles.menuActiveBg : 'transparent',
+                  borderLeft: isActive('/ayarlar') ? '3px solid #6366f1' : '3px solid transparent',
+                  color: isActive('/ayarlar') ? styles.textPrimary : styles.textSecondary
+                }}
+              >
+                <Settings className="w-5 h-5" />
+                <span className="text-sm font-medium">Ayarlar</span>
+              </Link>
             </nav>
 
             {/* User Section */}
@@ -405,16 +463,25 @@ export default function DashboardLayout({
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
                     <span className="text-white text-sm font-bold">
-                      {user.email?.charAt(0).toUpperCase() || 'A'}
+                      {appUser.email?.charAt(0).toUpperCase() || 'A'}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate transition-colors duration-300" style={{ color: styles.textPrimary }}>
-                      {user.user_metadata?.full_name || 'Ahmet Bozyel'}
+                      {appUser.full_name || 'Ahmet Bozyel'}
                     </p>
-                    <p className="text-[11px] font-mono" style={{ color: styles.textMuted }}>Admin</p>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-emerald-500/20 text-emerald-400">
+                      Admin
+                    </span>
                   </div>
                 </div>
+                <button
+                  onClick={handleSignOut}
+                  className="w-full mt-3 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-rose-400 hover:bg-rose-500/10 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Çıkış Yap
+                </button>
               </div>
             </div>
           </div>
