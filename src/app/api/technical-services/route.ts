@@ -27,7 +27,6 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // @ts-expect-error - Table exists but types not generated yet
     const { data, error } = await supabase
       .from('technical_services')
       .select(`
@@ -67,7 +66,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues }, { status: 400 })
     }
 
-    // @ts-expect-error - Table exists but types not generated yet
+    // @ts-expect-error - Insert types not matching
     const { data, error } = await supabase
       .from('technical_services')
       .insert(parsed.data)

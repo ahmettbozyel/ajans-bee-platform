@@ -35,7 +35,6 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // @ts-expect-error - Table exists but types not generated yet
     const { data, error } = await supabase
       .from('technical_services')
       .select(`
@@ -85,7 +84,7 @@ export async function PATCH(
 
     const updateData = { ...parsed.data, updated_at: new Date().toISOString() }
 
-    // @ts-expect-error - Table exists but types not generated yet
+    // @ts-expect-error - Update types not matching
     const { data, error } = await supabase
       .from('technical_services')
       .update(updateData)
@@ -126,7 +125,6 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // @ts-expect-error - Table exists but types not generated yet
     const { error } = await supabase
       .from('technical_services')
       .delete()
