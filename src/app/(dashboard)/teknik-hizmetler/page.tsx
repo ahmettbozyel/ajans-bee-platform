@@ -45,11 +45,23 @@ function calculatePrice(service: TechnicalServiceWithRelations): number {
   return basePrice * quantity * (1 - discount / 100)
 }
 
+// Helper: Yeni yenileme tarihi hesapla
+function getNextRenewalDate(currentDate: string | null, billingCycle: 'monthly' | 'yearly' = 'yearly'): string {
+  const baseDate = currentDate ? new Date(currentDate) : new Date()
+  if (billingCycle === 'monthly') {
+    baseDate.setMonth(baseDate.getMonth() + 1)
+  } else {
+    baseDate.setFullYear(baseDate.getFullYear() + 1)
+  }
+  return baseDate.toISOString().split('T')[0]
+}
+
 export default function TeknikHizmetlerPage() {
   const [services, setServices] = useState<TechnicalServiceWithRelations[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilter, setActiveFilter] = useState<ServiceType | 'all'>('all')
+  const [renewingId, setRenewingId] = useState<string | null>(null)
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -94,6 +106,30 @@ export default function TeknikHizmetlerPage() {
       }
     } catch (error) {
       console.error('Error deleting service:', error)
+    }
+  }
+
+  async function handleRenew(service: TechnicalServiceWithRelations) {
+    const billingCycle = service.provider?.billing_cycle || 'yearly'
+    const newDate = getNextRenewalDate(service.renewal_date, billingCycle)
+    
+    if (!confirm(`Yenileme tarihi ${newDate} olarak güncellenecek. Onaylıyor musunuz?`)) return
+    
+    setRenewingId(service.id)
+    try {
+      const res = await fetch(`/api/technical-services/${service.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ renewal_date: newDate })
+      })
+      
+      if (res.ok) {
+        await loadData()
+      }
+    } catch (error) {
+      console.error('Error renewing service:', error)
+    } finally {
+      setRenewingId(null)
     }
   }
 
@@ -217,7 +253,7 @@ export default function TeknikHizmetlerPage() {
           <Link href="/ayarlar">
             <Button variant="outline" size="sm" className="text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700">
               <Settings className="w-4 h-4 mr-2" />
-              Fiyatlar
+              Ayarlar
             </Button>
           </Link>
           <Button 
@@ -277,6 +313,7 @@ export default function TeknikHizmetlerPage() {
             const serviceLabel = SERVICE_TYPES.find(t => t.value === service.service_type)?.label
             const price = calculatePrice(service)
             const statusInfo = SERVICE_STATUSES.find(s => s.value === service.status)
+            const isRenewing = renewingId === service.id
             
             return (
               <div 
@@ -344,9 +381,11 @@ export default function TeknikHizmetlerPage() {
                         </span>
                         <Button 
                           size="sm" 
-                          variant="outline" 
-                          className="text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-500/30 hover:bg-rose-50 dark:hover:bg-rose-500/10"
+                          onClick={() => handleRenew(service)}
+                          disabled={isRenewing}
+                          className="bg-rose-600 hover:bg-rose-500 text-white"
                         >
+                          {isRenewing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1" />}
                           Şimdi Yenile
                         </Button>
                       </>
@@ -358,8 +397,11 @@ export default function TeknikHizmetlerPage() {
                         <Button 
                           size="sm" 
                           variant="outline"
+                          onClick={() => handleRenew(service)}
+                          disabled={isRenewing}
                           className="text-zinc-700 dark:text-zinc-300 border-zinc-300 dark:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                         >
+                          {isRenewing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1" />}
                           Yenile
                         </Button>
                       </>
