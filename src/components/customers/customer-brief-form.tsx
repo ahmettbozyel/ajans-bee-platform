@@ -202,13 +202,13 @@ function SectionHeader({ section, isOpen, onToggle, completion }: SectionHeaderP
 // Progress Overview Grid - UI Kit HTML ile UYUMLU
 function ProgressOverview({ sections }: { sections: { label: string; filled: number; total: number }[] }) {
   return (
-    <div className="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10">
+    <div className="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900/50">
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
           <ListChecks className="w-5 h-5 text-indigo-500" />
           Brief Bölümleri
         </h2>
-        <span className="text-xs text-zinc-500">6 bölüm</span>
+        <span className="text-xs text-zinc-500 dark:text-zinc-400">6 bölüm</span>
       </div>
       <div className="grid grid-cols-6 gap-3">
         {sections.map((section, i) => {
@@ -302,7 +302,7 @@ function TagInput({
         onChange={(e) => setInputValue(e.target.value)} 
         onKeyDown={handleKeyDown} 
         placeholder={placeholder || "+ Yeni ekle..."} 
-        className="input-glow bg-zinc-50 dark:bg-white/[0.02] border-dashed"
+        className="input-glow bg-zinc-50 dark:bg-white/[0.02] border-dashed text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
       />
     </div>
   )
@@ -364,17 +364,17 @@ function SocialMediaInput({ value, onChange }: { value: SocialMediaData; onChang
     <div className="space-y-3">
       {platforms.map(({ key, label, icon: Icon, prefix }) => (
         <div key={key} className="flex items-center gap-3">
-          <div className="flex items-center gap-2 w-28 text-zinc-500">
+          <div className="flex items-center gap-2 w-28 text-zinc-500 dark:text-zinc-400">
             <Icon className="h-4 w-4" />
             <span className="text-sm">{label}</span>
           </div>
           <div className="flex-1 relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm font-medium">{prefix}</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500 text-sm font-medium">{prefix}</span>
             <Input 
               value={value[key]?.handle || ''} 
               onChange={(e) => onChange({ ...value, [key]: { ...value[key], handle: e.target.value } })} 
               placeholder="kullanici_adi" 
-              className="input-glow pl-8"
+              className="input-glow pl-8 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
             />
           </div>
         </div>
@@ -567,7 +567,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
       <ProgressOverview sections={allSectionsProgress} />
       
       {/* ==================== SECTION 1: MARKA KİMLİĞİ ==================== */}
-      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5">
+      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5 bg-white dark:bg-zinc-900/50">
         <SectionHeader 
           section={BRIEF_SECTIONS_CONFIG.markaKimligi}
           isOpen={openSections.includes('marka-kimligi')}
@@ -580,23 +580,23 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
               
               {/* Marka Adı */}
               <div>
-                <Label className="flex items-center gap-1 mb-2">
+                <Label className="flex items-center gap-1 mb-2 text-zinc-700 dark:text-zinc-300">
                   Marka Adı <span className="text-rose-500">*</span>
                 </Label>
                 <Input 
                   value={formData.name} 
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Örn: PERDIM Personel Diamonds"
-                  className="input-glow"
+                  className="input-glow text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
                   required
                 />
               </div>
               
               {/* Slogan */}
               <div>
-                <Label className="flex items-center gap-2 mb-2">
+                <Label className="flex items-center gap-2 mb-2 text-zinc-700 dark:text-zinc-300">
                   Slogan / Tagline
-                  <span className="text-zinc-400 cursor-help" title="Markayı özetleyen kısa ve akılda kalıcı cümle">
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Markayı özetleyen kısa ve akılda kalıcı cümle">
                     <Info className="w-3.5 h-3.5" />
                   </span>
                 </Label>
@@ -604,13 +604,13 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
                   value={formData.slogan || ''} 
                   onChange={(e) => setFormData({ ...formData, slogan: e.target.value })}
                   placeholder="Örn: Elmasın güvenilir adresi"
-                  className="input-glow"
+                  className="input-glow text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
                 />
               </div>
               
               {/* Marka Değerleri */}
               <div>
-                <Label className="flex items-center gap-1 mb-2">
+                <Label className="flex items-center gap-1 mb-2 text-zinc-700 dark:text-zinc-300">
                   Marka Değerleri <span className="text-rose-500">*</span>
                 </Label>
                 <TagInput 
@@ -623,9 +623,9 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
               
               {/* Marka Sesi - UI Kit HTML ile UYUMLU emoji'ler */}
               <div>
-                <Label className="flex items-center gap-2 mb-2">
+                <Label className="flex items-center gap-2 mb-2 text-zinc-700 dark:text-zinc-300">
                   Marka Sesi <span className="text-rose-500">*</span>
-                  <span className="text-zinc-400 cursor-help" title="İçeriklerin hangi tonda yazılacağını belirler">
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="İçeriklerin hangi tonda yazılacağını belirler">
                     <Info className="w-3.5 h-3.5" />
                   </span>
                 </Label>
@@ -644,7 +644,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
               
               {/* Sosyal Medya */}
               <div>
-                <Label className="mb-2 block">Sosyal Medya Hesapları</Label>
+                <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">Sosyal Medya Hesapları</Label>
                 <SocialMediaInput 
                   value={formData.social_media || {}}
                   onChange={(v) => setFormData({ ...formData, social_media: v })}
@@ -657,7 +657,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
       </div>
       
       {/* ==================== SECTION 2: HEDEF KİTLE ==================== */}
-      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5">
+      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5 bg-white dark:bg-zinc-900/50">
         <SectionHeader 
           section={BRIEF_SECTIONS_CONFIG.hedefKitle}
           isOpen={openSections.includes('hedef-kitle')}
@@ -670,18 +670,18 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
               
               {/* Yaş Aralığı */}
               <div>
-                <Label className="mb-2 block">Yaş Aralığı</Label>
+                <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">Yaş Aralığı</Label>
                 <Input 
                   value={formData.target_age_range || ''} 
                   onChange={(e) => setFormData({ ...formData, target_age_range: e.target.value })}
                   placeholder="Örn: 25-45"
-                  className="input-glow"
+                  className="input-glow text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
                 />
               </div>
               
               {/* Cinsiyet */}
               <div>
-                <Label className="mb-2 block">Cinsiyet</Label>
+                <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">Cinsiyet</Label>
                 <div className="flex gap-3">
                   <label className="flex-1 relative cursor-pointer">
                     <input 
@@ -722,24 +722,24 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
               
               {/* Hedef Kitle Açıklaması */}
               <div>
-                <Label className="mb-2 block">Hedef Kitle Açıklaması</Label>
+                <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">Hedef Kitle Açıklaması</Label>
                 <Textarea 
                   value={formData.target_audience || ''} 
                   onChange={(e) => setFormData({ ...formData, target_audience: e.target.value })}
                   placeholder="Örn: Kadınlar ve hediye alma potansiyeli olan erkekler. Orta-üst gelir grubu..."
-                  className="input-glow resize-none"
+                  className="input-glow resize-none text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
                   rows={3}
                 />
               </div>
               
               {/* Lokasyon */}
               <div>
-                <Label className="mb-2 block">Lokasyon</Label>
+                <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">Lokasyon</Label>
                 <Input 
                   value={formData.target_geography || ''} 
                   onChange={(e) => setFormData({ ...formData, target_geography: e.target.value })}
                   placeholder="Örn: Türkiye geneli, özellikle büyükşehirler"
-                  className="input-glow"
+                  className="input-glow text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
                 />
               </div>
               
@@ -749,7 +749,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
       </div>
       
       {/* ==================== SECTION 3: ÜRÜN/HİZMET ==================== */}
-      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5">
+      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5 bg-white dark:bg-zinc-900/50">
         <SectionHeader 
           section={BRIEF_SECTIONS_CONFIG.urunHizmet}
           isOpen={openSections.includes('urun-hizmet')}
@@ -762,7 +762,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
               
               {/* Ana Ürünler */}
               <div>
-                <Label className="flex items-center gap-1 mb-2">
+                <Label className="flex items-center gap-1 mb-2 text-zinc-700 dark:text-zinc-300">
                   Ana Ürün/Hizmetler <span className="text-rose-500">*</span>
                 </Label>
                 <TagInput 
@@ -775,25 +775,25 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
               
               {/* Fiyat Aralığı */}
               <div>
-                <Label className="mb-2 block">Fiyat Aralığı</Label>
+                <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">Fiyat Aralığı</Label>
                 <div className="flex gap-3 items-center">
                   <div className="flex-1 relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">₺</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500">₺</span>
                     <Input 
                       value={priceRange.min} 
                       onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
                       placeholder="Min"
-                      className="input-glow pl-8"
+                      className="input-glow pl-8 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
                     />
                   </div>
-                  <span className="text-zinc-400">—</span>
+                  <span className="text-zinc-400 dark:text-zinc-500">—</span>
                   <div className="flex-1 relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">₺</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500">₺</span>
                     <Input 
                       value={priceRange.max} 
                       onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
                       placeholder="Max"
-                      className="input-glow pl-8"
+                      className="input-glow pl-8 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
                     />
                   </div>
                 </div>
@@ -801,12 +801,12 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
               
               {/* En Çok Satan */}
               <div>
-                <Label className="mb-2 block">En Çok Satan Ürünler</Label>
+                <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">En Çok Satan Ürünler</Label>
                 <Textarea 
                   value={bestSellers} 
                   onChange={(e) => setBestSellers(e.target.value)}
                   placeholder="Hangi ürünler en çok satıyor? İçerik üretiminde öncelik verilebilir."
-                  className="input-glow resize-none"
+                  className="input-glow resize-none text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
                   rows={2}
                 />
               </div>
@@ -817,7 +817,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
       </div>
       
       {/* ==================== SECTION 4: RAKİPLER ==================== */}
-      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5">
+      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5 bg-white dark:bg-zinc-900/50">
         <SectionHeader 
           section={BRIEF_SECTIONS_CONFIG.rakipler}
           isOpen={openSections.includes('rakipler')}
@@ -830,7 +830,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
               
               {/* Rakipler */}
               <div>
-                <Label className="mb-2 block">Ana Rakipler</Label>
+                <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">Ana Rakipler</Label>
                 <TagInput 
                   value={(formData.competitors || []).map(c => typeof c === 'string' ? c : c.name)}
                   onChange={(v) => setFormData({ ...formData, competitors: v.map(name => ({ name, website: '', notes: '' })) })}
@@ -841,12 +841,12 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
               
               {/* Rakiplerden Farkınız */}
               <div>
-                <Label className="mb-2 block">Rakiplerden Farkınız</Label>
+                <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">Rakiplerden Farkınız</Label>
                 <Textarea 
                   value={differentiation} 
                   onChange={(e) => setDifferentiation(e.target.value)}
                   placeholder="Rakiplerinizden sizi ayıran özellikler neler?"
-                  className="input-glow resize-none"
+                  className="input-glow resize-none text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
                   rows={2}
                 />
               </div>
@@ -857,7 +857,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
       </div>
       
       {/* ==================== SECTION 5: KURALLAR ==================== */}
-      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5">
+      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5 bg-white dark:bg-zinc-900/50">
         <SectionHeader 
           section={BRIEF_SECTIONS_CONFIG.kurallar}
           isOpen={openSections.includes('kurallar')}
@@ -870,7 +870,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
               
               {/* Kullanılmaması Gereken Kelimeler */}
               <div>
-                <Label className="mb-2 block">Kullanılmaması Gereken Kelimeler</Label>
+                <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">Kullanılmaması Gereken Kelimeler</Label>
                 <TagInput 
                   value={formData.do_not_do || []}
                   onChange={(v) => setFormData({ ...formData, do_not_do: v })}
@@ -881,9 +881,9 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
               
               {/* Hashtag Tercihi */}
               <div>
-                <Label className="mb-2 block">Hashtag Tercihi</Label>
+                <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">Hashtag Tercihi</Label>
                 <Select value={hashtagPreference} onValueChange={setHashtagPreference}>
-                  <SelectTrigger className="input-glow">
+                  <SelectTrigger className="input-glow text-zinc-900 dark:text-white">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -897,7 +897,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
               
               {/* Emoji Tercihi */}
               <div>
-                <Label className="mb-2 block">Emoji Kullanımı</Label>
+                <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">Emoji Kullanımı</Label>
                 <div className="grid grid-cols-3 gap-3">
                   <OptionCard
                     label="Hiç"
@@ -926,7 +926,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
       </div>
       
       {/* ==================== SECTION 6: ÖZEL GÜNLER ==================== */}
-      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5">
+      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5 bg-white dark:bg-zinc-900/50">
         <SectionHeader 
           section={BRIEF_SECTIONS_CONFIG.ozelGunler}
           isOpen={openSections.includes('ozel-gunler')}
@@ -939,7 +939,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
               
               {/* Genel Özel Günler */}
               <div>
-                <Label className="mb-2 block">İçerik Üretilecek Özel Günler</Label>
+                <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">İçerik Üretilecek Özel Günler</Label>
                 <div className="grid grid-cols-3 gap-2">
                   {GENERAL_HOLIDAYS.map((holiday) => (
                     <label key={holiday.id} className="relative cursor-pointer">
@@ -965,7 +965,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
               
               {/* Markaya Özel Tarihler */}
               <div>
-                <Label className="mb-2 block">Markaya Özel Tarihler</Label>
+                <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">Markaya Özel Tarihler</Label>
                 <Textarea 
                   value={(formData.special_events || []).map(e => typeof e === 'string' ? e : e.name).join('\n')} 
                   onChange={(e) => setFormData({ 
@@ -973,7 +973,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
                     special_events: e.target.value.split('\n').filter(Boolean).map(name => ({ name, date: '', description: '' }))
                   })}
                   placeholder="Örn: Kuruluş yıldönümü (15 Mart), mağaza açılışları..."
-                  className="input-glow resize-none"
+                  className="input-glow resize-none text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
                   rows={2}
                 />
               </div>
