@@ -60,58 +60,91 @@ export default function DashboardPage() {
   const activeCustomers = customers.filter(c => c.status !== 'inactive')
 
   // ==========================================
-  // THEME-AWARE STYLES
+  // UI KIT LIGHT MODE STİLLERİ - BİREBİR
   // ==========================================
-  const styles = {
-    // Glass card
-    glassCardBg: isDark 
-      ? 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)'
-      : 'rgba(255,255,255,0.9)',
-    glassCardShadow: isDark ? 'none' : '0 4px 20px -5px rgba(0,0,0,0.08)',
-    
-    // Glow colors - Dark mode has glow, light mode has subtle shadow
-    glow: {
-      indigo: {
-        border: isDark ? '1px solid rgba(99,102,241,0.4)' : '1px solid rgba(99,102,241,0.3)',
-        boxShadow: isDark ? '0 0 20px -5px rgba(99,102,241,0.4)' : '0 4px 20px -5px rgba(99,102,241,0.2)'
-      },
-      violet: {
-        border: isDark ? '1px solid rgba(139,92,246,0.4)' : '1px solid rgba(139,92,246,0.3)',
-        boxShadow: isDark ? '0 0 20px -5px rgba(139,92,246,0.4)' : '0 4px 20px -5px rgba(139,92,246,0.2)'
-      },
-      cyan: {
-        border: isDark ? '1px solid rgba(34,211,238,0.4)' : '1px solid rgba(34,211,238,0.3)',
-        boxShadow: isDark ? '0 0 20px -5px rgba(34,211,238,0.4)' : '0 4px 20px -5px rgba(34,211,238,0.2)'
-      }
-    },
-    
-    // Text colors
-    textPrimary: isDark ? '#ffffff' : '#0f172a',
-    textSecondary: isDark ? '#a1a1aa' : '#64748b',
-    
-    // Card borders
-    cardBorder: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-    cardDivider: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-    
-    // Icon backgrounds
-    iconBg: (color: string, opacity: number) => isDark 
-      ? `rgba(${color},${opacity})`
-      : `rgba(${color},${opacity * 0.7})`,
-    
-    // Empty state bg
-    emptyBg: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
-    emptyBorder: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-  }
   
-  // Hover style
-  const getHoverStyle = (isHovered: boolean) => {
-    if (!isHovered) return {}
-    return {
-      transform: 'translateY(-2px)',
-      borderColor: isDark ? 'rgba(139,92,246,0.6)' : 'rgba(139,92,246,0.5)',
-      boxShadow: isDark ? '0 0 30px -5px rgba(139,92,246,0.5)' : '0 8px 30px -5px rgba(139,92,246,0.2)'
+  // Glass card background
+  const glassCardBg = isDark 
+    ? 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)'
+    : 'rgba(255, 255, 255, 0.8)'
+  
+  const glassCardShadow = isDark 
+    ? 'none' 
+    : '0 4px 20px -5px rgba(0, 0, 0, 0.08)'
+
+  // Glow styles - UI Kit'ten birebir
+  const glowStyles = {
+    indigo: {
+      border: isDark ? '1px solid rgba(99,102,241,0.3)' : '1px solid rgba(99, 102, 241, 0.25)',
+      boxShadow: isDark 
+        ? '0 0 20px -5px rgba(99,102,241,0.3), inset 0 0 20px -10px rgba(99,102,241,0.1)' 
+        : '0 4px 20px -5px rgba(99, 102, 241, 0.15)'
+    },
+    violet: {
+      border: isDark ? '1px solid rgba(139,92,246,0.3)' : '1px solid rgba(139, 92, 246, 0.25)',
+      boxShadow: isDark 
+        ? '0 0 20px -5px rgba(139,92,246,0.3), inset 0 0 20px -10px rgba(139,92,246,0.1)' 
+        : '0 4px 20px -5px rgba(139, 92, 246, 0.15)'
+    },
+    cyan: {
+      border: isDark ? '1px solid rgba(34,211,238,0.3)' : '1px solid rgba(34, 211, 238, 0.25)',
+      boxShadow: isDark 
+        ? '0 0 20px -5px rgba(34,211,238,0.3), inset 0 0 20px -10px rgba(34,211,238,0.1)' 
+        : '0 4px 20px -5px rgba(34, 211, 238, 0.15)'
     }
   }
+
+  // Card hover - UI Kit'ten
+  const getCardHoverStyle = (color: 'indigo' | 'violet' | 'cyan', isHovered: boolean) => {
+    if (!isHovered) return {}
+    
+    if (isDark) {
+      return {
+        borderColor: 'rgba(139, 92, 246, 0.5)',
+        boxShadow: '0 0 30px -5px rgba(139, 92, 246, 0.4), inset 0 0 30px -10px rgba(139, 92, 246, 0.15)',
+        transform: 'translateY(-2px)'
+      }
+    } else {
+      return {
+        borderColor: 'rgba(139, 92, 246, 0.4)',
+        boxShadow: '0 8px 30px -5px rgba(139, 92, 246, 0.2)',
+        transform: 'translateY(-2px)'
+      }
+    }
+  }
+  
+  // Quick action hover
+  const getQuickActionHoverStyle = (isHovered: boolean) => {
+    if (!isHovered) return {}
+    
+    if (isDark) {
+      return {
+        borderColor: 'rgba(139, 92, 246, 0.5)',
+        boxShadow: '0 0 30px -5px rgba(139, 92, 246, 0.4)',
+        transform: 'translateY(-2px)'
+      }
+    } else {
+      return {
+        borderColor: 'rgba(139, 92, 246, 0.4)',
+        boxShadow: '0 8px 30px -5px rgba(139, 92, 246, 0.2)',
+        transform: 'translateY(-2px)'
+      }
+    }
+  }
+
+  // Text colors
+  const textPrimary = isDark ? '#ffffff' : '#18181b'  // zinc-900
+  const textSecondary = isDark ? '#71717a' : '#71717a' // zinc-500
+
+  // Icon container backgrounds
+  const getIconBg = (r: number, g: number, b: number) => ({
+    background: isDark 
+      ? `rgba(${r},${g},${b},0.1)` 
+      : `rgba(${r},${g},${b},0.1)`,
+    border: isDark 
+      ? `1px solid rgba(${r},${g},${b},0.2)` 
+      : `1px solid rgba(${r},${g},${b},0.2)`
+  })
 
   // Hızlı İşlemler
   const quickActions = [
@@ -121,7 +154,7 @@ export default function DashboardPage() {
       description: 'AI ile içerik oluştur',
       icon: Sparkles,
       href: '/icerik-uret',
-      colors: { r: 217, g: 70, b: 239, icon: '#d946ef' }
+      color: { r: 217, g: 70, b: 239, hex: '#d946ef' } // fuchsia
     },
     {
       id: 'gorseller',
@@ -129,7 +162,7 @@ export default function DashboardPage() {
       description: 'AI ile görsel oluştur',
       icon: Image,
       href: '/gorseller',
-      colors: { r: 16, g: 185, b: 129, icon: '#10b981' }
+      color: { r: 16, g: 185, b: 129, hex: '#10b981' } // emerald
     },
     {
       id: 'gecmis',
@@ -137,7 +170,7 @@ export default function DashboardPage() {
       description: 'Önceki içerikler',
       icon: History,
       href: '/gecmis',
-      colors: { r: 59, g: 130, b: 246, icon: '#3b82f6' }
+      color: { r: 59, g: 130, b: 246, hex: '#3b82f6' } // blue
     },
     {
       id: 'musteriler',
@@ -145,7 +178,7 @@ export default function DashboardPage() {
       description: "Brief'leri yönet",
       icon: Users,
       href: '/musteriler',
-      colors: { r: 245, g: 158, b: 11, icon: '#f59e0b' }
+      color: { r: 245, g: 158, b: 11, hex: '#f59e0b' } // amber
     }
   ]
 
@@ -154,41 +187,38 @@ export default function DashboardPage() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
         
-        {/* Toplam İçerik - Indigo */}
+        {/* Toplam İçerik - Indigo Glow */}
         <div 
           className="rounded-2xl p-5 cursor-pointer transition-all duration-300"
           style={{
-            background: styles.glassCardBg,
+            background: glassCardBg,
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
-            ...styles.glow.indigo,
-            ...getHoverStyle(hoveredCard === 'content')
+            ...glowStyles.indigo,
+            ...getCardHoverStyle('indigo', hoveredCard === 'content')
           }}
           onMouseEnter={() => setHoveredCard('content')}
           onMouseLeave={() => setHoveredCard(null)}
         >
           <div 
             className="p-3 rounded-xl w-fit mb-4"
-            style={{
-              background: isDark ? 'rgba(99,102,241,0.1)' : 'rgba(99,102,241,0.08)',
-              border: isDark ? '1px solid rgba(99,102,241,0.2)' : '1px solid rgba(99,102,241,0.15)'
-            }}
+            style={getIconBg(99, 102, 241)}
           >
-            <FileText className="w-6 h-6 text-indigo-500" />
+            <FileText className="w-6 h-6" style={{ color: '#818cf8' }} />
           </div>
-          <p className="text-3xl font-bold mb-1 transition-colors" style={{ color: styles.textPrimary }}>0</p>
-          <p className="text-sm" style={{ color: styles.textSecondary }}>Toplam İçerik</p>
+          <p className="text-3xl font-bold mb-1" style={{ color: textPrimary }}>0</p>
+          <p className="text-sm" style={{ color: textSecondary }}>Toplam İçerik</p>
         </div>
 
-        {/* Müşteri Sayısı - Violet */}
+        {/* Müşteri Sayısı - Violet Glow */}
         <div 
           className="rounded-2xl p-5 cursor-pointer transition-all duration-300"
           style={{
-            background: styles.glassCardBg,
+            background: glassCardBg,
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
-            ...styles.glow.violet,
-            ...getHoverStyle(hoveredCard === 'customers')
+            ...glowStyles.violet,
+            ...getCardHoverStyle('violet', hoveredCard === 'customers')
           }}
           onMouseEnter={() => setHoveredCard('customers')}
           onMouseLeave={() => setHoveredCard(null)}
@@ -196,62 +226,56 @@ export default function DashboardPage() {
         >
           <div 
             className="p-3 rounded-xl w-fit mb-4"
-            style={{
-              background: isDark ? 'rgba(139,92,246,0.1)' : 'rgba(139,92,246,0.08)',
-              border: isDark ? '1px solid rgba(139,92,246,0.2)' : '1px solid rgba(139,92,246,0.15)'
-            }}
+            style={getIconBg(139, 92, 246)}
           >
-            <Building2 className="w-6 h-6 text-violet-500" />
+            <Building2 className="w-6 h-6" style={{ color: '#a78bfa' }} />
           </div>
-          <p className="text-3xl font-bold mb-1 transition-colors" style={{ color: styles.textPrimary }}>
+          <p className="text-3xl font-bold mb-1" style={{ color: textPrimary }}>
             {loading ? '...' : activeCustomers.length}
           </p>
-          <p className="text-sm" style={{ color: styles.textSecondary }}>Müşteri Sayısı</p>
+          <p className="text-sm" style={{ color: textSecondary }}>Müşteri Sayısı</p>
         </div>
 
-        {/* Bu Hafta - Cyan */}
+        {/* Bu Hafta - Cyan Glow */}
         <div 
           className="rounded-2xl p-5 cursor-pointer transition-all duration-300"
           style={{
-            background: styles.glassCardBg,
+            background: glassCardBg,
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
-            ...styles.glow.cyan,
-            ...getHoverStyle(hoveredCard === 'week')
+            ...glowStyles.cyan,
+            ...getCardHoverStyle('cyan', hoveredCard === 'week')
           }}
           onMouseEnter={() => setHoveredCard('week')}
           onMouseLeave={() => setHoveredCard(null)}
         >
           <div 
             className="p-3 rounded-xl w-fit mb-4"
-            style={{
-              background: isDark ? 'rgba(34,211,238,0.1)' : 'rgba(34,211,238,0.08)',
-              border: isDark ? '1px solid rgba(34,211,238,0.2)' : '1px solid rgba(34,211,238,0.15)'
-            }}
+            style={getIconBg(34, 211, 238)}
           >
-            <Calendar className="w-6 h-6 text-cyan-500" />
+            <Calendar className="w-6 h-6" style={{ color: '#22d3ee' }} />
           </div>
-          <p className="text-3xl font-bold mb-1 transition-colors" style={{ color: styles.textPrimary }}>0</p>
-          <p className="text-sm" style={{ color: styles.textSecondary }}>Bu Hafta</p>
+          <p className="text-3xl font-bold mb-1" style={{ color: textPrimary }}>0</p>
+          <p className="text-sm" style={{ color: textSecondary }}>Bu Hafta</p>
         </div>
       </div>
 
       {/* Hızlı İşlemler */}
-      <h2 className="text-lg font-semibold mb-4 transition-colors" style={{ color: styles.textPrimary }}>Hızlı İşlemler</h2>
+      <h2 className="text-lg font-semibold mb-4" style={{ color: textPrimary }}>Hızlı İşlemler</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {quickActions.map((action) => {
-          const { r, g, b } = action.colors
+          const { r, g, b, hex } = action.color
           return (
             <div
               key={action.id}
               className="rounded-2xl p-5 cursor-pointer transition-all duration-300 group"
               style={{
-                background: styles.glassCardBg,
+                background: glassCardBg,
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
-                border: `1px solid ${styles.cardBorder}`,
-                boxShadow: styles.glassCardShadow,
-                ...getHoverStyle(hoveredCard === action.id)
+                border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.08)',
+                boxShadow: glassCardShadow,
+                ...getQuickActionHoverStyle(hoveredCard === action.id)
               }}
               onClick={() => router.push(action.href)}
               onMouseEnter={() => setHoveredCard(action.id)}
@@ -259,15 +283,12 @@ export default function DashboardPage() {
             >
               <div 
                 className="p-3 rounded-xl w-fit mb-4 transition-transform group-hover:scale-110"
-                style={{
-                  background: `linear-gradient(135deg, rgba(${r},${g},${b},${isDark ? 0.1 : 0.08}) 0%, rgba(${r},${g},${b},${isDark ? 0.05 : 0.04}) 100%)`,
-                  border: `1px solid rgba(${r},${g},${b},${isDark ? 0.2 : 0.15})`
-                }}
+                style={getIconBg(r, g, b)}
               >
-                <action.icon className="w-6 h-6" style={{ color: action.colors.icon }} />
+                <action.icon className="w-6 h-6" style={{ color: hex }} />
               </div>
-              <h3 className="font-semibold mb-1 transition-colors" style={{ color: styles.textPrimary }}>{action.title}</h3>
-              <p className="text-sm" style={{ color: styles.textSecondary }}>{action.description}</p>
+              <h3 className="font-semibold mb-1" style={{ color: textPrimary }}>{action.title}</h3>
+              <p className="text-sm" style={{ color: textSecondary }}>{action.description}</p>
             </div>
           )
         })}
@@ -275,35 +296,35 @@ export default function DashboardPage() {
 
       {/* Son Aktiviteler */}
       <div 
-        className="rounded-2xl transition-colors duration-300"
+        className="rounded-2xl"
         style={{
-          background: styles.glassCardBg,
+          background: glassCardBg,
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          border: `1px solid ${styles.cardBorder}`,
-          boxShadow: styles.glassCardShadow
+          border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.08)',
+          boxShadow: glassCardShadow
         }}
       >
         <div 
           className="px-5 py-4"
-          style={{ borderBottom: `1px solid ${styles.cardDivider}` }}
+          style={{ borderBottom: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)' }}
         >
-          <h2 className="font-semibold transition-colors" style={{ color: styles.textPrimary }}>Son Aktiviteler</h2>
+          <h2 className="font-semibold" style={{ color: textPrimary }}>Son Aktiviteler</h2>
         </div>
         
         <div className="p-12 flex flex-col items-center text-center">
           <div 
             className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
             style={{
-              background: styles.emptyBg,
-              border: `1px solid ${styles.emptyBorder}`,
+              background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+              border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.08)',
               animation: 'float 3s ease-in-out infinite'
             }}
           >
-            <Inbox className="w-8 h-8" style={{ color: styles.textSecondary }} />
+            <Inbox className="w-8 h-8" style={{ color: textSecondary }} />
           </div>
-          <h3 className="font-semibold mb-2 transition-colors" style={{ color: styles.textPrimary }}>Henüz aktivite yok</h3>
-          <p className="text-sm mb-6" style={{ color: styles.textSecondary }}>İlk içeriği üretmek için bir marka seç! 🚀</p>
+          <h3 className="font-semibold mb-2" style={{ color: textPrimary }}>Henüz aktivite yok</h3>
+          <p className="text-sm mb-6" style={{ color: textSecondary }}>İlk içeriği üretmek için bir marka seç! 🚀</p>
           
           <button 
             className="px-5 py-2.5 rounded-xl text-white text-sm font-medium flex items-center gap-2 transition-all active:scale-95"
