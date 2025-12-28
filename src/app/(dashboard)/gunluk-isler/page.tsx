@@ -13,8 +13,7 @@ import {
   Check,
   X,
   Loader2,
-  Users,
-  Filter
+  Users
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -49,13 +48,13 @@ export default function AdminGunlukIslerPage() {
     setLoading(true)
     try {
       // Kategoriler
-      const { data: cats } = await supabase
+      const { data: cats } = await (supabase as any)
         .from('task_categories')
         .select('*')
         .eq('is_active', true)
         .order('sort_order')
       
-      if (cats) setCategories(cats)
+      if (cats) setCategories(cats as TaskCategory[])
 
       // Markalar
       const { data: brandsData } = await supabase
@@ -78,7 +77,7 @@ export default function AdminGunlukIslerPage() {
       }
 
       // Günlük işler
-      let query = supabase
+      let query = (supabase as any)
         .from('daily_tasks')
         .select(`
           *,
@@ -95,7 +94,7 @@ export default function AdminGunlukIslerPage() {
       
       const { data: tasksData } = await query
       
-      if (tasksData) setTasks(tasksData as unknown as DailyTask[])
+      if (tasksData) setTasks(tasksData as DailyTask[])
     } catch (error) {
       console.error('Fetch error:', error)
     } finally {
@@ -118,12 +117,12 @@ export default function AdminGunlukIslerPage() {
       }
 
       if (editingTask) {
-        await supabase
+        await (supabase as any)
           .from('daily_tasks')
           .update(payload)
           .eq('id', editingTask.id)
       } else {
-        await supabase
+        await (supabase as any)
           .from('daily_tasks')
           .insert(payload)
       }
@@ -142,7 +141,7 @@ export default function AdminGunlukIslerPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Bu işi silmek istediğine emin misin?')) return
     
-    await supabase.from('daily_tasks').delete().eq('id', id)
+    await (supabase as any).from('daily_tasks').delete().eq('id', id)
     fetchData()
   }
 
