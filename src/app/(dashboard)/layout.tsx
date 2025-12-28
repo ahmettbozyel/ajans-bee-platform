@@ -97,7 +97,7 @@ export default function DashboardLayout({
       return
     }
     
-    // Verileri çek (admin için veya personel sayfasındaki herkes için)
+    // Verileri çek
     async function fetchData() {
       try {
         // Admin için tüm verileri çek
@@ -219,7 +219,8 @@ export default function DashboardLayout({
     logoBorder: isDark ? 'rgba(245, 158, 11, 0.3)' : 'rgba(245, 158, 11, 0.4)',
   }
 
-  if (loading || authLoading) {
+  // Sadece auth loading'i bekle, kendi loading'imizi kaldır
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: styles.bodyBg }}>
         <div className="flex flex-col items-center gap-4">
