@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { z } from 'zod'
 
 // Zod schema for validation
@@ -28,8 +27,8 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const adminClient = createAdminClient()
-    const { data, error } = await adminClient
+    // RLS politikası authenticated kullanıcılara izin veriyor
+    const { data, error } = await supabase
       .from('technical_services')
       .select(`
         *,
@@ -39,10 +38,11 @@ export async function GET() {
       .order('renewal_date', { ascending: true, nullsFirst: false })
 
     if (error) {
+      console.error('Supabase GET error:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json(data)
+    return NextResponse.json(data || [])
   } catch (error) {
     console.error('GET /api/technical-services error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -68,8 +68,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues }, { status: 400 })
     }
 
-    const adminClient = createAdminClient()
-    const { data, error } = await adminClient
+    // RLS politikası authenticated kullanıcılara izin veriyor
+    const { data, error } = await supabase
       .from('technical_services')
       .insert(parsed.data)
       .select(`
@@ -80,6 +80,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
+      console.error('Supabase POST error:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
