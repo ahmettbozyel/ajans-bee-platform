@@ -522,19 +522,21 @@ export default function MusterilerPage() {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent 
-                  className="w-[var(--radix-popover-trigger-width)] p-0 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-indigo-500/30 shadow-xl dark:shadow-indigo-500/10 rounded-xl overflow-hidden" 
+                  className="w-[var(--radix-popover-trigger-width)] p-0 !bg-zinc-900 border-zinc-700 shadow-2xl rounded-xl overflow-hidden" 
                   align="start"
+                  style={{ backgroundColor: '#18181b' }}
                 >
-                  <Command className="bg-transparent">
+                  <Command className="bg-zinc-900" style={{ backgroundColor: '#18181b' }}>
                     <CommandInput 
                       placeholder="Sektör ara..." 
-                      className="h-11 border-b border-zinc-200 dark:border-white/10 bg-transparent text-zinc-900 dark:text-white placeholder:text-zinc-400" 
+                      className="h-11 border-b border-zinc-700 bg-zinc-900 text-white placeholder:text-zinc-500" 
+                      style={{ backgroundColor: '#18181b' }}
                     />
-                    <CommandList className="max-h-64 overflow-auto">
+                    <CommandList className="max-h-64 overflow-auto bg-zinc-900" style={{ backgroundColor: '#18181b' }}>
                       <CommandEmpty className="py-6 text-center text-sm text-zinc-500">
                         Sektör bulunamadı.
                       </CommandEmpty>
-                      <CommandGroup>
+                      <CommandGroup className="bg-zinc-900" style={{ backgroundColor: '#18181b' }}>
                         {SECTORS.map((sector) => (
                           <CommandItem
                             key={sector.value}
@@ -546,16 +548,16 @@ export default function MusterilerPage() {
                               }))
                               setSectorPopoverOpen(false)
                             }}
-                            className="px-3 py-2.5 cursor-pointer text-zinc-700 dark:text-zinc-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 aria-selected:bg-indigo-50 dark:aria-selected:bg-indigo-500/10 data-[selected=true]:bg-indigo-50 dark:data-[selected=true]:bg-indigo-500/10"
+                            className="px-3 py-2.5 cursor-pointer text-zinc-300 hover:!bg-zinc-800 aria-selected:!bg-zinc-800 data-[selected=true]:!bg-zinc-800"
                           >
                             <Check
                               className={cn(
-                                "mr-2 h-4 w-4 text-indigo-600 dark:text-indigo-400",
+                                "mr-2 h-4 w-4 text-indigo-400",
                                 newBrandForm.sector === sector.value ? "opacity-100" : "opacity-0"
                               )}
                             />
                             <span className={cn(
-                              newBrandForm.sector === sector.value && "text-indigo-700 dark:text-indigo-400 font-medium"
+                              newBrandForm.sector === sector.value && "text-indigo-400 font-medium"
                             )}>
                               {sector.label}
                             </span>
