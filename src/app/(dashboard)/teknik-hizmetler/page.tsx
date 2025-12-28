@@ -215,7 +215,7 @@ export default function TeknikHizmetlerPage() {
             })}
           </div>
           <Link href="/ayarlar">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700">
               <Settings className="w-4 h-4 mr-2" />
               Fiyatlar
             </Button>
@@ -342,7 +342,11 @@ export default function TeknikHizmetlerPage() {
                         <span className="text-xs px-2.5 py-1 rounded-full bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400 font-semibold border border-rose-200 dark:border-rose-500/30 animate-pulse">
                           {Math.abs(daysDiff!)} gün geçti!
                         </span>
-                        <Button size="sm" variant="outline" className="text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-500/30 hover:bg-rose-50 dark:hover:bg-rose-500/10">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-500/30 hover:bg-rose-50 dark:hover:bg-rose-500/10"
+                        >
                           Şimdi Yenile
                         </Button>
                       </>
@@ -351,7 +355,13 @@ export default function TeknikHizmetlerPage() {
                         <span className="text-xs px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-semibold border border-amber-200 dark:border-amber-500/30">
                           {daysDiff} gün kaldı
                         </span>
-                        <Button size="sm" variant="outline">Yenile</Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="text-zinc-700 dark:text-zinc-300 border-zinc-300 dark:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        >
+                          Yenile
+                        </Button>
                       </>
                     ) : daysDiff !== null ? (
                       <>
