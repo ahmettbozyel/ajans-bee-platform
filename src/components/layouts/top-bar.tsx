@@ -62,6 +62,9 @@ export function TopBar() {
     if (pathname.startsWith('/customers/')) {
       return { title: 'Marka Detayı', subtitle: "Brief bilgilerini düzenle" }
     }
+    if (pathname.startsWith('/musteriler/')) {
+      return { title: 'Marka Detayı', subtitle: "Brief bilgilerini düzenle" }
+    }
     return pageTitles[pathname] || { title: 'Dashboard', subtitle: '' }
   }
 
@@ -70,7 +73,14 @@ export function TopBar() {
 
   if (!mounted) {
     return (
-      <header className="sticky top-0 z-40 glass border-b border-zinc-200 dark:border-white/5">
+      <header 
+        className="sticky top-0 z-40 border-b border-zinc-200 dark:border-white/5"
+        style={{
+          background: 'rgba(9, 9, 11, 0.8)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)'
+        }}
+      >
         <div className="flex items-center justify-between px-6 py-4">
           <div className="h-12" />
         </div>
@@ -79,7 +89,14 @@ export function TopBar() {
   }
 
   return (
-    <header className="sticky top-0 z-40 glass border-b border-zinc-200 dark:border-white/5 transition-colors duration-300">
+    <header 
+      className="sticky top-0 z-40 border-b border-zinc-200 dark:border-white/5 transition-colors duration-300"
+      style={{
+        background: isDark ? 'rgba(9, 9, 11, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)'
+      }}
+    >
       <div className="flex items-center justify-between px-6 py-4">
         {/* Sol: Sayfa Başlığı */}
         <div>
@@ -97,10 +114,10 @@ export function TopBar() {
             <input 
               type="text" 
               placeholder="Ara..." 
-              className="input-glow w-56 pl-10 pr-12 py-2 rounded-lg bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 transition-all"
+              className="input-glow w-56 pl-10 pr-12 py-2 rounded-lg bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 transition-all"
             />
             {/* Keyboard Shortcut - UI Kit */}
-            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-zinc-400 dark:text-zinc-600 bg-zinc-200 dark:bg-white/10 px-1.5 py-0.5 rounded font-mono">⌘K</kbd>
+            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-zinc-400 dark:text-zinc-500 bg-zinc-200 dark:bg-white/10 px-1.5 py-0.5 rounded font-mono">⌘K</kbd>
           </div>
           
           {/* Theme Toggle */}
