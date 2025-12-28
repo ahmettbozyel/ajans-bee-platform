@@ -105,7 +105,13 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile header */}
-      <header className="lg:hidden sticky top-0 z-50 flex h-14 items-center gap-4 border-b border-zinc-200 dark:border-white/5 glass px-4">
+      <header className="lg:hidden sticky top-0 z-50 flex h-14 items-center gap-4 border-b border-zinc-200 dark:border-white/5 px-4"
+        style={{
+          background: 'rgba(9, 9, 11, 0.9)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)'
+        }}
+      >
         <Button variant="ghost" size="icon" className="lg:hidden">
           <Menu className="h-5 w-5" />
         </Button>
@@ -117,10 +123,15 @@ export default function DashboardLayout({
         </div>
       </header>
 
-      <div className="flex min-h-screen">
-        {/* Sidebar - w-64 (256px) - Karar #18 */}
-        <aside className="hidden lg:flex lg:w-64 lg:flex-col fixed left-0 top-0 h-full z-50">
-          <div className="flex flex-col flex-grow sidebar-bg border-r border-zinc-200 dark:border-white/5 transition-colors duration-300">
+      <div className="flex">
+        {/* Sidebar - w-64 (256px) - Fixed */}
+        <aside className="hidden lg:flex lg:w-64 lg:flex-col fixed left-0 top-0 h-screen z-50">
+          <div 
+            className="flex flex-col flex-grow border-r border-zinc-200 dark:border-white/5 transition-colors duration-300"
+            style={{
+              background: 'linear-gradient(180deg, rgba(17, 17, 20, 0.98) 0%, rgba(9, 9, 11, 0.99) 100%)'
+            }}
+          >
             {/* Logo Section */}
             <div className="p-5 border-b border-zinc-200 dark:border-white/5 transition-colors duration-300">
               <div className="flex items-center gap-3">
@@ -128,8 +139,13 @@ export default function DashboardLayout({
                   <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-amber-400/20 to-yellow-500/10 border border-amber-500/30 flex items-center justify-center shadow-lg shadow-amber-500/10">
                     <AjansBeeLogoSVG className="w-7 h-7" />
                   </div>
-                  {/* Online Status Dot - UI Kit */}
-                  <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-zinc-900 pulse-status"></div>
+                  {/* Online Status Dot - Pulse Animation */}
+                  <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-zinc-900"
+                    style={{
+                      animation: 'pulse-glow 2s ease-in-out infinite',
+                      boxShadow: '0 0 8px rgba(16, 185, 129, 0.6)'
+                    }}
+                  ></div>
                 </div>
                 <div>
                   <h1 className="font-bold text-base text-zinc-900 dark:text-white tracking-tight transition-colors">Ajans Bee</h1>
@@ -149,11 +165,15 @@ export default function DashboardLayout({
                   href="/dashboard"
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
                     isActive('/dashboard') 
-                      ? 'menu-active text-zinc-900 dark:text-white' 
-                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'
+                      ? 'text-zinc-900 dark:text-white' 
+                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'
                   }`}
+                  style={isActive('/dashboard') ? {
+                    background: 'linear-gradient(90deg, rgba(99, 102, 241, 0.2) 0%, rgba(99, 102, 241, 0.05) 100%)',
+                    borderLeft: '3px solid #6366f1'
+                  } : {}}
                 >
-                  <LayoutDashboard className={`h-5 w-5 ${isActive('/dashboard') ? 'text-indigo-500' : 'group-hover:text-indigo-500 dark:group-hover:text-indigo-400'} transition-colors`} />
+                  <LayoutDashboard className={`h-5 w-5 ${isActive('/dashboard') ? 'text-indigo-500' : 'group-hover:text-indigo-400'} transition-colors`} />
                   <span className="text-sm font-medium">Dashboard</span>
                 </Link>
 
@@ -162,14 +182,18 @@ export default function DashboardLayout({
                   href="/musteriler"
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
                     isActive('/musteriler') 
-                      ? 'menu-active text-zinc-900 dark:text-white' 
-                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'
+                      ? 'text-zinc-900 dark:text-white' 
+                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'
                   }`}
+                  style={isActive('/musteriler') ? {
+                    background: 'linear-gradient(90deg, rgba(139, 92, 246, 0.2) 0%, rgba(139, 92, 246, 0.05) 100%)',
+                    borderLeft: '3px solid #8b5cf6'
+                  } : {}}
                 >
-                  <Building2 className={`h-5 w-5 ${isActive('/musteriler') ? 'text-violet-500' : 'group-hover:text-violet-500 dark:group-hover:text-violet-400'} transition-colors`} />
+                  <Building2 className={`h-5 w-5 ${isActive('/musteriler') ? 'text-violet-500' : 'group-hover:text-violet-400'} transition-colors`} />
                   <span className="text-sm font-medium">Markalar</span>
                   {counts.customers > 0 && (
-                    <span className="ml-auto text-[11px] bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400 px-2 py-0.5 rounded-full font-mono">{counts.customers}</span>
+                    <span className="ml-auto text-[11px] bg-violet-500/20 text-violet-400 px-2 py-0.5 rounded-full font-mono">{counts.customers}</span>
                   )}
                 </Link>
 
@@ -178,14 +202,18 @@ export default function DashboardLayout({
                   href="/teknik-hizmetler"
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
                     isActive('/teknik-hizmetler') 
-                      ? 'menu-active text-zinc-900 dark:text-white' 
-                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'
+                      ? 'text-zinc-900 dark:text-white' 
+                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'
                   }`}
+                  style={isActive('/teknik-hizmetler') ? {
+                    background: 'linear-gradient(90deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.05) 100%)',
+                    borderLeft: '3px solid #f59e0b'
+                  } : {}}
                 >
-                  <Server className={`h-5 w-5 ${isActive('/teknik-hizmetler') ? 'text-amber-500' : 'group-hover:text-amber-500 dark:group-hover:text-amber-400'} transition-colors`} />
+                  <Server className={`h-5 w-5 ${isActive('/teknik-hizmetler') ? 'text-amber-500' : 'group-hover:text-amber-400'} transition-colors`} />
                   <span className="text-sm font-medium">Teknik Hizmetler</span>
                   {counts.services > 0 && (
-                    <span className="ml-auto text-[11px] bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full font-mono">{counts.services}</span>
+                    <span className="ml-auto text-[11px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-mono">{counts.services}</span>
                   )}
                 </Link>
               </div>
@@ -199,11 +227,15 @@ export default function DashboardLayout({
                   href="/icerik-uret"
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
                     isActive('/icerik-uret') 
-                      ? 'menu-active text-zinc-900 dark:text-white' 
-                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'
+                      ? 'text-zinc-900 dark:text-white' 
+                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'
                   }`}
+                  style={isActive('/icerik-uret') ? {
+                    background: 'linear-gradient(90deg, rgba(217, 70, 239, 0.2) 0%, rgba(217, 70, 239, 0.05) 100%)',
+                    borderLeft: '3px solid #d946ef'
+                  } : {}}
                 >
-                  <Sparkles className={`h-5 w-5 ${isActive('/icerik-uret') ? 'text-fuchsia-500' : 'group-hover:text-fuchsia-500 dark:group-hover:text-fuchsia-400'} transition-colors`} />
+                  <Sparkles className={`h-5 w-5 ${isActive('/icerik-uret') ? 'text-fuchsia-500' : 'group-hover:text-fuchsia-400'} transition-colors`} />
                   <span className="text-sm font-medium">İçerik Üret</span>
                   <span className="ml-auto text-[10px] bg-fuchsia-500/20 text-fuchsia-400 px-2 py-0.5 rounded border border-fuchsia-500/20">AI</span>
                 </Link>
@@ -221,14 +253,20 @@ export default function DashboardLayout({
                 >
                   <Settings className="h-5 w-5" />
                   <span className="text-sm font-medium">Ayarlar</span>
-                  <span className="ml-auto text-[10px] bg-zinc-200 dark:bg-zinc-800 text-zinc-500 px-2 py-0.5 rounded">Yakında</span>
+                  <span className="ml-auto text-[10px] bg-zinc-800 text-zinc-500 px-2 py-0.5 rounded">Yakında</span>
                 </Link>
               </div>
             </nav>
 
             {/* User Section */}
             <div className="p-3 border-t border-zinc-200 dark:border-white/5 transition-colors duration-300">
-              <div className="glass-card rounded-xl p-3 border border-zinc-200 dark:border-white/10 transition-colors duration-300">
+              <div 
+                className="rounded-xl p-3 border border-white/10 transition-colors duration-300"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+                  backdropFilter: 'blur(20px)'
+                }}
+              >
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
                     <span className="text-white text-sm font-bold">
@@ -255,17 +293,23 @@ export default function DashboardLayout({
           </div>
         </aside>
 
-        {/* Main content - ml-64 */}
-        <main className="flex-1 lg:ml-64">
-          {/* Top Bar - Desktop only */}
-          <div className="hidden lg:block">
+        {/* Main content area */}
+        <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
+          {/* Top Bar - Sticky Header */}
+          <div className="hidden lg:block sticky top-0 z-40">
             <TopBar />
           </div>
           
-          <div className="content-bg min-h-screen transition-colors duration-300">
+          {/* Content with background gradient */}
+          <div 
+            className="flex-1 transition-colors duration-300"
+            style={{
+              background: 'radial-gradient(ellipse at 10% 10%, rgba(99, 102, 241, 0.12) 0%, transparent 40%), radial-gradient(ellipse at 90% 90%, rgba(139, 92, 246, 0.08) 0%, transparent 40%)'
+            }}
+          >
             {children}
           </div>
-        </main>
+        </div>
       </div>
     </div>
   )
