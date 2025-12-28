@@ -76,7 +76,6 @@ export async function PATCH(
 
     const updateData = { ...parsed.data, updated_at: new Date().toISOString() }
 
-    // @ts-expect-error - Update types not matching
     const { data, error } = await supabase
       .from('service_providers')
       .update(updateData)

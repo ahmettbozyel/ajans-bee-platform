@@ -66,7 +66,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues }, { status: 400 })
     }
 
-    // @ts-expect-error - Insert types not matching
     const { data, error } = await supabase
       .from('technical_services')
       .insert(parsed.data)
