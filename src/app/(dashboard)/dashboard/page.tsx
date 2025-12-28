@@ -45,14 +45,15 @@ export default function DashboardPage() {
 
   const activeCustomers = customers.filter(c => c.status !== 'inactive')
 
-  // Hızlı İşlemler - UI Kit'e göre
+  // Hızlı İşlemler - UI Kit'e göre (gradient bg eklendi)
   const quickActions = [
     {
       title: 'İçerik Üret',
       description: 'AI ile içerik oluştur',
       icon: Sparkles,
       href: '/icerik-uret',
-      gradient: 'from-fuchsia-100 to-violet-100 dark:from-fuchsia-500/10 dark:to-violet-500/10',
+      cardBg: 'bg-gradient-to-br from-fuchsia-50/50 to-violet-50/50 dark:from-fuchsia-500/5 dark:to-violet-500/5',
+      iconBg: 'from-fuchsia-100 to-violet-100 dark:from-fuchsia-500/10 dark:to-violet-500/10',
       border: 'border-fuchsia-200 dark:border-fuchsia-500/20',
       iconColor: 'text-fuchsia-600 dark:text-fuchsia-400'
     },
@@ -61,7 +62,8 @@ export default function DashboardPage() {
       description: 'AI ile görsel oluştur',
       icon: Image,
       href: '/gorseller',
-      gradient: 'from-emerald-100 to-teal-100 dark:from-emerald-500/10 dark:to-teal-500/10',
+      cardBg: 'bg-gradient-to-br from-emerald-50/50 to-teal-50/50 dark:from-emerald-500/5 dark:to-teal-500/5',
+      iconBg: 'from-emerald-100 to-teal-100 dark:from-emerald-500/10 dark:to-teal-500/10',
       border: 'border-emerald-200 dark:border-emerald-500/20',
       iconColor: 'text-emerald-600 dark:text-emerald-400'
     },
@@ -70,7 +72,8 @@ export default function DashboardPage() {
       description: 'Önceki içerikler',
       icon: History,
       href: '/gecmis',
-      gradient: 'from-blue-100 to-indigo-100 dark:from-blue-500/10 dark:to-indigo-500/10',
+      cardBg: 'bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-500/5 dark:to-indigo-500/5',
+      iconBg: 'from-blue-100 to-indigo-100 dark:from-blue-500/10 dark:to-indigo-500/10',
       border: 'border-blue-200 dark:border-blue-500/20',
       iconColor: 'text-blue-600 dark:text-blue-400'
     },
@@ -79,14 +82,15 @@ export default function DashboardPage() {
       description: "Brief'leri yönet",
       icon: Users,
       href: '/musteriler',
-      gradient: 'from-amber-100 to-orange-100 dark:from-amber-500/10 dark:to-orange-500/10',
+      cardBg: 'bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-500/5 dark:to-orange-500/5',
+      iconBg: 'from-amber-100 to-orange-100 dark:from-amber-500/10 dark:to-orange-500/10',
       border: 'border-amber-200 dark:border-amber-500/20',
       iconColor: 'text-amber-600 dark:text-amber-400'
     }
   ]
 
   return (
-    <div className="space-y-8">
+    <div className="p-6 space-y-8">
       {/* Stats Cards - 3 kolonlu, glow efektli */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Toplam İçerik - Indigo Glow */}
@@ -122,17 +126,17 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Hızlı İşlemler */}
+      {/* Hızlı İşlemler - Gradient Background eklendi */}
       <div>
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Hızlı İşlemler</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {quickActions.map((action) => (
             <div
               key={action.title}
-              className="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10 card-hover cursor-pointer group"
+              className={`glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10 card-hover cursor-pointer group ${action.cardBg}`}
               onClick={() => router.push(action.href)}
             >
-              <div className={`p-3 rounded-xl bg-gradient-to-br ${action.gradient} border ${action.border} w-fit mb-4 group-hover:scale-110 transition-transform`}>
+              <div className={`p-3 rounded-xl bg-gradient-to-br ${action.iconBg} border ${action.border} w-fit mb-4 group-hover:scale-110 transition-transform`}>
                 <action.icon className={`w-6 h-6 ${action.iconColor}`} />
               </div>
               <h3 className="font-semibold text-zinc-900 dark:text-white mb-1">{action.title}</h3>
@@ -142,7 +146,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Son Aktiviteler */}
+      {/* Son Aktiviteler - Empty State with float animation */}
       <div className="glass-card rounded-2xl border border-zinc-200 dark:border-white/10">
         <div className="px-5 py-4 border-b border-zinc-200 dark:border-white/5">
           <h2 className="font-semibold text-zinc-900 dark:text-white">Son Aktiviteler</h2>
