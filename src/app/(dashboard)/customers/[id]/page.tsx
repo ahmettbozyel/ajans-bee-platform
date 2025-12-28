@@ -10,7 +10,7 @@ import {
   ArrowLeft, Building2, Globe, Users, FileText, 
   Sparkles, Loader2, LayoutDashboard, Calendar, 
   BarChart3, FolderOpen, Save, Instagram, Megaphone, Mail,
-  History, CalendarHeart, ClipboardList
+  History, CalendarHeart, ClipboardList, CheckCircle, Circle, CircleDot
 } from 'lucide-react'
 import { CustomerBriefForm } from '@/components/customers/customer-brief-form'
 import type { Customer, CustomerFormData } from '@/lib/customer-types'
@@ -31,9 +31,13 @@ function getCustomerTypeLabel(value: string): string {
 }
 
 // Progress Ring Component
-function ProgressRing({ percentage }: { percentage: number }) {
-  const circumference = 2 * Math.PI * 20
+function ProgressRing({ percentage, size = 'default' }: { percentage: number; size?: 'default' | 'large' }) {
+  const radius = size === 'large' ? 28 : 20
+  const strokeWidth = size === 'large' ? 4 : 3
+  const circumference = 2 * Math.PI * radius
   const strokeDashoffset = circumference - (percentage / 100) * circumference
+  const svgSize = size === 'large' ? 64 : 48
+  const center = svgSize / 2
   
   let colorClass = 'text-rose-500'
   let textColorClass = 'text-rose-600 dark:text-rose-400'
@@ -44,34 +48,39 @@ function ProgressRing({ percentage }: { percentage: number }) {
     colorClass = 'text-amber-500'
     textColorClass = 'text-amber-600 dark:text-amber-400'
   }
+  if (percentage >= 100) {
+    colorClass = 'text-emerald-500'
+    textColorClass = 'text-emerald-600 dark:text-emerald-400'
+  }
   
   return (
     <div className="relative">
-      <svg className="w-12 h-12" style={{ transform: 'rotate(-90deg)' }}>
+      <svg className={size === 'large' ? 'w-16 h-16' : 'w-12 h-12'} style={{ transform: 'rotate(-90deg)' }}>
         <circle 
           className="text-zinc-200 dark:text-white/10" 
           stroke="currentColor" 
-          strokeWidth="3" 
+          strokeWidth={strokeWidth} 
           fill="transparent" 
-          r="20" 
-          cx="24" 
-          cy="24"
+          r={radius} 
+          cx={center} 
+          cy={center}
         />
         <circle 
           className={cn("transition-all duration-500", colorClass)}
           stroke="currentColor" 
-          strokeWidth="3" 
+          strokeWidth={strokeWidth} 
           fill="transparent" 
-          r="20" 
-          cx="24" 
-          cy="24"
+          r={radius} 
+          cx={center} 
+          cy={center}
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
           strokeLinecap="round"
         />
       </svg>
       <span className={cn(
-        "absolute inset-0 flex items-center justify-center text-xs font-bold",
+        "absolute inset-0 flex items-center justify-center font-bold",
+        size === 'large' ? 'text-sm' : 'text-xs',
         textColorClass
       )}>
         {percentage}%
@@ -226,14 +235,44 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
     catch { return url }
   }
 
+  // Brief section status helper
+  const getBriefSectionStatus = () => {
+    return [
+      { 
+        label: 'Marka Kimliği', 
+        complete: !!(customer.name && customer.brand_values?.length && customer.brand_voice)
+      },
+      { 
+        label: 'Hedef Kitle', 
+        complete: !!(customer.target_audience && customer.target_age_range)
+      },
+      { 
+        label: 'Ürün/Hizmet', 
+        complete: !!(customer.top_products?.length)
+      },
+      { 
+        label: 'Rakip Analizi', 
+        complete: !!(customer.competitors?.length)
+      },
+      { 
+        label: 'İçerik Kuralları', 
+        complete: !!(customer.do_not_do?.length)
+      },
+      { 
+        label: 'Özel Günler', 
+        complete: !!(customer.special_events?.length)
+      }
+    ]
+  }
+
   return (
     <div className="space-y-0 -m-6">
       
-      {/* ==================== HEADER ==================== */}
+      {/* ==================== HEADER (Temizlenmiş) ==================== */}
       <header className="sticky top-0 z-40 glass border-b border-zinc-200 dark:border-white/5">
         <div className="px-6 py-4">
           
-          {/* Back + Brand Info + Progress + Save */}
+          {/* Back + Brand Info */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
               {/* Back Button */}
@@ -273,33 +312,6 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
                   </div>
                 </div>
               </div>
-            </div>
-            
-            {/* Progress + Save */}
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <ProgressRing percentage={completion} />
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-zinc-900 dark:text-white">Brief Durumu</p>
-                  <p className="text-xs text-zinc-500">{Math.round(completion * 0.25)}/25 alan dolu</p>
-                </div>
-              </div>
-              <Button 
-                onClick={() => {
-                  // Trigger form submit
-                  const form = document.querySelector('form')
-                  if (form) form.requestSubmit()
-                }}
-                disabled={saving}
-                className="btn-press px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-sm font-medium shadow-lg shadow-indigo-500/25"
-              >
-                {saving ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4 mr-2" />
-                )}
-                Kaydet
-              </Button>
             </div>
           </div>
           
@@ -538,7 +550,7 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
                 </div>
               </div>
               
-              {/* RIGHT (1/3) */}
+              {/* RIGHT (1/3) - Dashboard */}
               <div className="space-y-6">
                 
                 {/* AI Insight */}
@@ -606,50 +618,19 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
                     </button>
                   </div>
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-zinc-500">Marka Kimliği</span>
-                      <span className={cn(
-                        "text-xs px-2 py-0.5 rounded-full",
-                        customer.brand_values?.length 
-                          ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
-                          : "bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400"
-                      )}>
-                        {customer.brand_values?.length ? 'Tamamlandı' : 'Eksik'}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-zinc-500">Hedef Kitle</span>
-                      <span className={cn(
-                        "text-xs px-2 py-0.5 rounded-full",
-                        customer.target_audience 
-                          ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
-                          : "bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400"
-                      )}>
-                        {customer.target_audience ? 'Tamamlandı' : 'Eksik'}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-zinc-500">Ürün/Hizmet</span>
-                      <span className={cn(
-                        "text-xs px-2 py-0.5 rounded-full",
-                        customer.top_products?.length 
-                          ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
-                          : "bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400"
-                      )}>
-                        {customer.top_products?.length ? 'Tamamlandı' : 'Eksik'}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-zinc-500">Rakip Analizi</span>
-                      <span className={cn(
-                        "text-xs px-2 py-0.5 rounded-full",
-                        customer.competitors?.length 
-                          ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
-                          : "bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400"
-                      )}>
-                        {customer.competitors?.length ? 'Tamamlandı' : 'Eksik'}
-                      </span>
-                    </div>
+                    {getBriefSectionStatus().map((section, i) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <span className="text-sm text-zinc-500">{section.label}</span>
+                        <span className={cn(
+                          "text-xs px-2 py-0.5 rounded-full",
+                          section.complete
+                            ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
+                            : "bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400"
+                        )}>
+                          {section.complete ? 'Tamamlandı' : 'Eksik'}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
                 
@@ -658,15 +639,109 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
           </div>
         )}
         
-        {/* Brief Tab */}
+        {/* Brief Tab - YENİ 2/3 + 1/3 LAYOUT */}
         {activeTab === 'brief' && (
-          <div className="max-w-4xl mx-auto">
-            <CustomerBriefForm
-              customer={customer}
-              onSave={handleSaveCustomer}
-              onCancel={() => router.push('/musteriler')}
-              isLoading={saving}
-            />
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-3 gap-6">
+              
+              {/* LEFT (2/3) - Brief Form */}
+              <div className="col-span-2">
+                <CustomerBriefForm
+                  customer={customer}
+                  onSave={handleSaveCustomer}
+                  onCancel={() => router.push('/musteriler')}
+                  isLoading={saving}
+                />
+              </div>
+              
+              {/* RIGHT (1/3) - Brief Sidebar */}
+              <div className="space-y-6">
+                
+                {/* Brief Progress */}
+                <div className="glass-card rounded-2xl p-5 glow-cyan bg-gradient-to-br from-cyan-50/50 dark:from-cyan-950/30 to-blue-50/50 dark:to-blue-950/20">
+                  <div className="flex items-center gap-4 mb-4">
+                    <ProgressRing percentage={completion} size="large" />
+                    <div>
+                      <p className="text-lg font-bold text-zinc-900 dark:text-white">Brief Durumu</p>
+                      <p className="text-sm text-zinc-500">{Math.round(completion * 0.25)}/25 alan dolu</p>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={() => {
+                      const form = document.querySelector('form')
+                      if (form) form.requestSubmit()
+                    }}
+                    disabled={saving}
+                    className="btn-press w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-sm font-medium shadow-lg shadow-indigo-500/25"
+                  >
+                    {saving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Kaydediliyor...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        Kaydet
+                      </>
+                    )}
+                  </Button>
+                </div>
+                
+                {/* AI Insight for Brief */}
+                <div className="glass-card rounded-2xl p-5 glow-violet bg-gradient-to-br from-indigo-50/50 dark:from-indigo-950/30 to-violet-50/50 dark:to-violet-950/20">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">AI İçgörüsü</h3>
+                  </div>
+                  <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                    {completion < 50 
+                      ? "Brief tamamlanma oranı düşük. Eksik alanları doldurarak AI'ın daha iyi içerik üretmesini sağla."
+                      : completion < 80
+                      ? "Güzel ilerleme! Birkaç alan daha doldurup %80 üzerine çıkarsan AI harikalar yaratır."
+                      : "Mükemmel! Brief hazır. İçerik Üret sekmesine geçebilirsin. 🚀"
+                    }
+                  </p>
+                </div>
+                
+                {/* Brief Sections Status */}
+                <div className="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
+                      <ClipboardList className="w-4 h-4 text-cyan-500" />
+                      Bölüm Durumları
+                    </h3>
+                  </div>
+                  <div className="space-y-2">
+                    {getBriefSectionStatus().map((section, i) => (
+                      <div key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors">
+                        {section.complete ? (
+                          <CheckCircle className="w-4 h-4 text-emerald-500" />
+                        ) : (
+                          <Circle className="w-4 h-4 text-amber-500" />
+                        )}
+                        <span className={cn(
+                          "text-sm",
+                          section.complete ? "text-zinc-700 dark:text-zinc-300" : "text-zinc-500"
+                        )}>
+                          {section.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Quick Tips */}
+                <div className="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10">
+                  <h3 className="text-sm font-semibold text-zinc-900 dark:text-white mb-3">💡 İpucu</h3>
+                  <p className="text-xs text-zinc-500 leading-relaxed">
+                    Brief ne kadar detaylı olursa, AI o kadar kaliteli ve markaya uygun içerik üretir. 
+                    Özellikle "Marka Sesi" ve "Kullanılmaması Gereken Kelimeler" alanları çok önemli!
+                  </p>
+                </div>
+                
+              </div>
+            </div>
           </div>
         )}
         
