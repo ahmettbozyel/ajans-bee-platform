@@ -38,8 +38,8 @@ import {
 
 const AI_RESEARCH_ENDPOINT = 'https://n8n.beeswebsite.com/webhook/ai-research'
 
-// 6 Bölüm yapısı - UI Kit v1.0
-const BRIEF_SECTIONS_NEW = {
+// 6 Bölüm yapısı - UI Kit v1.0 HTML ile UYUMLU
+const BRIEF_SECTIONS_CONFIG = {
   markaKimligi: {
     id: 'marka-kimligi',
     label: 'Marka Kimliği',
@@ -108,9 +108,9 @@ interface AIResearchState {
   filledFields: string[]
 }
 
-// Section Header Component
+// Section Header Component - UI Kit HTML ile UYUMLU
 interface SectionHeaderProps {
-  section: typeof BRIEF_SECTIONS_NEW[keyof typeof BRIEF_SECTIONS_NEW]
+  section: typeof BRIEF_SECTIONS_CONFIG[keyof typeof BRIEF_SECTIONS_CONFIG]
   isOpen: boolean
   onToggle: () => void
   completion: { filled: number; total: number }
@@ -120,6 +120,7 @@ function SectionHeader({ section, isOpen, onToggle, completion }: SectionHeaderP
   const isComplete = completion.filled === completion.total
   const percentage = completion.total > 0 ? Math.round((completion.filled / completion.total) * 100) : 0
   
+  // HTML ile uyumlu ikon mapping
   const iconMap = {
     Fingerprint: <Fingerprint className="w-5 h-5" />,
     Users: <Users className="w-5 h-5" />,
@@ -129,13 +130,32 @@ function SectionHeader({ section, isOpen, onToggle, completion }: SectionHeaderP
     CalendarHeart: <CalendarHeart className="w-5 h-5" />
   }
 
+  // HTML ile uyumlu renk mapping
   const colorClasses = {
-    indigo: { bg: 'bg-indigo-100 dark:bg-indigo-500/10', text: 'text-indigo-600 dark:text-indigo-400' },
-    violet: { bg: 'bg-violet-100 dark:bg-violet-500/10', text: 'text-violet-600 dark:text-violet-400' },
-    cyan: { bg: 'bg-cyan-100 dark:bg-cyan-500/10', text: 'text-cyan-600 dark:text-cyan-400' },
-    amber: { bg: 'bg-amber-100 dark:bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400' },
-    rose: { bg: 'bg-rose-100 dark:bg-rose-500/10', text: 'text-rose-600 dark:text-rose-400' },
-    fuchsia: { bg: 'bg-fuchsia-100 dark:bg-fuchsia-500/10', text: 'text-fuchsia-600 dark:text-fuchsia-400' }
+    indigo: { 
+      bg: 'bg-indigo-100 dark:bg-indigo-500/10', 
+      text: 'text-indigo-600 dark:text-indigo-400' 
+    },
+    violet: { 
+      bg: 'bg-violet-100 dark:bg-violet-500/10', 
+      text: 'text-violet-600 dark:text-violet-400' 
+    },
+    cyan: { 
+      bg: 'bg-cyan-100 dark:bg-cyan-500/10', 
+      text: 'text-cyan-600 dark:text-cyan-400' 
+    },
+    amber: { 
+      bg: 'bg-amber-100 dark:bg-amber-500/10', 
+      text: 'text-amber-600 dark:text-amber-400' 
+    },
+    rose: { 
+      bg: 'bg-rose-100 dark:bg-rose-500/10', 
+      text: 'text-rose-600 dark:text-rose-400' 
+    },
+    fuchsia: { 
+      bg: 'bg-fuchsia-100 dark:bg-fuchsia-500/10', 
+      text: 'text-fuchsia-600 dark:text-fuchsia-400' 
+    }
   }
 
   const colors = colorClasses[section.color as keyof typeof colorClasses]
@@ -179,7 +199,7 @@ function SectionHeader({ section, isOpen, onToggle, completion }: SectionHeaderP
   )
 }
 
-// Progress Overview Grid
+// Progress Overview Grid - UI Kit HTML ile UYUMLU
 function ProgressOverview({ sections }: { sections: { label: string; filled: number; total: number }[] }) {
   return (
     <div className="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10">
@@ -195,27 +215,26 @@ function ProgressOverview({ sections }: { sections: { label: string; filled: num
           const isComplete = section.filled === section.total
           const percentage = section.total > 0 ? Math.round((section.filled / section.total) * 100) : 0
           
-          let colorClass = 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700'
-          let iconColorClass = 'text-zinc-400'
-          let textColorClass = 'text-zinc-600 dark:text-zinc-400'
+          // HTML ile UYUMLU renk mantığı
+          let colorClass = 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20'
+          let iconColorClass = 'text-amber-600 dark:text-amber-400'
+          let textColorClass = 'text-amber-700 dark:text-amber-400'
           let Icon = Circle
           
           if (isComplete) {
+            // EMERALD - Tamamlandı
             colorClass = 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20'
             iconColorClass = 'text-emerald-600 dark:text-emerald-400'
             textColorClass = 'text-emerald-700 dark:text-emerald-400'
             Icon = CheckCircle
           } else if (percentage >= 50) {
+            // CYAN - %50+ ama tamamlanmamış
             colorClass = 'bg-cyan-50 dark:bg-cyan-500/10 border-cyan-200 dark:border-cyan-500/20'
             iconColorClass = 'text-cyan-600 dark:text-cyan-400'
             textColorClass = 'text-cyan-700 dark:text-cyan-400'
             Icon = CircleDot
-          } else if (percentage > 0) {
-            colorClass = 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20'
-            iconColorClass = 'text-amber-600 dark:text-amber-400'
-            textColorClass = 'text-amber-700 dark:text-amber-400'
-            Icon = Circle
           }
+          // Default: AMBER - %50'den az
           
           return (
             <div key={i} className={cn("text-center p-3 rounded-xl border", colorClass)}>
@@ -228,50 +247,6 @@ function ProgressOverview({ sections }: { sections: { label: string; filled: num
           )
         })}
       </div>
-    </div>
-  )
-}
-
-// Progress Ring Component
-function ProgressRing({ percentage }: { percentage: number }) {
-  const circumference = 2 * Math.PI * 20
-  const strokeDashoffset = circumference - (percentage / 100) * circumference
-  
-  let colorClass = 'text-rose-500'
-  if (percentage >= 70) colorClass = 'text-cyan-500'
-  else if (percentage >= 30) colorClass = 'text-amber-500'
-  
-  return (
-    <div className="relative">
-      <svg className="w-12 h-12" style={{ transform: 'rotate(-90deg)' }}>
-        <circle 
-          className="text-zinc-200 dark:text-white/10" 
-          stroke="currentColor" 
-          strokeWidth="3" 
-          fill="transparent" 
-          r="20" 
-          cx="24" 
-          cy="24"
-        />
-        <circle 
-          className={cn("transition-all duration-500", colorClass)}
-          stroke="currentColor" 
-          strokeWidth="3" 
-          fill="transparent" 
-          r="20" 
-          cx="24" 
-          cy="24"
-          strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
-          strokeLinecap="round"
-        />
-      </svg>
-      <span className={cn(
-        "absolute inset-0 flex items-center justify-center text-xs font-bold",
-        colorClass.replace('text-', 'text-').replace('500', '600 dark:text-').replace('500', '400')
-      )}>
-        {percentage}%
-      </span>
     </div>
   )
 }
@@ -333,7 +308,7 @@ function TagInput({
   )
 }
 
-// Option Card Component (for radio/checkbox selections)
+// Option Card Component - UI Kit HTML ile UYUMLU
 function OptionCard({ 
   label, 
   emoji, 
@@ -347,12 +322,13 @@ function OptionCard({
   selected: boolean
   onChange: () => void
   type?: 'radio' | 'checkbox'
-  colorClass?: 'indigo' | 'violet' | 'fuchsia'
+  colorClass?: 'indigo' | 'violet' | 'fuchsia' | 'rose'
 }) {
   const borderColor = {
     indigo: 'peer-checked:border-indigo-500 peer-checked:bg-indigo-50 dark:peer-checked:bg-indigo-500/10',
     violet: 'peer-checked:border-violet-500 peer-checked:bg-violet-50 dark:peer-checked:bg-violet-500/10',
-    fuchsia: 'peer-checked:border-fuchsia-500 peer-checked:bg-fuchsia-50 dark:peer-checked:bg-fuchsia-500/10'
+    fuchsia: 'peer-checked:border-fuchsia-500 peer-checked:bg-fuchsia-50 dark:peer-checked:bg-fuchsia-500/10',
+    rose: 'peer-checked:border-rose-500 peer-checked:bg-rose-50 dark:peer-checked:bg-rose-500/10'
   }
   
   return (
@@ -374,7 +350,7 @@ function OptionCard({
   )
 }
 
-// Social Media Input
+// Social Media Input - UI Kit HTML ile UYUMLU (prefix görünür)
 function SocialMediaInput({ value, onChange }: { value: SocialMediaData; onChange: (v: SocialMediaData) => void }) {
   const platforms = [
     { key: 'instagram', label: 'Instagram', icon: Instagram, prefix: '@' },
@@ -393,12 +369,12 @@ function SocialMediaInput({ value, onChange }: { value: SocialMediaData; onChang
             <span className="text-sm">{label}</span>
           </div>
           <div className="flex-1 relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">{prefix}</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm font-medium">{prefix}</span>
             <Input 
               value={value[key]?.handle || ''} 
               onChange={(e) => onChange({ ...value, [key]: { ...value[key], handle: e.target.value } })} 
               placeholder="kullanici_adi" 
-              className="input-glow pl-7"
+              className="input-glow pl-8"
             />
           </div>
         </div>
@@ -570,7 +546,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
     }
   }
 
-  const allSectionsProgress = Object.values(BRIEF_SECTIONS_NEW).map(section => ({
+  const allSectionsProgress = Object.values(BRIEF_SECTIONS_CONFIG).map(section => ({
     label: section.label,
     ...getSectionCompletion(section.id)
   }))
@@ -593,7 +569,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
       {/* ==================== SECTION 1: MARKA KİMLİĞİ ==================== */}
       <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5">
         <SectionHeader 
-          section={BRIEF_SECTIONS_NEW.markaKimligi}
+          section={BRIEF_SECTIONS_CONFIG.markaKimligi}
           isOpen={openSections.includes('marka-kimligi')}
           onToggle={() => toggleSection('marka-kimligi')}
           completion={getSectionCompletion('marka-kimligi')}
@@ -645,7 +621,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
                 />
               </div>
               
-              {/* Marka Sesi */}
+              {/* Marka Sesi - UI Kit HTML ile UYUMLU emoji'ler */}
               <div>
                 <Label className="flex items-center gap-2 mb-2">
                   Marka Sesi <span className="text-rose-500">*</span>
@@ -683,7 +659,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
       {/* ==================== SECTION 2: HEDEF KİTLE ==================== */}
       <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5">
         <SectionHeader 
-          section={BRIEF_SECTIONS_NEW.hedefKitle}
+          section={BRIEF_SECTIONS_CONFIG.hedefKitle}
           isOpen={openSections.includes('hedef-kitle')}
           onToggle={() => toggleSection('hedef-kitle')}
           completion={getSectionCompletion('hedef-kitle')}
@@ -702,357 +678,3 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
                   className="input-glow"
                 />
               </div>
-              
-              {/* Cinsiyet */}
-              <div>
-                <Label className="mb-2 block">Cinsiyet</Label>
-                <div className="flex gap-3">
-                  <OptionCard
-                    label="Kadın"
-                    selected={targetGender.includes('female')}
-                    onChange={() => {
-                      if (targetGender.includes('female')) {
-                        setTargetGender(targetGender.filter(g => g !== 'female'))
-                      } else {
-                        setTargetGender([...targetGender, 'female'])
-                      }
-                    }}
-                    type="checkbox"
-                    colorClass="violet"
-                  />
-                  <OptionCard
-                    label="Erkek"
-                    selected={targetGender.includes('male')}
-                    onChange={() => {
-                      if (targetGender.includes('male')) {
-                        setTargetGender(targetGender.filter(g => g !== 'male'))
-                      } else {
-                        setTargetGender([...targetGender, 'male'])
-                      }
-                    }}
-                    type="checkbox"
-                    colorClass="violet"
-                  />
-                </div>
-              </div>
-              
-              {/* Hedef Kitle Açıklaması */}
-              <div>
-                <Label className="mb-2 block">Hedef Kitle Açıklaması</Label>
-                <Textarea 
-                  value={formData.target_audience || ''} 
-                  onChange={(e) => setFormData({ ...formData, target_audience: e.target.value })}
-                  placeholder="Kadınlar ve hediye alma potansiyeli olan erkekler. Orta-üst gelir grubu..."
-                  rows={3}
-                  className="input-glow resize-none"
-                />
-              </div>
-              
-              {/* Lokasyon */}
-              <div>
-                <Label className="mb-2 block">Lokasyon</Label>
-                <Input 
-                  value={formData.target_geography || ''} 
-                  onChange={(e) => setFormData({ ...formData, target_geography: e.target.value })}
-                  placeholder="Örn: Türkiye geneli, özellikle büyükşehirler"
-                  className="input-glow"
-                />
-              </div>
-              
-            </div>
-          </div>
-        )}
-      </div>
-      
-      {/* ==================== SECTION 3: ÜRÜN/HİZMET ==================== */}
-      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5">
-        <SectionHeader 
-          section={BRIEF_SECTIONS_NEW.urunHizmet}
-          isOpen={openSections.includes('urun-hizmet')}
-          onToggle={() => toggleSection('urun-hizmet')}
-          completion={getSectionCompletion('urun-hizmet')}
-        />
-        {openSections.includes('urun-hizmet') && (
-          <div className="px-5 pb-5">
-            <div className="pt-4 border-t border-zinc-200 dark:border-white/5 space-y-5">
-              
-              {/* Ana Ürünler */}
-              <div>
-                <Label className="flex items-center gap-1 mb-2">
-                  Ana Ürün/Hizmetler <span className="text-rose-500">*</span>
-                </Label>
-                <TagInput 
-                  value={formData.top_products || []}
-                  onChange={(v) => setFormData({ ...formData, top_products: v })}
-                  placeholder="+ Yeni ürün ekle..."
-                  colorClass="cyan"
-                />
-              </div>
-              
-              {/* Fiyat Aralığı */}
-              <div>
-                <Label className={cn("mb-2 block", !priceRange.min && !priceRange.max && "text-amber-600 dark:text-amber-400")}>
-                  Fiyat Aralığı
-                  {!priceRange.min && !priceRange.max && <span className="text-xs ml-2">• Eksik</span>}
-                </Label>
-                <div className="flex gap-3">
-                  <div className="flex-1 relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400">₺</span>
-                    <Input 
-                      value={priceRange.min}
-                      onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
-                      placeholder="Min"
-                      className={cn(
-                        "input-glow pl-8",
-                        !priceRange.min && "bg-amber-50 dark:bg-amber-500/5 border-amber-200 dark:border-amber-500/20"
-                      )}
-                    />
-                  </div>
-                  <span className="text-zinc-400 self-center">—</span>
-                  <div className="flex-1 relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400">₺</span>
-                    <Input 
-                      value={priceRange.max}
-                      onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
-                      placeholder="Max"
-                      className={cn(
-                        "input-glow pl-8",
-                        !priceRange.max && "bg-amber-50 dark:bg-amber-500/5 border-amber-200 dark:border-amber-500/20"
-                      )}
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              {/* En Çok Satan */}
-              <div>
-                <Label className={cn("mb-2 block", !bestSellers && "text-amber-600 dark:text-amber-400")}>
-                  En Çok Satan Ürünler
-                  {!bestSellers && <span className="text-xs ml-2">• Eksik</span>}
-                </Label>
-                <Textarea 
-                  value={bestSellers}
-                  onChange={(e) => setBestSellers(e.target.value)}
-                  placeholder="Hangi ürünler en çok satıyor? İçerik üretiminde öncelik verilebilir."
-                  rows={2}
-                  className={cn(
-                    "input-glow resize-none",
-                    !bestSellers && "bg-amber-50 dark:bg-amber-500/5 border-amber-200 dark:border-amber-500/20"
-                  )}
-                />
-              </div>
-              
-            </div>
-          </div>
-        )}
-      </div>
-      
-      {/* ==================== SECTION 4: RAKİPLER ==================== */}
-      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5">
-        <SectionHeader 
-          section={BRIEF_SECTIONS_NEW.rakipler}
-          isOpen={openSections.includes('rakipler')}
-          onToggle={() => toggleSection('rakipler')}
-          completion={getSectionCompletion('rakipler')}
-        />
-        {openSections.includes('rakipler') && (
-          <div className="px-5 pb-5">
-            <div className="pt-4 border-t border-zinc-200 dark:border-white/5 space-y-5">
-              
-              {/* Ana Rakipler */}
-              <div>
-                <Label className="mb-2 block">Ana Rakipler</Label>
-                <TagInput 
-                  value={(formData.competitors || []).map(c => typeof c === 'string' ? c : c.name)}
-                  onChange={(v) => setFormData({ ...formData, competitors: v.map(name => ({ name, strengths: [] })) })}
-                  placeholder="+ Rakip ekle..."
-                  colorClass="amber"
-                />
-              </div>
-              
-              {/* Rakiplerden Farkınız */}
-              <div>
-                <Label className={cn("mb-2 block", !differentiation && "text-amber-600 dark:text-amber-400")}>
-                  Rakiplerden Farkınız
-                  {!differentiation && <span className="text-xs ml-2">• Eksik</span>}
-                </Label>
-                <Textarea 
-                  value={differentiation}
-                  onChange={(e) => setDifferentiation(e.target.value)}
-                  placeholder="Rakiplerinizden sizi ayıran özellikler neler?"
-                  rows={2}
-                  className={cn(
-                    "input-glow resize-none",
-                    !differentiation && "bg-amber-50 dark:bg-amber-500/5 border-amber-200 dark:border-amber-500/20"
-                  )}
-                />
-              </div>
-              
-            </div>
-          </div>
-        )}
-      </div>
-      
-      {/* ==================== SECTION 5: KURALLAR ==================== */}
-      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5">
-        <SectionHeader 
-          section={BRIEF_SECTIONS_NEW.kurallar}
-          isOpen={openSections.includes('kurallar')}
-          onToggle={() => toggleSection('kurallar')}
-          completion={getSectionCompletion('kurallar')}
-        />
-        {openSections.includes('kurallar') && (
-          <div className="px-5 pb-5">
-            <div className="pt-4 border-t border-zinc-200 dark:border-white/5 space-y-5">
-              
-              {/* Kullanılmaması Gereken Kelimeler */}
-              <div>
-                <Label className="mb-2 block">Kullanılmaması Gereken Kelimeler</Label>
-                <TagInput 
-                  value={formData.do_not_do || []}
-                  onChange={(v) => setFormData({ ...formData, do_not_do: v })}
-                  placeholder="+ Kelime ekle..."
-                  colorClass="rose"
-                />
-              </div>
-              
-              {/* Hashtag Tercihi */}
-              <div>
-                <Label className="mb-2 block">Hashtag Tercihi</Label>
-                <Select value={hashtagPreference} onValueChange={setHashtagPreference}>
-                  <SelectTrigger className="input-glow">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="few">Az hashtag (3-5 adet)</SelectItem>
-                    <SelectItem value="medium">Orta (5-10 adet)</SelectItem>
-                    <SelectItem value="many">Çok (10+ adet)</SelectItem>
-                    <SelectItem value="none">Hashtag kullanma</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {/* Emoji Kullanımı */}
-              <div>
-                <Label className="mb-2 block">Emoji Kullanımı</Label>
-                <div className="grid grid-cols-3 gap-3">
-                  <OptionCard
-                    label="Az"
-                    emoji="😊"
-                    selected={emojiPreference === 'minimal'}
-                    onChange={() => setEmojiPreference('minimal')}
-                  />
-                  <OptionCard
-                    label="Orta"
-                    emoji="😊✨"
-                    selected={emojiPreference === 'moderate'}
-                    onChange={() => setEmojiPreference('moderate')}
-                  />
-                  <OptionCard
-                    label="Çok"
-                    emoji="😊✨🎉"
-                    selected={emojiPreference === 'heavy'}
-                    onChange={() => setEmojiPreference('heavy')}
-                  />
-                </div>
-              </div>
-              
-            </div>
-          </div>
-        )}
-      </div>
-      
-      {/* ==================== SECTION 6: ÖZEL GÜNLER ==================== */}
-      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5">
-        <SectionHeader 
-          section={BRIEF_SECTIONS_NEW.ozelGunler}
-          isOpen={openSections.includes('ozel-gunler')}
-          onToggle={() => toggleSection('ozel-gunler')}
-          completion={getSectionCompletion('ozel-gunler')}
-        />
-        {openSections.includes('ozel-gunler') && (
-          <div className="px-5 pb-5">
-            <div className="pt-4 border-t border-zinc-200 dark:border-white/5 space-y-5">
-              
-              {/* Genel Özel Günler */}
-              <div>
-                <Label className="mb-2 block">İçerik Üretilecek Özel Günler</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {GENERAL_HOLIDAYS.map((holiday) => (
-                    <OptionCard
-                      key={holiday.id}
-                      label={holiday.label}
-                      selected={selectedHolidays.includes(holiday.id)}
-                      onChange={() => {
-                        if (selectedHolidays.includes(holiday.id)) {
-                          setSelectedHolidays(selectedHolidays.filter(h => h !== holiday.id))
-                        } else {
-                          setSelectedHolidays([...selectedHolidays, holiday.id])
-                        }
-                      }}
-                      type="checkbox"
-                      colorClass="fuchsia"
-                    />
-                  ))}
-                </div>
-              </div>
-              
-              {/* Markaya Özel Tarihler */}
-              <div>
-                <Label className={cn(
-                  "mb-2 block", 
-                  !formData.special_events?.length && "text-amber-600 dark:text-amber-400"
-                )}>
-                  Markaya Özel Tarihler
-                  {!formData.special_events?.length && <span className="text-xs ml-2">• Eksik</span>}
-                </Label>
-                <Textarea 
-                  value={formData.special_events?.map(e => `${e.date} - ${e.name}`).join('\n') || ''}
-                  onChange={(e) => {
-                    const lines = e.target.value.split('\n').filter(Boolean)
-                    const events = lines.map(line => {
-                      const [date, ...nameParts] = line.split(' - ')
-                      return { date: date?.trim() || '', name: nameParts.join(' - ').trim() || '', notes: '', recurring: false }
-                    })
-                    setFormData({ ...formData, special_events: events })
-                  }}
-                  placeholder="Örn: 15 Mart - Kuruluş yıldönümü&#10;22 Haziran - Mağaza açılışı"
-                  rows={2}
-                  className={cn(
-                    "input-glow resize-none",
-                    !formData.special_events?.length && "bg-amber-50 dark:bg-amber-500/5 border-amber-200 dark:border-amber-500/20"
-                  )}
-                />
-              </div>
-              
-            </div>
-          </div>
-        )}
-      </div>
-      
-      {/* Bottom Actions */}
-      <div className="flex items-center justify-between pt-4">
-        <p className="text-sm text-zinc-500">
-          <span className="text-emerald-600 dark:text-emerald-400 font-medium">{totalFilled}</span> / {totalFields} alan dolduruldu
-        </p>
-        <div className="flex gap-3">
-          <Button type="button" variant="outline" onClick={onCancel} className="btn-press">
-            İptal
-          </Button>
-          <Button 
-            type="submit" 
-            disabled={isLoading || !formData.name}
-            className="btn-press bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-500/25"
-          >
-            {isLoading ? (
-              <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Kaydediliyor...</>
-            ) : (
-              <><Save className="h-4 w-4 mr-2" />{customer ? 'Güncelle' : 'Kaydet'}</>
-            )}
-          </Button>
-        </div>
-      </div>
-      
-    </form>
-  )
-}

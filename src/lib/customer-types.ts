@@ -1,6 +1,6 @@
 // =====================================================
 // Customer Types - Genişletilmiş Brief Sistemi
-// Version: 2.1 - UI Kit v1.0 Brief Formu Entegrasyonu
+// Version: 2.2 - UI Kit v1.0 Brief Formu Entegrasyonu
 // =====================================================
 
 // Sosyal medya platform tipi
@@ -147,8 +147,8 @@ export type CustomerType = 'retainer' | 'project';
 // Customer status (Karar #14)
 export type CustomerStatus = 'active' | 'inactive';
 
-// Brand voice options - Karar #18
-export type BrandVoice = 'samimi' | 'kurumsal' | 'enerjik' | 'profesyonel';
+// Brand voice options - Karar #18 - UI Kit HTML ile uyumlu
+export type BrandVoice = 'samimi' | 'profesyonel' | 'kurumsal' | 'enerjik';
 
 // Business type
 export type BusinessType = 'B2B' | 'B2C' | 'Both';
@@ -360,7 +360,7 @@ export const BRIEF_SECTIONS_NEW = {
   },
   kurallar: {
     id: 'kurallar',
-    label: 'Kurallar',
+    label: 'İçerik Kuralları',
     icon: 'ShieldCheck',
     fields: ['do_not_do', 'must_emphasize'],
     required: []
@@ -521,7 +521,7 @@ export const SECTORS = [
   { value: 'diger', label: 'Diğer' }
 ] as const;
 
-// Marka Sesi - Karar #18 (4 seçenek, emoji'li)
+// Marka Sesi - UI Kit v1.0 HTML ile UYUMLU
 // emoji field'ı Brief formunda OptionCard için kullanılıyor
 export const BRAND_VOICES = [
   { value: 'samimi', label: 'Samimi', emoji: '🤝', icon: '🤝', description: 'Arkadaşça, sıcak' },

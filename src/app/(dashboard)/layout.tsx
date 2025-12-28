@@ -54,6 +54,10 @@ export default function DashboardLayout({
   
   const supabase = createClient()
 
+  // Marka detay sayfasında mı kontrol et
+  const isCustomerDetailPage = pathname.startsWith('/customers/') || pathname.startsWith('/musteriler/')
+  const isDetailPage = pathname.includes('/customers/') && pathname.split('/').length > 2
+
   useEffect(() => {
     setMounted(true)
     // Check saved theme or system preference
@@ -330,9 +334,9 @@ export default function DashboardLayout({
                 href="/musteriler"
                 className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
                 style={{
-                  background: isActive('/musteriler') ? styles.menuActiveBg : 'transparent',
-                  borderLeft: isActive('/musteriler') ? '3px solid #6366f1' : '3px solid transparent',
-                  color: isActive('/musteriler') ? styles.textPrimary : styles.textSecondary
+                  background: isActive('/musteriler') || isActive('/customers') ? styles.menuActiveBg : 'transparent',
+                  borderLeft: isActive('/musteriler') || isActive('/customers') ? '3px solid #6366f1' : '3px solid transparent',
+                  color: isActive('/musteriler') || isActive('/customers') ? styles.textPrimary : styles.textSecondary
                 }}
               >
                 <Building2 className="w-5 h-5" />
@@ -419,58 +423,60 @@ export default function DashboardLayout({
         {/* ========== MAIN CONTENT ========== */}
         <div className="flex-1 flex flex-col min-h-screen" style={{ marginLeft: '256px' }}>
           
-          {/* Sticky Header */}
-          <header 
-            className="sticky z-40 flex items-center justify-between px-6 py-4 transition-colors duration-300"
-            style={{
-              top: `${TOP_BAR_HEIGHT}px`,
-              background: styles.glassBg,
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              borderBottom: `1px solid ${styles.glassBorder}`
-            }}
-          >
-            <div>
-              <h1 className="text-xl font-bold transition-colors duration-300" style={{ color: styles.textPrimary }}>
-                Hoş geldin, {getUserName()} 👋
-              </h1>
-              <p className="text-sm mt-0.5" style={{ color: styles.textMuted }}>Hemen içerik üretmeye başla</p>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: styles.textMuted }} />
-                <input 
-                  type="text" 
-                  placeholder="Ara..." 
-                  className="w-56 pl-10 pr-4 py-2 rounded-lg text-sm transition-all focus:outline-none"
+          {/* Sticky Header - Sadece detay sayfası DEĞİLSE göster */}
+          {!isDetailPage && (
+            <header 
+              className="sticky z-40 flex items-center justify-between px-6 py-4 transition-colors duration-300"
+              style={{
+                top: `${TOP_BAR_HEIGHT}px`,
+                background: styles.glassBg,
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                borderBottom: `1px solid ${styles.glassBorder}`
+              }}
+            >
+              <div>
+                <h1 className="text-xl font-bold transition-colors duration-300" style={{ color: styles.textPrimary }}>
+                  Hoş geldin, {getUserName()} 👋
+                </h1>
+                <p className="text-sm mt-0.5" style={{ color: styles.textMuted }}>Hemen içerik üretmeye başla</p>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: styles.textMuted }} />
+                  <input 
+                    type="text" 
+                    placeholder="Ara..." 
+                    className="w-56 pl-10 pr-4 py-2 rounded-lg text-sm transition-all focus:outline-none"
+                    style={{
+                      background: styles.inputBg,
+                      border: `1px solid ${styles.inputBorder}`,
+                      color: styles.textPrimary
+                    }}
+                  />
+                  <kbd 
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] px-1.5 py-0.5 rounded font-mono"
+                    style={{ background: styles.inputBg, color: styles.textMuted }}
+                  >
+                    ⌘K
+                  </kbd>
+                </div>
+                
+                <button 
+                  className="relative p-2.5 rounded-lg transition-all"
                   style={{
                     background: styles.inputBg,
                     border: `1px solid ${styles.inputBorder}`,
-                    color: styles.textPrimary
+                    color: styles.textMuted
                   }}
-                />
-                <kbd 
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] px-1.5 py-0.5 rounded font-mono"
-                  style={{ background: styles.inputBg, color: styles.textMuted }}
                 >
-                  ⌘K
-                </kbd>
+                  <Bell className="w-5 h-5" />
+                  <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-rose-500" />
+                </button>
               </div>
-              
-              <button 
-                className="relative p-2.5 rounded-lg transition-all"
-                style={{
-                  background: styles.inputBg,
-                  border: `1px solid ${styles.inputBorder}`,
-                  color: styles.textMuted
-                }}
-              >
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-rose-500" />
-              </button>
-            </div>
-          </header>
+            </header>
+          )}
           
           {/* Content */}
           <div 
