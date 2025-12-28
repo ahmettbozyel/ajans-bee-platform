@@ -43,6 +43,9 @@ const navTabs = [
   { label: 'Components', href: '#' },
 ]
 
+// Personel sayfaları - admin olmayanlar sadece bunlara erişebilir
+const STAFF_PAGES = ['/gunluk-isler', '/giris-cikis']
+
 export default function DashboardLayout({
   children,
 }: {
@@ -61,6 +64,9 @@ export default function DashboardLayout({
   // Marka detay sayfasında mı kontrol et
   const isCustomerDetailPage = pathname.startsWith('/customers/') || pathname.startsWith('/musteriler/')
   const isDetailPage = pathname.includes('/customers/') && pathname.split('/').length > 2
+  
+  // Personel sayfasında mı?
+  const isStaffPage = STAFF_PAGES.some(page => pathname.startsWith(page))
 
   useEffect(() => {
     setMounted(true)
@@ -85,23 +91,26 @@ export default function DashboardLayout({
       return
     }
     
-    // Admin değilse staff paneline yönlendir
-    if (!isAdmin) {
+    // Admin değilse VE personel sayfasında DEĞİLSE → personel sayfasına yönlendir
+    if (!isAdmin && !isStaffPage) {
       router.push('/gunluk-isler')
       return
     }
     
-    // Admin ise verileri çek
+    // Verileri çek (admin için veya personel sayfasındaki herkes için)
     async function fetchData() {
       try {
-        const [customersRes, servicesRes] = await Promise.all([
-          supabase.from('customers').select('id', { count: 'exact', head: true }),
-          supabase.from('technical_services').select('id', { count: 'exact', head: true })
-        ])
-        setCounts({
-          customers: customersRes.count || 0,
-          services: servicesRes.count || 0
-        })
+        // Admin için tüm verileri çek
+        if (isAdmin) {
+          const [customersRes, servicesRes] = await Promise.all([
+            supabase.from('customers').select('id', { count: 'exact', head: true }),
+            supabase.from('technical_services').select('id', { count: 'exact', head: true })
+          ])
+          setCounts({
+            customers: customersRes.count || 0,
+            services: servicesRes.count || 0
+          })
+        }
       } catch (error) {
         console.error('Fetch error:', error)
       } finally {
@@ -110,7 +119,7 @@ export default function DashboardLayout({
     }
     
     fetchData()
-  }, [authLoading, appUser, isAdmin, router, supabase])
+  }, [authLoading, appUser, isAdmin, isStaffPage, router, supabase, pathname])
 
   const toggleTheme = () => {
     const newIsDark = !isDark
@@ -146,6 +155,12 @@ export default function DashboardLayout({
       return name.charAt(0).toUpperCase() + name.slice(1)
     }
     return 'Kullanıcı'
+  }
+  
+  const getRoleBadge = () => {
+    if (isAdmin) return { label: 'Admin', color: 'emerald' }
+    if (appUser?.role === 'operasyon') return { label: 'Operasyon', color: 'violet' }
+    return { label: 'Personel', color: 'blue' }
   }
 
   // ==========================================
@@ -215,9 +230,13 @@ export default function DashboardLayout({
     )
   }
 
-  if (!appUser || !isAdmin) return null
+  if (!appUser) return null
+  
+  // Admin değilse ve personel sayfasında değilse hiçbir şey gösterme (yönlendirme yapılıyor)
+  if (!isAdmin && !isStaffPage) return null
 
   const TOP_BAR_HEIGHT = 48
+  const roleBadge = getRoleBadge()
 
   return (
     <div className="min-h-screen transition-colors duration-300" style={{ background: styles.bodyBg }}>
@@ -235,22 +254,26 @@ export default function DashboardLayout({
         {/* Sol: Version + Tabs */}
         <div className="flex items-center gap-2">
           <span className="text-xs font-mono" style={{ color: styles.textMuted }}>UI Kit v1.0</span>
-          <span style={{ color: styles.textMuted }}>|</span>
-          <div className="flex gap-1">
-            {navTabs.map((tab) => (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                className="px-3 py-1.5 text-xs font-medium rounded-md transition-all"
-                style={{
-                  background: isTabActive(tab.href) ? (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)') : 'transparent',
-                  color: isTabActive(tab.href) ? styles.textPrimary : styles.textSecondary
-                }}
-              >
-                {tab.label}
-              </Link>
-            ))}
-          </div>
+          {isAdmin && (
+            <>
+              <span style={{ color: styles.textMuted }}>|</span>
+              <div className="flex gap-1">
+                {navTabs.map((tab) => (
+                  <Link
+                    key={tab.href}
+                    href={tab.href}
+                    className="px-3 py-1.5 text-xs font-medium rounded-md transition-all"
+                    style={{
+                      background: isTabActive(tab.href) ? (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)') : 'transparent',
+                      color: isTabActive(tab.href) ? styles.textPrimary : styles.textSecondary
+                    }}
+                  >
+                    {tab.label}
+                  </Link>
+                ))}
+              </div>
+            </>
+          )}
         </div>
         
         {/* Sağ: Dark Mode Toggle */}
@@ -327,80 +350,86 @@ export default function DashboardLayout({
 
             {/* Navigation */}
             <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-              <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2" style={{ color: styles.textMuted }}>Ana Menü</p>
               
-              {/* Dashboard */}
-              <Link
-                href="/dashboard"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
-                style={{
-                  background: isActive('/dashboard') ? styles.menuActiveBg : 'transparent',
-                  borderLeft: isActive('/dashboard') ? '3px solid #6366f1' : '3px solid transparent',
-                  color: isActive('/dashboard') ? styles.textPrimary : styles.textSecondary
-                }}
-              >
-                <LayoutDashboard className={`w-5 h-5 ${isActive('/dashboard') ? 'text-indigo-500' : ''}`} />
-                <span className="text-sm font-medium">Dashboard</span>
-              </Link>
+              {/* Admin menüsü */}
+              {isAdmin && (
+                <>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2" style={{ color: styles.textMuted }}>Ana Menü</p>
+                  
+                  {/* Dashboard */}
+                  <Link
+                    href="/dashboard"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
+                    style={{
+                      background: isActive('/dashboard') ? styles.menuActiveBg : 'transparent',
+                      borderLeft: isActive('/dashboard') ? '3px solid #6366f1' : '3px solid transparent',
+                      color: isActive('/dashboard') ? styles.textPrimary : styles.textSecondary
+                    }}
+                  >
+                    <LayoutDashboard className={`w-5 h-5 ${isActive('/dashboard') ? 'text-indigo-500' : ''}`} />
+                    <span className="text-sm font-medium">Dashboard</span>
+                  </Link>
 
-              {/* Markalar */}
-              <Link
-                href="/musteriler"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
-                style={{
-                  background: isActive('/musteriler') || isActive('/customers') ? styles.menuActiveBg : 'transparent',
-                  borderLeft: isActive('/musteriler') || isActive('/customers') ? '3px solid #6366f1' : '3px solid transparent',
-                  color: isActive('/musteriler') || isActive('/customers') ? styles.textPrimary : styles.textSecondary
-                }}
-              >
-                <Building2 className="w-5 h-5" />
-                <span className="text-sm font-medium">Markalar</span>
-                {counts.customers > 0 && (
-                  <span className="ml-auto text-[11px] bg-violet-500/20 text-violet-400 px-2 py-0.5 rounded-full font-mono">{counts.customers}</span>
-                )}
-              </Link>
+                  {/* Markalar */}
+                  <Link
+                    href="/musteriler"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
+                    style={{
+                      background: isActive('/musteriler') || isActive('/customers') ? styles.menuActiveBg : 'transparent',
+                      borderLeft: isActive('/musteriler') || isActive('/customers') ? '3px solid #6366f1' : '3px solid transparent',
+                      color: isActive('/musteriler') || isActive('/customers') ? styles.textPrimary : styles.textSecondary
+                    }}
+                  >
+                    <Building2 className="w-5 h-5" />
+                    <span className="text-sm font-medium">Markalar</span>
+                    {counts.customers > 0 && (
+                      <span className="ml-auto text-[11px] bg-violet-500/20 text-violet-400 px-2 py-0.5 rounded-full font-mono">{counts.customers}</span>
+                    )}
+                  </Link>
 
-              {/* Teknik Hizmetler */}
-              <Link
-                href="/teknik-hizmetler"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
-                style={{
-                  background: isActive('/teknik-hizmetler') ? styles.menuActiveBg : 'transparent',
-                  borderLeft: isActive('/teknik-hizmetler') ? '3px solid #6366f1' : '3px solid transparent',
-                  color: isActive('/teknik-hizmetler') ? styles.textPrimary : styles.textSecondary
-                }}
-              >
-                <Server className="w-5 h-5" />
-                <span className="text-sm font-medium">Teknik Hizmetler</span>
-                {counts.services > 0 && (
-                  <span className="ml-auto text-[11px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-mono">{counts.services}</span>
-                )}
-              </Link>
+                  {/* Teknik Hizmetler */}
+                  <Link
+                    href="/teknik-hizmetler"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
+                    style={{
+                      background: isActive('/teknik-hizmetler') ? styles.menuActiveBg : 'transparent',
+                      borderLeft: isActive('/teknik-hizmetler') ? '3px solid #6366f1' : '3px solid transparent',
+                      color: isActive('/teknik-hizmetler') ? styles.textPrimary : styles.textSecondary
+                    }}
+                  >
+                    <Server className="w-5 h-5" />
+                    <span className="text-sm font-medium">Teknik Hizmetler</span>
+                    {counts.services > 0 && (
+                      <span className="ml-auto text-[11px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-mono">{counts.services}</span>
+                    )}
+                  </Link>
 
-              <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 mt-5" style={{ color: styles.textMuted }}>Araçlar</p>
-              
-              {/* İçerik Üret */}
-              <Link
-                href="/icerik-uret"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
-                style={{
-                  background: isActive('/icerik-uret') ? styles.menuActiveBg : 'transparent',
-                  borderLeft: isActive('/icerik-uret') ? '3px solid #6366f1' : '3px solid transparent',
-                  color: isActive('/icerik-uret') ? styles.textPrimary : styles.textSecondary
-                }}
-              >
-                <Sparkles className="w-5 h-5" />
-                <span className="text-sm font-medium">İçerik Üret</span>
-                <span 
-                  className="ml-auto text-[10px] text-fuchsia-400 px-2 py-0.5 rounded-full font-mono"
-                  style={{
-                    background: 'rgba(217, 70, 239, 0.2)',
-                    border: '1px solid rgba(217, 70, 239, 0.2)'
-                  }}
-                >
-                  AI
-                </span>
-              </Link>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 mt-5" style={{ color: styles.textMuted }}>Araçlar</p>
+                  
+                  {/* İçerik Üret */}
+                  <Link
+                    href="/icerik-uret"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
+                    style={{
+                      background: isActive('/icerik-uret') ? styles.menuActiveBg : 'transparent',
+                      borderLeft: isActive('/icerik-uret') ? '3px solid #6366f1' : '3px solid transparent',
+                      color: isActive('/icerik-uret') ? styles.textPrimary : styles.textSecondary
+                    }}
+                  >
+                    <Sparkles className="w-5 h-5" />
+                    <span className="text-sm font-medium">İçerik Üret</span>
+                    <span 
+                      className="ml-auto text-[10px] text-fuchsia-400 px-2 py-0.5 rounded-full font-mono"
+                      style={{
+                        background: 'rgba(217, 70, 239, 0.2)',
+                        border: '1px solid rgba(217, 70, 239, 0.2)'
+                      }}
+                    >
+                      AI
+                    </span>
+                  </Link>
+                </>
+              )}
 
               <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 mt-5" style={{ color: styles.textMuted }}>Personel</p>
               
@@ -432,19 +461,21 @@ export default function DashboardLayout({
                 <span className="text-sm font-medium">Giriş/Çıkış</span>
               </Link>
 
-              {/* Ayarlar */}
-              <Link
-                href="/ayarlar"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
-                style={{
-                  background: isActive('/ayarlar') ? styles.menuActiveBg : 'transparent',
-                  borderLeft: isActive('/ayarlar') ? '3px solid #6366f1' : '3px solid transparent',
-                  color: isActive('/ayarlar') ? styles.textPrimary : styles.textSecondary
-                }}
-              >
-                <Settings className="w-5 h-5" />
-                <span className="text-sm font-medium">Ayarlar</span>
-              </Link>
+              {/* Ayarlar - sadece admin */}
+              {isAdmin && (
+                <Link
+                  href="/ayarlar"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
+                  style={{
+                    background: isActive('/ayarlar') ? styles.menuActiveBg : 'transparent',
+                    borderLeft: isActive('/ayarlar') ? '3px solid #6366f1' : '3px solid transparent',
+                    color: isActive('/ayarlar') ? styles.textPrimary : styles.textSecondary
+                  }}
+                >
+                  <Settings className="w-5 h-5" />
+                  <span className="text-sm font-medium">Ayarlar</span>
+                </Link>
+              )}
             </nav>
 
             {/* User Section */}
@@ -468,10 +499,10 @@ export default function DashboardLayout({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate transition-colors duration-300" style={{ color: styles.textPrimary }}>
-                      {appUser.full_name || 'Ahmet Bozyel'}
+                      {appUser.full_name || getUserName()}
                     </p>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-emerald-500/20 text-emerald-400">
-                      Admin
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium bg-${roleBadge.color}-500/20 text-${roleBadge.color}-400`}>
+                      {roleBadge.label}
                     </span>
                   </div>
                 </div>
@@ -506,42 +537,46 @@ export default function DashboardLayout({
                 <h1 className="text-xl font-bold transition-colors duration-300" style={{ color: styles.textPrimary }}>
                   Hoş geldin, {getUserName()} 👋
                 </h1>
-                <p className="text-sm mt-0.5" style={{ color: styles.textMuted }}>Hemen içerik üretmeye başla</p>
+                <p className="text-sm mt-0.5" style={{ color: styles.textMuted }}>
+                  {isAdmin ? 'Hemen içerik üretmeye başla' : 'Günlük işlerini kaydet'}
+                </p>
               </div>
               
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: styles.textMuted }} />
-                  <input 
-                    type="text" 
-                    placeholder="Ara..." 
-                    className="w-56 pl-10 pr-4 py-2 rounded-lg text-sm transition-all focus:outline-none"
+              {isAdmin && (
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: styles.textMuted }} />
+                    <input 
+                      type="text" 
+                      placeholder="Ara..." 
+                      className="w-56 pl-10 pr-4 py-2 rounded-lg text-sm transition-all focus:outline-none"
+                      style={{
+                        background: styles.inputBg,
+                        border: `1px solid ${styles.inputBorder}`,
+                        color: styles.textPrimary
+                      }}
+                    />
+                    <kbd 
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] px-1.5 py-0.5 rounded font-mono"
+                      style={{ background: styles.inputBg, color: styles.textMuted }}
+                    >
+                      ⌘K
+                    </kbd>
+                  </div>
+                  
+                  <button 
+                    className="relative p-2.5 rounded-lg transition-all"
                     style={{
                       background: styles.inputBg,
                       border: `1px solid ${styles.inputBorder}`,
-                      color: styles.textPrimary
+                      color: styles.textMuted
                     }}
-                  />
-                  <kbd 
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] px-1.5 py-0.5 rounded font-mono"
-                    style={{ background: styles.inputBg, color: styles.textMuted }}
                   >
-                    ⌘K
-                  </kbd>
+                    <Bell className="w-5 h-5" />
+                    <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-rose-500" />
+                  </button>
                 </div>
-                
-                <button 
-                  className="relative p-2.5 rounded-lg transition-all"
-                  style={{
-                    background: styles.inputBg,
-                    border: `1px solid ${styles.inputBorder}`,
-                    color: styles.textMuted
-                  }}
-                >
-                  <Bell className="w-5 h-5" />
-                  <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-rose-500" />
-                </button>
-              </div>
+              )}
             </header>
           )}
           
