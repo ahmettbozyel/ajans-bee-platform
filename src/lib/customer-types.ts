@@ -1,6 +1,6 @@
 // =====================================================
 // Customer Types - Genişletilmiş Brief Sistemi
-// Version: 2.0 - UI Kit v1.0 Entegrasyonu (Karar #18)
+// Version: 2.1 - UI Kit v1.0 Brief Formu Entegrasyonu
 // =====================================================
 
 // Sosyal medya platform tipi
@@ -522,11 +522,12 @@ export const SECTORS = [
 ] as const;
 
 // Marka Sesi - Karar #18 (4 seçenek, emoji'li)
+// emoji field'ı Brief formunda OptionCard için kullanılıyor
 export const BRAND_VOICES = [
-  { value: 'samimi', label: 'Samimi', icon: '🤝', description: 'Arkadaşça, sıcak' },
-  { value: 'profesyonel', label: 'Profesyonel', icon: '💼', description: 'Ciddi, iş odaklı' },
-  { value: 'kurumsal', label: 'Kurumsal', icon: '🏢', description: 'Formal, resmi' },
-  { value: 'enerjik', label: 'Enerjik', icon: '⚡', description: 'Dinamik, heyecanlı' }
+  { value: 'samimi', label: 'Samimi', emoji: '🤝', icon: '🤝', description: 'Arkadaşça, sıcak' },
+  { value: 'profesyonel', label: 'Profesyonel', emoji: '💼', icon: '💼', description: 'Ciddi, iş odaklı' },
+  { value: 'kurumsal', label: 'Kurumsal', emoji: '🏢', icon: '🏢', description: 'Formal, resmi' },
+  { value: 'enerjik', label: 'Enerjik', emoji: '⚡', icon: '⚡', description: 'Dinamik, heyecanlı' }
 ] as const;
 
 export const BUSINESS_TYPES = [
