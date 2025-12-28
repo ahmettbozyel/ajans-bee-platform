@@ -104,13 +104,13 @@ export function UsersTab() {
       if (editingUser) {
         // Update existing user
         const { error } = await (supabase
-          .from('users')
+          .from('users') as any)
           .update({
             full_name: formData.full_name,
             role: formData.role,
             updated_at: new Date().toISOString()
           })
-          .eq('id', editingUser.id) as any)
+          .eq('id', editingUser.id)
 
         if (error) throw error
       } else {
@@ -130,14 +130,14 @@ export function UsersTab() {
         // Insert into public.users table
         if (authData.user) {
           const { error: insertError } = await (supabase
-            .from('users')
+            .from('users') as any)
             .insert({
               id: authData.user.id,
               email: formData.email,
               full_name: formData.full_name,
               role: formData.role,
               is_active: true
-            }) as any)
+            })
 
           if (insertError) throw insertError
         }
@@ -156,12 +156,12 @@ export function UsersTab() {
   async function toggleUserStatus(user: User) {
     try {
       const { error } = await (supabase
-        .from('users')
+        .from('users') as any)
         .update({ 
           is_active: !user.is_active,
           updated_at: new Date().toISOString()
         })
-        .eq('id', user.id) as any)
+        .eq('id', user.id)
 
       if (error) throw error
       await fetchUsers()
@@ -413,7 +413,7 @@ export function UsersTab() {
                       className={cn(
                         "px-3 py-2.5 rounded-lg border text-sm font-medium transition-all",
                         formData.role === role.value
-                          ? `bg-${role.color}-500/20 border-${role.color}-500/50 text-${role.color}-400`
+                          ? ""
                           : "bg-white/5 border-white/10 text-zinc-400 hover:border-white/20"
                       )}
                       style={formData.role === role.value ? {
