@@ -4,12 +4,13 @@ import { useState } from 'react'
 import { Settings, DollarSign, Users, Shield, Palette } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ServiceProvidersTab } from './components/service-providers-tab'
+import { UsersTab } from './components/users-tab'
 
 type TabType = 'providers' | 'users' | 'security' | 'appearance'
 
 const TABS = [
   { id: 'providers' as TabType, label: 'Sağlayıcı Fiyatları', icon: DollarSign, ready: true },
-  { id: 'users' as TabType, label: 'Kullanıcılar', icon: Users, ready: false },
+  { id: 'users' as TabType, label: 'Kullanıcılar', icon: Users, ready: true },
   { id: 'security' as TabType, label: 'Güvenlik', icon: Shield, ready: false },
   { id: 'appearance' as TabType, label: 'Görünüm', icon: Palette, ready: false },
 ]
@@ -63,8 +64,9 @@ export default function AyarlarPage() {
 
       {/* Tab Content */}
       {activeTab === 'providers' && <ServiceProvidersTab />}
+      {activeTab === 'users' && <UsersTab />}
       
-      {activeTab !== 'providers' && (
+      {activeTab !== 'providers' && activeTab !== 'users' && (
         <div className="glass-card rounded-2xl p-12 border border-zinc-200 dark:border-white/10 text-center">
           <div className="p-4 rounded-2xl bg-zinc-100 dark:bg-white/5 w-fit mx-auto mb-4">
             <Settings className="w-8 h-8 text-zinc-400" />
