@@ -1,7 +1,7 @@
 // @ts-nocheck
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { 
   Fingerprint, Users, Package, Swords, ShieldAlert, CalendarHeart,
   ChevronDown, Bot, Plus, X, Check, Globe, Instagram, Facebook, Linkedin,
@@ -200,7 +200,13 @@ function SectionHeader({ section, isOpen, onToggle, completion }: SectionHeaderP
 }
 
 // Progress Overview Grid - UI Kit HTML ile UYUMLU
-function ProgressOverview({ sections }: { sections: { label: string; filled: number; total: number }[] }) {
+// Artık tıklanabilir ve ilgili section'a scroll ediyor
+interface ProgressOverviewProps {
+  sections: { label: string; filled: number; total: number; id: string }[]
+  onSectionClick: (sectionId: string) => void
+}
+
+function ProgressOverview({ sections, onSectionClick }: ProgressOverviewProps) {
   return (
     <div className="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900/50">
       <div className="flex items-center justify-between mb-4">
@@ -237,13 +243,21 @@ function ProgressOverview({ sections }: { sections: { label: string; filled: num
           // Default: AMBER - %50'den az
           
           return (
-            <div key={i} className={cn("text-center p-3 rounded-xl border", colorClass)}>
+            <button
+              key={i}
+              type="button"
+              onClick={() => onSectionClick(section.id)}
+              className={cn(
+                "text-center p-3 rounded-xl border cursor-pointer transition-all hover:scale-105 hover:shadow-md",
+                colorClass
+              )}
+            >
               <Icon className={cn("w-5 h-5 mx-auto mb-1", iconColorClass)} />
               <p className={cn("text-[10px] font-medium", textColorClass)}>{section.label}</p>
               <p className={cn("text-[10px] font-mono", textColorClass.replace('700', '600').replace('400', '500'))}>
                 {section.filled}/{section.total}
               </p>
-            </div>
+            </button>
           )
         })}
       </div>
@@ -398,6 +412,9 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
     isLoading: false, progress: 0, status: 'idle', error: null, filledFields: [] 
   })
   
+  // Section refs for scroll
+  const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
+  
   // Form Data
   const [formData, setFormData] = useState<CustomerFormData>({
     name: '', brand_name: '', website_url: '', sector: '', sub_sector: '', 
@@ -479,6 +496,22 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
   const toggleSection = (id: string) => {
     setOpenSections(prev => prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id])
   }
+  
+  // Section'a scroll et ve aç
+  const scrollToSection = (sectionId: string) => {
+    // Önce section'ı aç (kapalıysa)
+    if (!openSections.includes(sectionId)) {
+      setOpenSections(prev => [...prev, sectionId])
+    }
+    
+    // Biraz bekle ki DOM güncellensin, sonra scroll et
+    setTimeout(() => {
+      const element = sectionRefs.current[sectionId]
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }, 100)
+  }
 
   // Calculate section completions
   const getSectionCompletion = (sectionId: string) => {
@@ -548,6 +581,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
 
   const allSectionsProgress = Object.values(BRIEF_SECTIONS_CONFIG).map(section => ({
     label: section.label,
+    id: section.id,
     ...getSectionCompletion(section.id)
   }))
 
@@ -563,11 +597,17 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       
-      {/* Progress Overview */}
-      <ProgressOverview sections={allSectionsProgress} />
+      {/* Progress Overview - Tıklanabilir */}
+      <ProgressOverview 
+        sections={allSectionsProgress} 
+        onSectionClick={scrollToSection}
+      />
       
       {/* ==================== SECTION 1: MARKA KİMLİĞİ ==================== */}
-      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5 bg-white dark:bg-zinc-900/50">
+      <div 
+        ref={(el) => { sectionRefs.current['marka-kimligi'] = el }}
+        className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5 bg-white dark:bg-zinc-900/50 scroll-mt-32"
+      >
         <SectionHeader 
           section={BRIEF_SECTIONS_CONFIG.markaKimligi}
           isOpen={openSections.includes('marka-kimligi')}
@@ -657,7 +697,10 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
       </div>
       
       {/* ==================== SECTION 2: HEDEF KİTLE ==================== */}
-      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5 bg-white dark:bg-zinc-900/50">
+      <div 
+        ref={(el) => { sectionRefs.current['hedef-kitle'] = el }}
+        className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5 bg-white dark:bg-zinc-900/50 scroll-mt-32"
+      >
         <SectionHeader 
           section={BRIEF_SECTIONS_CONFIG.hedefKitle}
           isOpen={openSections.includes('hedef-kitle')}
@@ -749,7 +792,10 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
       </div>
       
       {/* ==================== SECTION 3: ÜRÜN/HİZMET ==================== */}
-      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5 bg-white dark:bg-zinc-900/50">
+      <div 
+        ref={(el) => { sectionRefs.current['urun-hizmet'] = el }}
+        className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5 bg-white dark:bg-zinc-900/50 scroll-mt-32"
+      >
         <SectionHeader 
           section={BRIEF_SECTIONS_CONFIG.urunHizmet}
           isOpen={openSections.includes('urun-hizmet')}
@@ -817,7 +863,10 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
       </div>
       
       {/* ==================== SECTION 4: RAKİPLER ==================== */}
-      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5 bg-white dark:bg-zinc-900/50">
+      <div 
+        ref={(el) => { sectionRefs.current['rakipler'] = el }}
+        className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5 bg-white dark:bg-zinc-900/50 scroll-mt-32"
+      >
         <SectionHeader 
           section={BRIEF_SECTIONS_CONFIG.rakipler}
           isOpen={openSections.includes('rakipler')}
@@ -857,7 +906,10 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
       </div>
       
       {/* ==================== SECTION 5: KURALLAR ==================== */}
-      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5 bg-white dark:bg-zinc-900/50">
+      <div 
+        ref={(el) => { sectionRefs.current['kurallar'] = el }}
+        className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5 bg-white dark:bg-zinc-900/50 scroll-mt-32"
+      >
         <SectionHeader 
           section={BRIEF_SECTIONS_CONFIG.kurallar}
           isOpen={openSections.includes('kurallar')}
@@ -926,7 +978,10 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
       </div>
       
       {/* ==================== SECTION 6: ÖZEL GÜNLER ==================== */}
-      <div className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5 bg-white dark:bg-zinc-900/50">
+      <div 
+        ref={(el) => { sectionRefs.current['ozel-gunler'] = el }}
+        className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5 bg-white dark:bg-zinc-900/50 scroll-mt-32"
+      >
         <SectionHeader 
           section={BRIEF_SECTIONS_CONFIG.ozelGunler}
           isOpen={openSections.includes('ozel-gunler')}
