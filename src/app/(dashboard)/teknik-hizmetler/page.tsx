@@ -119,28 +119,28 @@ export default function TeknikHizmetlerPage() {
             <Server className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
           </div>
           <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">{stats.total}</p>
-          <p className="text-sm text-zinc-500">Toplam Hizmet</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Toplam Hizmet</p>
         </div>
         <div className="glass-card rounded-2xl p-5 glow-violet card-hover">
           <div className="p-3 rounded-xl bg-violet-100 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 w-fit mb-4">
             <Building2 className="w-6 h-6 text-violet-600 dark:text-violet-400" />
           </div>
           <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">{stats.brands}</p>
-          <p className="text-sm text-zinc-500">Marka</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Marka</p>
         </div>
         <div className="glass-card rounded-2xl p-5 glow-amber card-hover">
           <div className="p-3 rounded-xl bg-amber-100 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 w-fit mb-4">
             <Calendar className="w-6 h-6 text-amber-600 dark:text-amber-400" />
           </div>
           <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">{stats.upcoming}</p>
-          <p className="text-sm text-zinc-500">30 Gün İçinde</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">30 Gün İçinde</p>
         </div>
         <div className="glass-card rounded-2xl p-5 glow-rose card-hover">
           <div className="p-3 rounded-xl bg-rose-100 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 w-fit mb-4">
             <AlertTriangle className="w-6 h-6 text-rose-600 dark:text-rose-400" />
           </div>
           <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">{stats.overdue}</p>
-          <p className="text-sm text-zinc-500">Gecikmiş</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Gecikmiş</p>
         </div>
       </div>
       
@@ -195,7 +195,7 @@ export default function TeknikHizmetlerPage() {
           <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">
             {services.length === 0 ? 'Henüz hizmet eklenmedi' : 'Sonuç bulunamadı'}
           </h3>
-          <p className="text-sm text-zinc-500 mb-4">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
             {services.length === 0 
               ? 'Hosting, domain, SSL veya e-posta hizmetlerini buradan takip edebilirsin.' 
               : 'Farklı bir arama terimi veya filtre deneyin.'}
@@ -216,7 +216,7 @@ export default function TeknikHizmetlerPage() {
             <h2 className="font-semibold text-zinc-900 dark:text-white">
               Tüm Hizmetler ({filteredServices.length})
             </h2>
-            <div className="flex items-center gap-2 text-xs text-zinc-500">
+            <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
               <span>Sırala:</span>
               <span className="text-zinc-900 dark:text-white font-medium">Yenileme Tarihi</span>
             </div>
@@ -260,14 +260,14 @@ export default function TeknikHizmetlerPage() {
                           {serviceLabel}
                         </span>
                         {service.provider && (
-                          <span className="text-xs text-zinc-500">{service.provider.name}</span>
+                          <span className="text-xs text-zinc-500 dark:text-zinc-400">{service.provider.name}</span>
                         )}
                       </div>
                       <div className="flex items-center gap-3">
                         {service.brand && (
                           <div className="flex items-center gap-1">
                             <Building2 className="w-3 h-3 text-zinc-400" />
-                            <span className="text-xs text-zinc-500">{service.brand.name}</span>
+                            <span className="text-xs text-zinc-500 dark:text-zinc-400">{service.brand.name}</span>
                           </div>
                         )}
                         {price > 0 && (
@@ -276,12 +276,12 @@ export default function TeknikHizmetlerPage() {
                           </span>
                         )}
                         {service.quantity > 1 && (
-                          <span className="text-xs bg-zinc-100 dark:bg-white/5 text-zinc-500 px-1.5 py-0.5 rounded">
+                          <span className="text-xs bg-zinc-100 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 px-1.5 py-0.5 rounded">
                             x{service.quantity}
                           </span>
                         )}
                         {service.auto_renew && (
-                          <div className="flex items-center gap-1 text-xs text-emerald-600">
+                          <div className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
                             <RefreshCw className="w-3 h-3" />
                             Otomatik
                           </div>
@@ -295,7 +295,7 @@ export default function TeknikHizmetlerPage() {
                         <span className="text-xs px-2.5 py-1 rounded-full bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400 font-semibold border border-rose-200 dark:border-rose-500/30 animate-pulse">
                           {Math.abs(daysDiff!)} gün geçti!
                         </span>
-                        <Button size="sm" variant="outline" className="text-rose-600 border-rose-200 hover:bg-rose-50">
+                        <Button size="sm" variant="outline" className="text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-500/30 hover:bg-rose-50 dark:hover:bg-rose-500/10">
                           Şimdi Yenile
                         </Button>
                       </>
@@ -308,7 +308,7 @@ export default function TeknikHizmetlerPage() {
                       </>
                     ) : daysDiff !== null ? (
                       <>
-                        <span className="text-xs text-zinc-500 font-mono">{daysDiff} gün</span>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">{daysDiff} gün</span>
                         <span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
                           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
                           {statusInfo?.label || 'Aktif'}
