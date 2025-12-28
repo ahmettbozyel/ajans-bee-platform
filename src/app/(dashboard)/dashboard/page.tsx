@@ -15,10 +15,33 @@ import {
 } from 'lucide-react'
 import type { Customer } from '@/lib/customer-types'
 
+// Glow style helpers
+const glowStyles = {
+  indigo: {
+    border: '1px solid rgba(99, 102, 241, 0.4)',
+    boxShadow: '0 0 20px -5px rgba(99, 102, 241, 0.4), inset 0 0 20px -10px rgba(99, 102, 241, 0.1)'
+  },
+  violet: {
+    border: '1px solid rgba(139, 92, 246, 0.4)',
+    boxShadow: '0 0 20px -5px rgba(139, 92, 246, 0.4), inset 0 0 20px -10px rgba(139, 92, 246, 0.1)'
+  },
+  cyan: {
+    border: '1px solid rgba(34, 211, 238, 0.4)',
+    boxShadow: '0 0 20px -5px rgba(34, 211, 238, 0.4), inset 0 0 20px -10px rgba(34, 211, 238, 0.1)'
+  }
+}
+
+const glassCardStyle = {
+  background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+  backdropFilter: 'blur(20px)',
+  WebkitBackdropFilter: 'blur(20px)'
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(true)
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null)
 
   const supabase = createClient()
 
@@ -45,47 +68,47 @@ export default function DashboardPage() {
 
   const activeCustomers = customers.filter(c => c.status !== 'inactive')
 
-  // Hızlı İşlemler - UI Kit'e göre (gradient bg eklendi)
+  // Hızlı İşlemler
   const quickActions = [
     {
       title: 'İçerik Üret',
       description: 'AI ile içerik oluştur',
       icon: Sparkles,
       href: '/icerik-uret',
-      cardBg: 'bg-gradient-to-br from-fuchsia-50/50 to-violet-50/50 dark:from-fuchsia-500/5 dark:to-violet-500/5',
-      iconBg: 'from-fuchsia-100 to-violet-100 dark:from-fuchsia-500/10 dark:to-violet-500/10',
-      border: 'border-fuchsia-200 dark:border-fuchsia-500/20',
-      iconColor: 'text-fuchsia-600 dark:text-fuchsia-400'
+      gradient: 'linear-gradient(135deg, rgba(217, 70, 239, 0.08) 0%, rgba(139, 92, 246, 0.05) 100%)',
+      iconBg: 'linear-gradient(135deg, rgba(217, 70, 239, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%)',
+      iconColor: '#d946ef',
+      borderColor: 'rgba(217, 70, 239, 0.3)'
     },
     {
       title: 'Görseller',
       description: 'AI ile görsel oluştur',
       icon: Image,
       href: '/gorseller',
-      cardBg: 'bg-gradient-to-br from-emerald-50/50 to-teal-50/50 dark:from-emerald-500/5 dark:to-teal-500/5',
-      iconBg: 'from-emerald-100 to-teal-100 dark:from-emerald-500/10 dark:to-teal-500/10',
-      border: 'border-emerald-200 dark:border-emerald-500/20',
-      iconColor: 'text-emerald-600 dark:text-emerald-400'
+      gradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(20, 184, 166, 0.05) 100%)',
+      iconBg: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(20, 184, 166, 0.1) 100%)',
+      iconColor: '#10b981',
+      borderColor: 'rgba(16, 185, 129, 0.3)'
     },
     {
       title: 'Geçmiş',
       description: 'Önceki içerikler',
       icon: History,
       href: '/gecmis',
-      cardBg: 'bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-500/5 dark:to-indigo-500/5',
-      iconBg: 'from-blue-100 to-indigo-100 dark:from-blue-500/10 dark:to-indigo-500/10',
-      border: 'border-blue-200 dark:border-blue-500/20',
-      iconColor: 'text-blue-600 dark:text-blue-400'
+      gradient: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(99, 102, 241, 0.05) 100%)',
+      iconBg: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%)',
+      iconColor: '#3b82f6',
+      borderColor: 'rgba(59, 130, 246, 0.3)'
     },
     {
       title: 'Müşteriler',
       description: "Brief'leri yönet",
       icon: Users,
       href: '/musteriler',
-      cardBg: 'bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-500/5 dark:to-orange-500/5',
-      iconBg: 'from-amber-100 to-orange-100 dark:from-amber-500/10 dark:to-orange-500/10',
-      border: 'border-amber-200 dark:border-amber-500/20',
-      iconColor: 'text-amber-600 dark:text-amber-400'
+      gradient: 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(249, 115, 22, 0.05) 100%)',
+      iconBg: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(249, 115, 22, 0.1) 100%)',
+      iconColor: '#f59e0b',
+      borderColor: 'rgba(245, 158, 11, 0.3)'
     }
   ]
 
@@ -94,71 +117,155 @@ export default function DashboardPage() {
       {/* Stats Cards - 3 kolonlu, glow efektli */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Toplam İçerik - Indigo Glow */}
-        <div className="glass-card rounded-2xl p-5 glow-indigo card-hover cursor-pointer">
-          <div className="p-3 rounded-xl bg-indigo-100 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 w-fit mb-4">
-            <FileText className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+        <div 
+          className="rounded-2xl p-5 cursor-pointer transition-all duration-300"
+          style={{
+            ...glassCardStyle,
+            ...glowStyles.indigo,
+            transform: hoveredCard === 'content' ? 'translateY(-2px)' : 'none',
+            boxShadow: hoveredCard === 'content' 
+              ? '0 0 30px -5px rgba(99, 102, 241, 0.5), inset 0 0 30px -10px rgba(99, 102, 241, 0.15)'
+              : glowStyles.indigo.boxShadow
+          }}
+          onMouseEnter={() => setHoveredCard('content')}
+          onMouseLeave={() => setHoveredCard(null)}
+        >
+          <div 
+            className="p-3 rounded-xl w-fit mb-4"
+            style={{
+              background: 'rgba(99, 102, 241, 0.1)',
+              border: '1px solid rgba(99, 102, 241, 0.2)'
+            }}
+          >
+            <FileText className="w-6 h-6" style={{ color: '#818cf8' }} />
           </div>
-          <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">0</p>
+          <p className="text-3xl font-bold text-white mb-1">0</p>
           <p className="text-sm text-zinc-500">Toplam İçerik</p>
         </div>
 
         {/* Müşteri Sayısı - Violet Glow */}
         <div 
-          className="glass-card rounded-2xl p-5 glow-violet card-hover cursor-pointer"
+          className="rounded-2xl p-5 cursor-pointer transition-all duration-300"
+          style={{
+            ...glassCardStyle,
+            ...glowStyles.violet,
+            transform: hoveredCard === 'customers' ? 'translateY(-2px)' : 'none',
+            boxShadow: hoveredCard === 'customers' 
+              ? '0 0 30px -5px rgba(139, 92, 246, 0.5), inset 0 0 30px -10px rgba(139, 92, 246, 0.15)'
+              : glowStyles.violet.boxShadow
+          }}
+          onMouseEnter={() => setHoveredCard('customers')}
+          onMouseLeave={() => setHoveredCard(null)}
           onClick={() => router.push('/musteriler')}
         >
-          <div className="p-3 rounded-xl bg-violet-100 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 w-fit mb-4">
-            <Building2 className="w-6 h-6 text-violet-600 dark:text-violet-400" />
+          <div 
+            className="p-3 rounded-xl w-fit mb-4"
+            style={{
+              background: 'rgba(139, 92, 246, 0.1)',
+              border: '1px solid rgba(139, 92, 246, 0.2)'
+            }}
+          >
+            <Building2 className="w-6 h-6" style={{ color: '#a78bfa' }} />
           </div>
-          <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">
+          <p className="text-3xl font-bold text-white mb-1">
             {loading ? '...' : activeCustomers.length}
           </p>
           <p className="text-sm text-zinc-500">Müşteri Sayısı</p>
         </div>
 
         {/* Bu Hafta - Cyan Glow */}
-        <div className="glass-card rounded-2xl p-5 glow-cyan card-hover cursor-pointer">
-          <div className="p-3 rounded-xl bg-cyan-100 dark:bg-cyan-500/10 border border-cyan-200 dark:border-cyan-500/20 w-fit mb-4">
-            <Calendar className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
+        <div 
+          className="rounded-2xl p-5 cursor-pointer transition-all duration-300"
+          style={{
+            ...glassCardStyle,
+            ...glowStyles.cyan,
+            transform: hoveredCard === 'week' ? 'translateY(-2px)' : 'none',
+            boxShadow: hoveredCard === 'week' 
+              ? '0 0 30px -5px rgba(34, 211, 238, 0.5), inset 0 0 30px -10px rgba(34, 211, 238, 0.15)'
+              : glowStyles.cyan.boxShadow
+          }}
+          onMouseEnter={() => setHoveredCard('week')}
+          onMouseLeave={() => setHoveredCard(null)}
+        >
+          <div 
+            className="p-3 rounded-xl w-fit mb-4"
+            style={{
+              background: 'rgba(34, 211, 238, 0.1)',
+              border: '1px solid rgba(34, 211, 238, 0.2)'
+            }}
+          >
+            <Calendar className="w-6 h-6" style={{ color: '#22d3ee' }} />
           </div>
-          <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">0</p>
+          <p className="text-3xl font-bold text-white mb-1">0</p>
           <p className="text-sm text-zinc-500">Bu Hafta</p>
         </div>
       </div>
 
-      {/* Hızlı İşlemler - Gradient Background eklendi */}
+      {/* Hızlı İşlemler */}
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Hızlı İşlemler</h2>
+        <h2 className="text-lg font-semibold text-white mb-4">Hızlı İşlemler</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {quickActions.map((action) => (
             <div
               key={action.title}
-              className={`glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10 card-hover cursor-pointer group ${action.cardBg}`}
+              className="rounded-2xl p-5 cursor-pointer transition-all duration-300 group"
+              style={{
+                background: action.gradient,
+                border: `1px solid ${action.borderColor}`,
+                transform: hoveredCard === action.title ? 'translateY(-2px)' : 'none'
+              }}
               onClick={() => router.push(action.href)}
+              onMouseEnter={() => setHoveredCard(action.title)}
+              onMouseLeave={() => setHoveredCard(null)}
             >
-              <div className={`p-3 rounded-xl bg-gradient-to-br ${action.iconBg} border ${action.border} w-fit mb-4 group-hover:scale-110 transition-transform`}>
-                <action.icon className={`w-6 h-6 ${action.iconColor}`} />
+              <div 
+                className="p-3 rounded-xl w-fit mb-4 transition-transform group-hover:scale-110"
+                style={{
+                  background: action.iconBg,
+                  border: `1px solid ${action.borderColor}`
+                }}
+              >
+                <action.icon className="w-6 h-6" style={{ color: action.iconColor }} />
               </div>
-              <h3 className="font-semibold text-zinc-900 dark:text-white mb-1">{action.title}</h3>
+              <h3 className="font-semibold text-white mb-1">{action.title}</h3>
               <p className="text-sm text-zinc-500">{action.description}</p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Son Aktiviteler - Empty State with float animation */}
-      <div className="glass-card rounded-2xl border border-zinc-200 dark:border-white/10">
-        <div className="px-5 py-4 border-b border-zinc-200 dark:border-white/5">
-          <h2 className="font-semibold text-zinc-900 dark:text-white">Son Aktiviteler</h2>
+      {/* Son Aktiviteler - Empty State */}
+      <div 
+        className="rounded-2xl"
+        style={{
+          ...glassCardStyle,
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        }}
+      >
+        <div 
+          className="px-5 py-4"
+          style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}
+        >
+          <h2 className="font-semibold text-white">Son Aktiviteler</h2>
         </div>
         <div className="p-12 flex flex-col items-center text-center">
-          <div className="w-16 h-16 rounded-2xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 flex items-center justify-center mb-4 float-animation">
+          <div 
+            className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+            style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.1)'
+            }}
+          >
             <Inbox className="w-8 h-8 text-zinc-400" />
           </div>
-          <h3 className="font-semibold text-zinc-900 dark:text-white mb-2">Henüz aktivite yok</h3>
+          <h3 className="font-semibold text-white mb-2">Henüz aktivite yok</h3>
           <p className="text-sm text-zinc-500 mb-6">İlk içeriği üretmek için bir marka seç! 🚀</p>
           <button 
-            className="btn-press px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-medium shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-shadow flex items-center gap-2"
+            className="px-5 py-2.5 rounded-xl text-white text-sm font-medium flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+            style={{
+              background: 'linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%)',
+              boxShadow: '0 4px 20px -5px rgba(99, 102, 241, 0.5)'
+            }}
             onClick={() => router.push('/icerik-uret')}
           >
             <Sparkles className="w-4 h-4" />
