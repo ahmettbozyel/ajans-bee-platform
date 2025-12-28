@@ -82,9 +82,12 @@ export async function PATCH(
       return NextResponse.json({ error: parsed.error.issues }, { status: 400 })
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateData: any = { ...parsed.data, updated_at: new Date().toISOString() }
+
     const { data, error } = await supabase
       .from('technical_services')
-      .update({ ...parsed.data, updated_at: new Date().toISOString() })
+      .update(updateData)
       .eq('id', id)
       .select(`
         *,
