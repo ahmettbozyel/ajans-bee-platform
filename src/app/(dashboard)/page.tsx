@@ -11,29 +11,64 @@ import {
   Clock, 
   Activity,
   ArrowRight,
-  AlertTriangle,
   Calendar
 } from 'lucide-react'
 import { getRecentCustomers, type RecentCustomer } from '@/lib/local-storage'
 import type { Customer } from '@/lib/customer-types'
 import { calculateBriefCompletion, SECTORS } from '@/lib/customer-types'
-import {
-  type TechnicalServiceWithCustomer,
-  getDaysUntilRenewal,
-  getRenewalBadgeColor,
-  getServiceTypeLabel
-} from '@/lib/technical-service-types'
 
 function getSectorLabel(value: string): string {
   return SECTORS.find(s => s.value === value)?.label || value
+}
+
+// Basit servis tipi (TechnicalService import etmeden)
+interface SimpleService {
+  id: string
+  renewal_date: string | null
+  service_type: string
+  name: string
+  customer: {
+    id: string
+    name: string
+    customer_type: string
+  } | null
+}
+
+function getDaysUntilRenewal(renewalDate: string | null | undefined): number | null {
+  if (!renewalDate) return null
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const renewal = new Date(renewalDate)
+  renewal.setHours(0, 0, 0, 0)
+  const diffTime = renewal.getTime() - today.getTime()
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+}
+
+function getRenewalBadgeColor(daysUntil: number | null): string {
+  if (daysUntil === null) return 'gray'
+  if (daysUntil < 0) return 'red'
+  if (daysUntil <= 7) return 'red'
+  if (daysUntil <= 30) return 'yellow'
+  return 'green'
+}
+
+function getServiceTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    hosting: 'Hosting',
+    domain: 'Domain',
+    ssl: 'SSL',
+    email: 'E-posta'
+  }
+  return labels[type] || type
 }
 
 export default function DashboardPage() {
   const router = useRouter()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [recentCustomers, setRecentCustomers] = useState<RecentCustomer[]>([])
-  const [services, setServices] = useState<TechnicalServiceWithCustomer[]>([])
+  const [services, setServices] = useState<SimpleService[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const supabase = createClient()
 
@@ -43,6 +78,8 @@ export default function DashboardPage() {
 
   async function fetchData() {
     setLoading(true)
+    setError(null)
+    
     try {
       // Müşterileri yükle
       const { data: customersData, error: customersError } = await supabase
@@ -50,23 +87,42 @@ export default function DashboardPage() {
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (customersError) throw customersError
+      if (customersError) {
+        console.error('Customers error:', customersError)
+        throw customersError
+      }
+      
       setCustomers(customersData || [])
       setRecentCustomers(getRecentCustomers())
 
-      // Teknik hizmetleri yükle
-      const { data: servicesData, error: servicesError } = await (supabase
-        .from('technical_services')
-        .select(`
-          *,
-          customer:customers(id, name, customer_type)
-        `)
-        .order('renewal_date', { ascending: true, nullsFirst: false }) as any)
+      // Teknik hizmetleri yükle - hata olursa boş array kullan
+      try {
+        const { data: servicesData, error: servicesError } = await supabase
+          .from('technical_services')
+          .select(`
+            id,
+            renewal_date,
+            service_type,
+            name,
+            customer:customers(id, name, customer_type)
+          `)
+          .order('renewal_date', { ascending: true, nullsFirst: false })
 
-      if (servicesError) throw servicesError
-      setServices(servicesData || [])
-    } catch (error) {
-      console.error('Error fetching data:', error)
+        if (servicesError) {
+          console.error('Services error:', servicesError)
+          // Hata olsa bile devam et, sadece servisleri boş bırak
+          setServices([])
+        } else {
+          setServices((servicesData as SimpleService[]) || [])
+        }
+      } catch (serviceErr) {
+        console.error('Services fetch error:', serviceErr)
+        setServices([])
+      }
+
+    } catch (err) {
+      console.error('Error fetching data:', err)
+      setError('Veriler yüklenirken bir hata oluştu.')
     } finally {
       setLoading(false)
     }
@@ -91,12 +147,23 @@ export default function DashboardPage() {
     return days !== null && days < 0
   }).length
 
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <Button onClick={fetchData}>Tekrar Dene</Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-semibold">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Hoş geldin 👋</p>
+        <h1 className="text-xl font-semibold text-zinc-900 dark:text-white">Dashboard</h1>
+        <p className="text-sm text-zinc-500">Hoş geldin 👋</p>
       </div>
 
       {/* Stats Grid */}
@@ -111,8 +178,8 @@ export default function DashboardPage() {
               <Building2 className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
             </div>
           </div>
-          <p className="text-3xl font-bold">{activeCustomers.length}</p>
-          <p className="text-sm text-muted-foreground">Aktif Marka</p>
+          <p className="text-3xl font-bold text-zinc-900 dark:text-white">{activeCustomers.length}</p>
+          <p className="text-sm text-zinc-500">Aktif Marka</p>
         </div>
 
         {/* Pasif Marka */}
@@ -125,8 +192,8 @@ export default function DashboardPage() {
               <EyeOff className="h-6 w-6 text-violet-600 dark:text-violet-400" />
             </div>
           </div>
-          <p className="text-3xl font-bold">{inactiveCustomers.length}</p>
-          <p className="text-sm text-muted-foreground">Pasif Marka</p>
+          <p className="text-3xl font-bold text-zinc-900 dark:text-white">{inactiveCustomers.length}</p>
+          <p className="text-sm text-zinc-500">Pasif Marka</p>
         </div>
 
         {/* Yaklaşan Yenileme */}
@@ -144,8 +211,8 @@ export default function DashboardPage() {
               </span>
             )}
           </div>
-          <p className="text-3xl font-bold">{upcomingRenewals.length}</p>
-          <p className="text-sm text-muted-foreground">Yaklaşan Yenileme</p>
+          <p className="text-3xl font-bold text-zinc-900 dark:text-white">{upcomingRenewals.length}</p>
+          <p className="text-sm text-zinc-500">Yaklaşan Yenileme</p>
         </div>
 
         {/* Aktivite */}
@@ -155,8 +222,8 @@ export default function DashboardPage() {
               <Activity className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
             </div>
           </div>
-          <p className="text-3xl font-bold">{services.length}</p>
-          <p className="text-sm text-muted-foreground">Teknik Hizmet</p>
+          <p className="text-3xl font-bold text-zinc-900 dark:text-white">{services.length}</p>
+          <p className="text-sm text-zinc-500">Teknik Hizmet</p>
         </div>
       </div>
 
@@ -164,14 +231,14 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Son Çalışılan Markalar */}
         <div className="lg:col-span-2">
-          <div className="glass-card rounded-2xl border border-border/40 overflow-hidden">
-            <div className="p-5 border-b border-border/40">
+          <div className="glass-card rounded-2xl border border-zinc-200 dark:border-white/5 overflow-hidden">
+            <div className="p-5 border-b border-zinc-200 dark:border-white/5">
               <div className="flex items-center justify-between">
-                <h2 className="font-semibold">Son Çalışılan Markalar</h2>
+                <h2 className="font-semibold text-zinc-900 dark:text-white">Son Çalışılan Markalar</h2>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="text-muted-foreground hover:text-foreground"
+                  className="text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
                   onClick={() => router.push('/musteriler')}
                 >
                   Tümü
@@ -182,7 +249,7 @@ export default function DashboardPage() {
             
             <div className="p-5">
               {loading ? (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-8 text-zinc-500">
                   <div className="animate-pulse">Yükleniyor...</div>
                 </div>
               ) : recentCustomers.length === 0 ? (
@@ -190,7 +257,7 @@ export default function DashboardPage() {
                   <div className="inline-flex items-center justify-center p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 mb-4">
                     <Building2 className="h-8 w-8 text-indigo-500/50" />
                   </div>
-                  <p className="text-muted-foreground">Henüz marka kullanmadınız</p>
+                  <p className="text-zinc-500">Henüz marka kullanmadınız</p>
                   <Button 
                     className="mt-4 bg-gradient-to-r from-indigo-500 to-violet-500 text-white"
                     onClick={() => router.push('/musteriler')}
@@ -208,7 +275,7 @@ export default function DashboardPage() {
                     return (
                       <div 
                         key={recent.id}
-                        className="glass-card rounded-xl p-4 cursor-pointer card-hover border border-border/40"
+                        className="glass-card rounded-xl p-4 cursor-pointer card-hover border border-zinc-200 dark:border-white/5"
                         onClick={() => router.push(`/customers/${customer.id}`)}
                       >
                         <div className="flex items-center gap-3 mb-3">
@@ -216,14 +283,14 @@ export default function DashboardPage() {
                             <Building2 className="h-5 w-5 text-white" />
                           </div>
                           <div className="min-w-0">
-                            <p className="font-medium truncate">{customer.name}</p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="font-medium truncate text-zinc-900 dark:text-white">{customer.name}</p>
+                            <p className="text-xs text-zinc-500">
                               {customer.customer_type === 'retainer' ? 'Retainer' : 'Proje'}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div className="flex-1 h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
                             <div 
                               className={`h-full rounded-full ${
                                 completion < 30 ? 'bg-rose-500' :
@@ -233,7 +300,7 @@ export default function DashboardPage() {
                               style={{ width: `${completion}%` }}
                             />
                           </div>
-                          <span className="text-xs text-muted-foreground font-mono">%{completion}</span>
+                          <span className="text-xs text-zinc-500 font-mono">%{completion}</span>
                         </div>
                       </div>
                     )
@@ -246,17 +313,17 @@ export default function DashboardPage() {
 
         {/* Yaklaşan Yenilemeler */}
         <div>
-          <div className="glass-card rounded-2xl border border-border/40 overflow-hidden">
-            <div className="p-5 border-b border-border/40">
+          <div className="glass-card rounded-2xl border border-zinc-200 dark:border-white/5 overflow-hidden">
+            <div className="p-5 border-b border-zinc-200 dark:border-white/5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-muted-foreground" />
-                  <h2 className="font-semibold">Yaklaşan Yenilemeler</h2>
+                  <Calendar className="h-5 w-5 text-zinc-500" />
+                  <h2 className="font-semibold text-zinc-900 dark:text-white">Yaklaşan Yenilemeler</h2>
                 </div>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="text-muted-foreground hover:text-foreground"
+                  className="text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
                   onClick={() => router.push('/teknik-hizmetler')}
                 >
                   <ArrowRight className="h-4 w-4" />
@@ -266,7 +333,7 @@ export default function DashboardPage() {
             
             <div className="p-3">
               {loading ? (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-8 text-zinc-500">
                   <div className="animate-pulse">Yükleniyor...</div>
                 </div>
               ) : upcomingRenewals.length === 0 ? (
@@ -274,7 +341,7 @@ export default function DashboardPage() {
                   <div className="inline-flex items-center justify-center p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10 mb-3">
                     <Calendar className="h-6 w-6 text-emerald-500/50" />
                   </div>
-                  <p className="text-sm text-muted-foreground">Yaklaşan yenileme yok</p>
+                  <p className="text-sm text-zinc-500">Yaklaşan yenileme yok</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -286,7 +353,7 @@ export default function DashboardPage() {
                     return (
                       <div 
                         key={service.id}
-                        className={`flex items-center gap-3 p-3 rounded-xl hover:bg-muted/30 cursor-pointer transition-all ${
+                        className={`flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-100 dark:hover:bg-white/5 cursor-pointer transition-all ${
                           isOverdue ? 'bg-rose-500/5' : ''
                         }`}
                         onClick={() => router.push('/teknik-hizmetler')}
@@ -296,10 +363,10 @@ export default function DashboardPage() {
                           color === 'yellow' ? 'bg-amber-500' : 'bg-emerald-500'
                         }`} />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">
+                          <p className="text-sm font-medium truncate text-zinc-900 dark:text-white">
                             {service.customer?.name || 'Bilinmiyor'}
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-zinc-500">
                             {getServiceTypeLabel(service.service_type)} - {service.name}
                           </p>
                         </div>
