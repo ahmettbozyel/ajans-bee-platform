@@ -60,14 +60,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let isMounted = true
-    
-    // Timeout: 3 saniye sonra loading'i kapat
-    const timeout = setTimeout(() => {
-      if (isMounted && loading) {
-        console.log('[Auth] Timeout - forcing load complete')
-        setLoading(false)
-      }
-    }, 3000)
 
     const initAuth = async () => {
       try {
@@ -104,7 +96,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       isMounted = false
-      clearTimeout(timeout)
       subscription.unsubscribe()
     }
   }, [])
