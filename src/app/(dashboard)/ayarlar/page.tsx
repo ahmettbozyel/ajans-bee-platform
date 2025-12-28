@@ -1,59 +1,82 @@
-import { Settings, Bell, User, Shield, Palette, Globe } from 'lucide-react'
+'use client'
+
+import { useState } from 'react'
+import { Settings, DollarSign, Users, Shield, Palette } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { ServiceProvidersTab } from './components/service-providers-tab'
+
+type TabType = 'providers' | 'users' | 'security' | 'appearance'
+
+const TABS = [
+  { id: 'providers' as TabType, label: 'Sağlayıcı Fiyatları', icon: DollarSign, ready: true },
+  { id: 'users' as TabType, label: 'Kullanıcılar', icon: Users, ready: false },
+  { id: 'security' as TabType, label: 'Güvenlik', icon: Shield, ready: false },
+  { id: 'appearance' as TabType, label: 'Görünüm', icon: Palette, ready: false },
+]
 
 export default function AyarlarPage() {
-  const settingsSections = [
-    { name: 'Profil', description: 'Kullanıcı bilgilerini düzenle', icon: User },
-    { name: 'Bildirimler', description: 'Bildirim tercihlerini yönet', icon: Bell },
-    { name: 'Güvenlik', description: 'Şifre ve oturum ayarları', icon: Shield },
-    { name: 'Görünüm', description: 'Tema ve dil ayarları', icon: Palette },
-    { name: 'Entegrasyonlar', description: 'Üçüncü parti bağlantılar', icon: Globe },
-  ]
+  const [activeTab, setActiveTab] = useState<TabType>('providers')
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 content-bg min-h-screen">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-semibold">Ayarlar</h1>
-        <p className="text-sm text-muted-foreground">Uygulama ayarlarını yönetin</p>
+      <div className="mb-6">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-2 rounded-xl bg-indigo-100 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20">
+            <Settings className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+          </div>
+          <h1 className="text-xl font-semibold text-zinc-900 dark:text-white">Ayarlar</h1>
+        </div>
+        <p className="text-sm text-zinc-500">Sistem ayarlarını ve fiyatları yönetin</p>
       </div>
 
-      {/* Coming Soon Banner */}
-      <div className="glass-card rounded-2xl p-6 border-glow-indigo">
-        <div className="flex items-center gap-4">
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-violet-500/10 border border-indigo-500/20">
-            <Settings className="h-8 w-8 text-indigo-500" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <h2 className="text-lg font-semibold">Ayarlar Sayfası</h2>
-              <span className="text-[10px] bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full font-medium">Yakında</span>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Bu sayfa üzerinde çalışıyoruz. Çok yakında kullanıma hazır olacak.
-            </p>
-          </div>
+      {/* Tabs */}
+      <div className="glass-card rounded-xl border border-zinc-200 dark:border-white/10 mb-6">
+        <div className="flex border-b border-zinc-200 dark:border-white/10">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => tab.ready && setActiveTab(tab.id)}
+              className={cn(
+                "flex items-center gap-2 px-5 py-3 text-sm font-medium transition-all relative",
+                activeTab === tab.id
+                  ? "text-indigo-600 dark:text-indigo-400"
+                  : tab.ready
+                  ? "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
+                  : "text-zinc-400 cursor-not-allowed",
+              )}
+            >
+              <tab.icon className="w-4 h-4" />
+              {tab.label}
+              {!tab.ready && (
+                <span className="text-[10px] bg-zinc-100 dark:bg-white/5 text-zinc-500 px-1.5 py-0.5 rounded-full">
+                  Yakında
+                </span>
+              )}
+              {activeTab === tab.id && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400" />
+              )}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Settings Preview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {settingsSections.map((section) => (
-          <div 
-            key={section.name}
-            className="glass-card rounded-xl p-5 border border-zinc-200 dark:border-white/5 opacity-50 cursor-not-allowed"
-          >
-            <div className="flex items-start gap-4">
-              <div className="p-3 rounded-xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10">
-                <section.icon className="h-5 w-5 text-zinc-400" />
-              </div>
-              <div>
-                <h3 className="font-medium text-zinc-600 dark:text-zinc-400">{section.name}</h3>
-                <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">{section.description}</p>
-              </div>
-            </div>
+      {/* Tab Content */}
+      {activeTab === 'providers' && <ServiceProvidersTab />}
+      
+      {activeTab !== 'providers' && (
+        <div className="glass-card rounded-2xl p-12 border border-zinc-200 dark:border-white/10 text-center">
+          <div className="p-4 rounded-2xl bg-zinc-100 dark:bg-white/5 w-fit mx-auto mb-4">
+            <Settings className="w-8 h-8 text-zinc-400" />
           </div>
-        ))}
-      </div>
+          <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">
+            Yakında
+          </h3>
+          <p className="text-sm text-zinc-500">
+            Bu bölüm üzerinde çalışıyoruz.
+          </p>
+        </div>
+      )}
     </div>
   )
 }
