@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react'
 import { 
   Plus, Pencil, Trash2, Server, Globe, ShieldCheck, Mail,
-  Loader2, Check, X, DollarSign
+  Loader2, Check, X, DollarSign, ChevronsUpDown
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command'
 import { cn } from '@/lib/utils'
 import type { ServiceProvider, ServiceType, BillingCycle } from '@/lib/service-provider-types'
 import { SERVICE_TYPES, BILLING_CYCLES, SERVICE_TYPE_COLORS } from '@/lib/service-provider-types'
@@ -26,6 +28,12 @@ export function ServiceProvidersTab() {
   const [isAdding, setIsAdding] = useState(false)
   const [formData, setFormData] = useState<Partial<ServiceProvider>>({})
   const [isSaving, setIsSaving] = useState(false)
+  
+  // Popover states
+  const [typeOpen, setTypeOpen] = useState(false)
+  const [cycleOpen, setCycleOpen] = useState(false)
+  const [editTypeOpen, setEditTypeOpen] = useState(false)
+  const [editCycleOpen, setEditCycleOpen] = useState(false)
 
   useEffect(() => {
     loadProviders()
@@ -124,6 +132,10 @@ export function ServiceProvidersTab() {
     return acc
   }, {} as Record<ServiceType, ServiceProvider[]>)
 
+  // Get labels
+  const selectedTypeLabel = SERVICE_TYPES.find(t => t.value === formData.service_type)?.label || 'Tip Seç'
+  const selectedCycleLabel = BILLING_CYCLES.find(c => c.value === formData.billing_cycle)?.label || 'Dönem Seç'
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -158,17 +170,48 @@ export function ServiceProvidersTab() {
               placeholder="Sağlayıcı Adı"
               value={formData.name || ''}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="text-zinc-900 dark:text-white placeholder:text-zinc-400"
+              className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
             />
-            <select
-              value={formData.service_type || 'hosting'}
-              onChange={(e) => setFormData({ ...formData, service_type: e.target.value as ServiceType })}
-              className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              {SERVICE_TYPES.map(t => (
-                <option key={t.value} value={t.value} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white">{t.label}</option>
-              ))}
-            </select>
+            
+            {/* Service Type Popover */}
+            <Popover open={typeOpen} onOpenChange={setTypeOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  className="w-full justify-between bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700 hover:text-white"
+                >
+                  {selectedTypeLabel}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent 
+                className="w-[var(--radix-popover-trigger-width)] p-0 border-zinc-700 rounded-xl overflow-hidden"
+                style={{ backgroundColor: '#18181b' }}
+              >
+                <Command style={{ backgroundColor: '#18181b' }}>
+                  <CommandList style={{ backgroundColor: '#18181b' }}>
+                    <CommandGroup style={{ backgroundColor: '#18181b' }}>
+                      {SERVICE_TYPES.map((type) => (
+                        <CommandItem
+                          key={type.value}
+                          value={type.value}
+                          onSelect={() => {
+                            setFormData({ ...formData, service_type: type.value as ServiceType })
+                            setTypeOpen(false)
+                          }}
+                          className="px-3 py-2 cursor-pointer text-zinc-300 hover:!bg-zinc-800 aria-selected:!bg-zinc-800"
+                        >
+                          <Check className={cn("mr-2 h-4 w-4 text-indigo-400", formData.service_type === type.value ? "opacity-100" : "opacity-0")} />
+                          {type.label}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+
             <div className="relative">
               <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
               <Input
@@ -177,23 +220,54 @@ export function ServiceProvidersTab() {
                 placeholder="Fiyat (USD)"
                 value={formData.base_price_usd || ''}
                 onChange={(e) => setFormData({ ...formData, base_price_usd: parseFloat(e.target.value) })}
-                className="pl-9 text-zinc-900 dark:text-white placeholder:text-zinc-400"
+                className="pl-9 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
               />
             </div>
-            <select
-              value={formData.billing_cycle || 'yearly'}
-              onChange={(e) => setFormData({ ...formData, billing_cycle: e.target.value as BillingCycle })}
-              className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              {BILLING_CYCLES.map(c => (
-                <option key={c.value} value={c.value} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white">{c.label}</option>
-              ))}
-            </select>
+
+            {/* Billing Cycle Popover */}
+            <Popover open={cycleOpen} onOpenChange={setCycleOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  className="w-full justify-between bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700 hover:text-white"
+                >
+                  {selectedCycleLabel}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent 
+                className="w-[var(--radix-popover-trigger-width)] p-0 border-zinc-700 rounded-xl overflow-hidden"
+                style={{ backgroundColor: '#18181b' }}
+              >
+                <Command style={{ backgroundColor: '#18181b' }}>
+                  <CommandList style={{ backgroundColor: '#18181b' }}>
+                    <CommandGroup style={{ backgroundColor: '#18181b' }}>
+                      {BILLING_CYCLES.map((cycle) => (
+                        <CommandItem
+                          key={cycle.value}
+                          value={cycle.value}
+                          onSelect={() => {
+                            setFormData({ ...formData, billing_cycle: cycle.value as BillingCycle })
+                            setCycleOpen(false)
+                          }}
+                          className="px-3 py-2 cursor-pointer text-zinc-300 hover:!bg-zinc-800 aria-selected:!bg-zinc-800"
+                        >
+                          <Check className={cn("mr-2 h-4 w-4 text-indigo-400", formData.billing_cycle === cycle.value ? "opacity-100" : "opacity-0")} />
+                          {cycle.label}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+
             <div className="flex gap-2">
-              <Button onClick={handleSave} disabled={isSaving} size="sm" className="flex-1">
+              <Button onClick={handleSave} disabled={isSaving} size="sm" className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white">
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
               </Button>
-              <Button onClick={cancelEdit} variant="outline" size="sm">
+              <Button onClick={cancelEdit} variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
                 <X className="w-4 h-4" />
               </Button>
             </div>
@@ -230,17 +304,48 @@ export function ServiceProvidersTab() {
                         <Input
                           value={formData.name || ''}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          className="text-zinc-900 dark:text-white"
+                          className="bg-zinc-800 border-zinc-700 text-white"
                         />
-                        <select
-                          value={formData.service_type || 'hosting'}
-                          onChange={(e) => setFormData({ ...formData, service_type: e.target.value as ServiceType })}
-                          className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        >
-                          {SERVICE_TYPES.map(t => (
-                            <option key={t.value} value={t.value} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white">{t.label}</option>
-                          ))}
-                        </select>
+                        
+                        {/* Edit Service Type Popover */}
+                        <Popover open={editTypeOpen} onOpenChange={setEditTypeOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className="w-full justify-between bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700 hover:text-white"
+                            >
+                              {SERVICE_TYPES.find(t => t.value === formData.service_type)?.label || 'Tip Seç'}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent 
+                            className="w-[var(--radix-popover-trigger-width)] p-0 border-zinc-700 rounded-xl overflow-hidden"
+                            style={{ backgroundColor: '#18181b' }}
+                          >
+                            <Command style={{ backgroundColor: '#18181b' }}>
+                              <CommandList style={{ backgroundColor: '#18181b' }}>
+                                <CommandGroup style={{ backgroundColor: '#18181b' }}>
+                                  {SERVICE_TYPES.map((t) => (
+                                    <CommandItem
+                                      key={t.value}
+                                      value={t.value}
+                                      onSelect={() => {
+                                        setFormData({ ...formData, service_type: t.value as ServiceType })
+                                        setEditTypeOpen(false)
+                                      }}
+                                      className="px-3 py-2 cursor-pointer text-zinc-300 hover:!bg-zinc-800 aria-selected:!bg-zinc-800"
+                                    >
+                                      <Check className={cn("mr-2 h-4 w-4 text-indigo-400", formData.service_type === t.value ? "opacity-100" : "opacity-0")} />
+                                      {t.label}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+
                         <div className="relative">
                           <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                           <Input
@@ -248,23 +353,54 @@ export function ServiceProvidersTab() {
                             step="0.01"
                             value={formData.base_price_usd || ''}
                             onChange={(e) => setFormData({ ...formData, base_price_usd: parseFloat(e.target.value) })}
-                            className="pl-9 text-zinc-900 dark:text-white"
+                            className="pl-9 bg-zinc-800 border-zinc-700 text-white"
                           />
                         </div>
-                        <select
-                          value={formData.billing_cycle || 'yearly'}
-                          onChange={(e) => setFormData({ ...formData, billing_cycle: e.target.value as BillingCycle })}
-                          className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        >
-                          {BILLING_CYCLES.map(c => (
-                            <option key={c.value} value={c.value} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white">{c.label}</option>
-                          ))}
-                        </select>
+
+                        {/* Edit Billing Cycle Popover */}
+                        <Popover open={editCycleOpen} onOpenChange={setEditCycleOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className="w-full justify-between bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700 hover:text-white"
+                            >
+                              {BILLING_CYCLES.find(c => c.value === formData.billing_cycle)?.label || 'Dönem Seç'}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent 
+                            className="w-[var(--radix-popover-trigger-width)] p-0 border-zinc-700 rounded-xl overflow-hidden"
+                            style={{ backgroundColor: '#18181b' }}
+                          >
+                            <Command style={{ backgroundColor: '#18181b' }}>
+                              <CommandList style={{ backgroundColor: '#18181b' }}>
+                                <CommandGroup style={{ backgroundColor: '#18181b' }}>
+                                  {BILLING_CYCLES.map((c) => (
+                                    <CommandItem
+                                      key={c.value}
+                                      value={c.value}
+                                      onSelect={() => {
+                                        setFormData({ ...formData, billing_cycle: c.value as BillingCycle })
+                                        setEditCycleOpen(false)
+                                      }}
+                                      className="px-3 py-2 cursor-pointer text-zinc-300 hover:!bg-zinc-800 aria-selected:!bg-zinc-800"
+                                    >
+                                      <Check className={cn("mr-2 h-4 w-4 text-indigo-400", formData.billing_cycle === c.value ? "opacity-100" : "opacity-0")} />
+                                      {c.label}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+
                         <div className="flex gap-2">
-                          <Button onClick={handleSave} disabled={isSaving} size="sm" className="flex-1">
+                          <Button onClick={handleSave} disabled={isSaving} size="sm" className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white">
                             {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                           </Button>
-                          <Button onClick={cancelEdit} variant="outline" size="sm">
+                          <Button onClick={cancelEdit} variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
                             <X className="w-4 h-4" />
                           </Button>
                         </div>
