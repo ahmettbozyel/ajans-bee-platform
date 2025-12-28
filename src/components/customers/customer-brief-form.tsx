@@ -46,7 +46,7 @@ const BRIEF_SECTIONS_CONFIG = {
     description: 'Logo, slogan, değerler ve marka sesi',
     icon: 'Fingerprint',
     color: 'indigo',
-    fields: ['name', 'slogan', 'brand_values', 'brand_voice', 'social_media']
+    fields: ['name', 'slogan', 'brand_values', 'brand_voice', 'social_media', 'mission', 'vision', 'usp']
   },
   hedefKitle: {
     id: 'hedef-kitle',
@@ -523,9 +523,12 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
             formData.slogan,
             formData.brand_values?.length,
             formData.brand_voice,
-            Object.keys(formData.social_media || {}).length
+            Object.keys(formData.social_media || {}).length,
+            formData.mission,
+            formData.vision,
+            formData.usp
           ].filter(Boolean).length,
-          total: 5
+          total: 8
         }
       case 'hedef-kitle':
         return {
@@ -680,6 +683,57 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
                     />
                   ))}
                 </div>
+              </div>
+              
+              {/* Misyon - YENİ ALAN */}
+              <div>
+                <Label className="flex items-center gap-2 mb-2 text-zinc-700 dark:text-zinc-300">
+                  Misyon
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Markanın var oluş amacı, ne için çalıştığı">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+                <Textarea 
+                  value={formData.mission || ''} 
+                  onChange={(e) => setFormData({ ...formData, mission: e.target.value })}
+                  placeholder="Örn: Müşterilerimize en kaliteli pırlantaları en güvenilir şekilde sunmak..."
+                  className="input-glow resize-none text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+                  rows={2}
+                />
+              </div>
+              
+              {/* Vizyon - YENİ ALAN */}
+              <div>
+                <Label className="flex items-center gap-2 mb-2 text-zinc-700 dark:text-zinc-300">
+                  Vizyon
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Markanın gelecekte ulaşmak istediği nokta">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+                <Textarea 
+                  value={formData.vision || ''} 
+                  onChange={(e) => setFormData({ ...formData, vision: e.target.value })}
+                  placeholder="Örn: Türkiye'nin en güvenilir mücevher markası olmak..."
+                  className="input-glow resize-none text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+                  rows={2}
+                />
+              </div>
+              
+              {/* USP - YENİ ALAN */}
+              <div>
+                <Label className="flex items-center gap-2 mb-2 text-zinc-700 dark:text-zinc-300">
+                  USP (Benzersiz Satış Vaadi)
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Markayı rakiplerinden ayıran en önemli özellik">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+                <Textarea 
+                  value={formData.usp || ''} 
+                  onChange={(e) => setFormData({ ...formData, usp: e.target.value })}
+                  placeholder="Örn: Türkiye'nin en güvenilir pırlanta markası, tüm ürünlerde GIA sertifikası garantisi"
+                  className="input-glow resize-none text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+                  rows={2}
+                />
               </div>
               
               {/* Sosyal Medya */}
