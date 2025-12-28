@@ -138,7 +138,7 @@ export function ServiceProvidersTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Sağlayıcı Fiyatları</h2>
-          <p className="text-sm text-zinc-500">Hosting, domain, SSL ve e-posta sağlayıcı fiyatlarını yönetin</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Hosting, domain, SSL ve e-posta sağlayıcı fiyatlarını yönetin</p>
         </div>
         <Button 
           onClick={startAdd}
@@ -158,14 +158,15 @@ export function ServiceProvidersTab() {
               placeholder="Sağlayıcı Adı"
               value={formData.name || ''}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="text-zinc-900 dark:text-white placeholder:text-zinc-400"
             />
             <select
               value={formData.service_type || 'hosting'}
               onChange={(e) => setFormData({ ...formData, service_type: e.target.value as ServiceType })}
-              className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm"
+              className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               {SERVICE_TYPES.map(t => (
-                <option key={t.value} value={t.value}>{t.label}</option>
+                <option key={t.value} value={t.value} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white">{t.label}</option>
               ))}
             </select>
             <div className="relative">
@@ -176,16 +177,16 @@ export function ServiceProvidersTab() {
                 placeholder="Fiyat (USD)"
                 value={formData.base_price_usd || ''}
                 onChange={(e) => setFormData({ ...formData, base_price_usd: parseFloat(e.target.value) })}
-                className="pl-9"
+                className="pl-9 text-zinc-900 dark:text-white placeholder:text-zinc-400"
               />
             </div>
             <select
               value={formData.billing_cycle || 'yearly'}
               onChange={(e) => setFormData({ ...formData, billing_cycle: e.target.value as BillingCycle })}
-              className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm"
+              className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               {BILLING_CYCLES.map(c => (
-                <option key={c.value} value={c.value}>{c.label}</option>
+                <option key={c.value} value={c.value} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white">{c.label}</option>
               ))}
             </select>
             <div className="flex gap-2">
@@ -213,11 +214,11 @@ export function ServiceProvidersTab() {
             <div className={cn("px-5 py-3 border-b border-zinc-200 dark:border-white/10 flex items-center gap-3", colors.bg)}>
               <Icon className={cn("w-5 h-5", colors.text)} />
               <h3 className={cn("font-medium", colors.text)}>{type.label}</h3>
-              <span className="text-xs text-zinc-500">({typeProviders.length})</span>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">({typeProviders.length})</span>
             </div>
             
             {typeProviders.length === 0 ? (
-              <div className="p-8 text-center text-zinc-500 text-sm">
+              <div className="p-8 text-center text-zinc-500 dark:text-zinc-400 text-sm">
                 Henüz {type.label.toLowerCase()} sağlayıcısı eklenmedi
               </div>
             ) : (
@@ -229,14 +230,15 @@ export function ServiceProvidersTab() {
                         <Input
                           value={formData.name || ''}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          className="text-zinc-900 dark:text-white"
                         />
                         <select
                           value={formData.service_type || 'hosting'}
                           onChange={(e) => setFormData({ ...formData, service_type: e.target.value as ServiceType })}
-                          className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm"
+                          className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         >
                           {SERVICE_TYPES.map(t => (
-                            <option key={t.value} value={t.value}>{t.label}</option>
+                            <option key={t.value} value={t.value} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white">{t.label}</option>
                           ))}
                         </select>
                         <div className="relative">
@@ -246,16 +248,16 @@ export function ServiceProvidersTab() {
                             step="0.01"
                             value={formData.base_price_usd || ''}
                             onChange={(e) => setFormData({ ...formData, base_price_usd: parseFloat(e.target.value) })}
-                            className="pl-9"
+                            className="pl-9 text-zinc-900 dark:text-white"
                           />
                         </div>
                         <select
                           value={formData.billing_cycle || 'yearly'}
                           onChange={(e) => setFormData({ ...formData, billing_cycle: e.target.value as BillingCycle })}
-                          className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm"
+                          className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         >
                           {BILLING_CYCLES.map(c => (
-                            <option key={c.value} value={c.value}>{c.label}</option>
+                            <option key={c.value} value={c.value} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white">{c.label}</option>
                           ))}
                         </select>
                         <div className="flex gap-2">
@@ -272,7 +274,7 @@ export function ServiceProvidersTab() {
                         <div className="flex items-center gap-4">
                           <span className="font-medium text-zinc-900 dark:text-white">{provider.name}</span>
                           {!provider.is_active && (
-                            <span className="text-xs bg-zinc-100 dark:bg-white/5 text-zinc-500 px-2 py-0.5 rounded-full">Pasif</span>
+                            <span className="text-xs bg-zinc-100 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 px-2 py-0.5 rounded-full">Pasif</span>
                           )}
                         </div>
                         <div className="flex items-center gap-6">
@@ -280,7 +282,7 @@ export function ServiceProvidersTab() {
                             <span className="font-mono text-lg font-semibold text-zinc-900 dark:text-white">
                               ${provider.base_price_usd}
                             </span>
-                            <span className="text-xs text-zinc-500 ml-1">
+                            <span className="text-xs text-zinc-500 dark:text-zinc-400 ml-1">
                               /{provider.billing_cycle === 'monthly' ? 'ay' : 'yıl'}
                             </span>
                           </div>
