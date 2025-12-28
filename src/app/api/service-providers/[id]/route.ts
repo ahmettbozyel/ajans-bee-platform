@@ -1,0 +1,140 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { z } from 'zod'
+
+// Zod schema for validation
+const serviceProviderUpdateSchema = z.object({
+  name: z.string().min(1, 'İsim zorunlu').optional(),
+  service_type: z.enum(['hosting', 'domain', 'ssl', 'email']).optional(),
+  base_price_usd: z.number().min(0, 'Fiyat 0 veya üzeri olmalı').optional(),
+  billing_cycle: z.enum(['monthly', 'yearly']).optional(),
+  is_active: z.boolean().optional(),
+  notes: z.string().optional().nullable()
+})
+
+interface RouteContext {
+  params: Promise<{ id: string }>
+}
+
+// GET - Get single service provider
+export async function GET(
+  request: NextRequest,
+  context: RouteContext
+) {
+  try {
+    const { id } = await context.params
+    const supabase = await createClient()
+    
+    // Auth kontrolü
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { data, error } = await supabase
+      .from('service_providers')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json({ error: 'Sağlayıcı bulunamadı' }, { status: 404 })
+      }
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json(data)
+  } catch (error) {
+    console.error('GET /api/service-providers/[id] error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+// PATCH - Update service provider
+export async function PATCH(
+  request: NextRequest,
+  context: RouteContext
+) {
+  try {
+    const { id } = await context.params
+    const supabase = await createClient()
+    
+    // Auth kontrolü
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    
+    // Validation
+    const parsed = serviceProviderUpdateSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.errors }, { status: 400 })
+    }
+
+    const { data, error } = await supabase
+      .from('service_providers')
+      .update({ ...parsed.data, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json({ error: 'Sağlayıcı bulunamadı' }, { status: 404 })
+      }
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json(data)
+  } catch (error) {
+    console.error('PATCH /api/service-providers/[id] error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+// DELETE - Delete service provider
+export async function DELETE(
+  request: NextRequest,
+  context: RouteContext
+) {
+  try {
+    const { id } = await context.params
+    const supabase = await createClient()
+    
+    // Auth kontrolü
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Önce bu sağlayıcıya bağlı servis var mı kontrol et
+    const { count } = await supabase
+      .from('technical_services')
+      .select('*', { count: 'exact', head: true })
+      .eq('provider_id', id)
+
+    if (count && count > 0) {
+      return NextResponse.json(
+        { error: 'Bu sağlayıcıya bağlı hizmetler var. Önce onları silin veya başka sağlayıcıya taşıyın.' },
+        { status: 400 }
+      )
+    }
+
+    const { error } = await supabase
+      .from('service_providers')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('DELETE /api/service-providers/[id] error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
