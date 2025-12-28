@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 
 // GET - List customers (brands)
 export async function GET(request: NextRequest) {
@@ -15,22 +14,22 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams
     const minimal = searchParams.get('minimal') === 'true'
-
-    const adminClient = createAdminClient()
     
     const selectFields = minimal ? 'id, name, brand_name' : '*'
     
-    const { data, error } = await adminClient
+    // RLS politikası authenticated kullanıcılara izin veriyor
+    const { data, error } = await supabase
       .from('customers')
       .select(selectFields)
       .eq('status', 'active')
       .order('name', { ascending: true })
 
     if (error) {
+      console.error('Supabase error:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json(data)
+    return NextResponse.json(data || [])
   } catch (error) {
     console.error('GET /api/customers error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
