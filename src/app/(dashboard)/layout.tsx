@@ -12,6 +12,9 @@ import {
 import { Button } from '@/components/ui/button'
 import { TopBar } from '@/components/layouts/top-bar'
 
+// Force dynamic rendering (cookies kullanıldığı için)
+export const dynamic = 'force-dynamic'
+
 // Karar #15: Sidebar menü yapısı
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard, comingSoon: false },
@@ -36,15 +39,8 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  let user = null
-  
-  try {
-    const supabase = await createClient()
-    const { data } = await supabase.auth.getUser()
-    user = data?.user
-  } catch (error) {
-    console.error('Auth error:', error)
-  }
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     redirect('/login')
