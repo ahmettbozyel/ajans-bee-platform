@@ -983,39 +983,8 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
         )}
       </div>
       
-      {/* Bottom Actions */}
-      <div className="flex items-center justify-between pt-4">
-        <p className="text-sm text-zinc-500">
-          <span className="text-emerald-600 dark:text-emerald-400 font-medium">{totalFilled}</span> / {totalFields} alan dolduruldu
-        </p>
-        <div className="flex gap-3">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={onCancel}
-            className="btn-press"
-          >
-            İptal
-          </Button>
-          <Button 
-            type="submit" 
-            disabled={isLoading}
-            className="btn-press bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-500/25"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Kaydediliyor...
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4 mr-2" />
-                Kaydet
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
+      {/* Form - hidden submit için */}
+      {/* Kaydet butonu artık sağ sidebar'da, bu form submit için gerekli */}
       
     </form>
   )
