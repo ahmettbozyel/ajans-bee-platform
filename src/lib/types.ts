@@ -65,6 +65,10 @@ export type Database = {
           cta_standards: Record<string, unknown>[] | null
           forbidden_words: Record<string, unknown>[] | null
           seasonal_calendar: Record<string, unknown>[] | null
+          // Billing alanları
+          billing_contact_name: string | null
+          billing_contact_email: string | null
+          billing_contact_phone: string | null
         }
         Insert: {
           id?: string
@@ -117,6 +121,9 @@ export type Database = {
           cta_standards?: Record<string, unknown>[] | null
           forbidden_words?: Record<string, unknown>[] | null
           seasonal_calendar?: Record<string, unknown>[] | null
+          billing_contact_name?: string | null
+          billing_contact_email?: string | null
+          billing_contact_phone?: string | null
         }
         Update: {
           id?: string
@@ -169,50 +176,129 @@ export type Database = {
           cta_standards?: Record<string, unknown>[] | null
           forbidden_words?: Record<string, unknown>[] | null
           seasonal_calendar?: Record<string, unknown>[] | null
+          billing_contact_name?: string | null
+          billing_contact_email?: string | null
+          billing_contact_phone?: string | null
+        }
+      }
+      service_providers: {
+        Row: {
+          id: string
+          name: string
+          service_type: 'hosting' | 'domain' | 'ssl' | 'email'
+          base_price_usd: number
+          billing_cycle: 'monthly' | 'yearly'
+          is_active: boolean
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          service_type: 'hosting' | 'domain' | 'ssl' | 'email'
+          base_price_usd?: number
+          billing_cycle?: 'monthly' | 'yearly'
+          is_active?: boolean
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          service_type?: 'hosting' | 'domain' | 'ssl' | 'email'
+          base_price_usd?: number
+          billing_cycle?: 'monthly' | 'yearly'
+          is_active?: boolean
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
         }
       }
       technical_services: {
         Row: {
           id: string
+          brand_id: string
+          provider_id: string
+          service_type: 'hosting' | 'domain' | 'ssl' | 'email'
+          identifier: string
+          renewal_date: string | null
+          discount_percent: number
+          quantity: number
+          status: 'active' | 'pending_renewal' | 'expired' | 'cancelled'
+          auto_renew: boolean
+          notes: string | null
           created_at: string
           updated_at: string
-          customer_id: string
-          user_id: string
-          service_type: 'hosting' | 'domain' | 'ssl' | 'email'
-          name: string
-          platform: string | null
-          renewal_date: string | null
-          payment_status: 'pending' | 'paid' | 'overdue'
-          price: number | null
-          notes: string | null
         }
         Insert: {
           id?: string
+          brand_id: string
+          provider_id: string
+          service_type: 'hosting' | 'domain' | 'ssl' | 'email'
+          identifier: string
+          renewal_date?: string | null
+          discount_percent?: number
+          quantity?: number
+          status?: 'active' | 'pending_renewal' | 'expired' | 'cancelled'
+          auto_renew?: boolean
+          notes?: string | null
           created_at?: string
           updated_at?: string
-          customer_id: string
-          user_id: string
-          service_type: 'hosting' | 'domain' | 'ssl' | 'email'
-          name: string
-          platform?: string | null
-          renewal_date?: string | null
-          payment_status?: 'pending' | 'paid' | 'overdue'
-          price?: number | null
-          notes?: string | null
         }
         Update: {
           id?: string
+          brand_id?: string
+          provider_id?: string
+          service_type?: 'hosting' | 'domain' | 'ssl' | 'email'
+          identifier?: string
+          renewal_date?: string | null
+          discount_percent?: number
+          quantity?: number
+          status?: 'active' | 'pending_renewal' | 'expired' | 'cancelled'
+          auto_renew?: boolean
+          notes?: string | null
           created_at?: string
           updated_at?: string
-          customer_id?: string
-          user_id?: string
-          service_type?: 'hosting' | 'domain' | 'ssl' | 'email'
-          name?: string
-          platform?: string | null
-          renewal_date?: string | null
-          payment_status?: 'pending' | 'paid' | 'overdue'
-          price?: number | null
+        }
+      }
+      renewal_history: {
+        Row: {
+          id: string
+          service_id: string
+          renewed_at: string
+          price_usd: number
+          exchange_rate: number | null
+          price_try: number | null
+          payment_status: 'paid' | 'pending' | 'overdue'
+          invoice_no: string | null
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          service_id: string
+          renewed_at?: string
+          price_usd: number
+          exchange_rate?: number | null
+          price_try?: number | null
+          payment_status?: 'paid' | 'pending' | 'overdue'
+          invoice_no?: string | null
           notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          service_id?: string
+          renewed_at?: string
+          price_usd?: number
+          exchange_rate?: number | null
+          price_try?: number | null
+          payment_status?: 'paid' | 'pending' | 'overdue'
+          invoice_no?: string | null
+          notes?: string | null
+          created_at?: string
         }
       }
       posts: {
@@ -268,6 +354,8 @@ export type Database = {
       customer_status: 'active' | 'inactive'
       service_type: 'hosting' | 'domain' | 'ssl' | 'email'
       payment_status: 'pending' | 'paid' | 'overdue'
+      billing_cycle: 'monthly' | 'yearly'
+      service_status: 'active' | 'pending_renewal' | 'expired' | 'cancelled'
     }
   }
 }
@@ -277,9 +365,17 @@ export type Customer = Database['public']['Tables']['customers']['Row']
 export type CustomerInsert = Database['public']['Tables']['customers']['Insert']
 export type CustomerUpdate = Database['public']['Tables']['customers']['Update']
 
+export type ServiceProvider = Database['public']['Tables']['service_providers']['Row']
+export type ServiceProviderInsert = Database['public']['Tables']['service_providers']['Insert']
+export type ServiceProviderUpdate = Database['public']['Tables']['service_providers']['Update']
+
 export type TechnicalService = Database['public']['Tables']['technical_services']['Row']
 export type TechnicalServiceInsert = Database['public']['Tables']['technical_services']['Insert']
 export type TechnicalServiceUpdate = Database['public']['Tables']['technical_services']['Update']
+
+export type RenewalHistory = Database['public']['Tables']['renewal_history']['Row']
+export type RenewalHistoryInsert = Database['public']['Tables']['renewal_history']['Insert']
+export type RenewalHistoryUpdate = Database['public']['Tables']['renewal_history']['Update']
 
 export type Post = Database['public']['Tables']['posts']['Row']
 export type PostInsert = Database['public']['Tables']['posts']['Insert']
@@ -292,3 +388,5 @@ export type CustomerType = Database['public']['Enums']['customer_type']
 export type CustomerStatus = Database['public']['Enums']['customer_status']
 export type ServiceType = Database['public']['Enums']['service_type']
 export type PaymentStatus = Database['public']['Enums']['payment_status']
+export type BillingCycle = Database['public']['Enums']['billing_cycle']
+export type ServiceStatus = Database['public']['Enums']['service_status']
