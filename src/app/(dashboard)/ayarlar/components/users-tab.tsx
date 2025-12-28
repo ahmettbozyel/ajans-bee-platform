@@ -2,15 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { createUser, updateUser } from '../actions'
 import { 
   Users, 
   Plus, 
   Pencil, 
-  Trash2, 
   X, 
   Check, 
   Mail, 
-  Shield,
   UserCheck,
   UserX,
   Loader2,
@@ -41,7 +40,6 @@ export function UsersTab() {
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [saving, setSaving] = useState(false)
   
-  // Form state
   const [formData, setFormData] = useState({
     email: '',
     full_name: '',
@@ -59,9 +57,9 @@ export function UsersTab() {
     try {
       setLoading(true)
       const { data, error } = await (supabase
-        .from('users')
+        .from('users') as any)
         .select('*')
-        .order('created_at', { ascending: false }) as any)
+        .order('created_at', { ascending: false })
 
       if (error) throw error
       setUsers(data || [])
@@ -75,12 +73,8 @@ export function UsersTab() {
 
   function openAddModal() {
     setEditingUser(null)
-    setFormData({
-      email: '',
-      full_name: '',
-      role: 'personel',
-      password: ''
-    })
+    setFormData({ email: '', full_name: '', role: 'personel', password: '' })
+    setError(null)
     setIsModalOpen(true)
   }
 
@@ -92,6 +86,7 @@ export function UsersTab() {
       role: user.role,
       password: ''
     })
+    setError(null)
     setIsModalOpen(true)
   }
 
@@ -102,44 +97,26 @@ export function UsersTab() {
 
     try {
       if (editingUser) {
-        // Update existing user
-        const { error } = await (supabase
-          .from('users') as any)
-          .update({
-            full_name: formData.full_name,
-            role: formData.role,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', editingUser.id)
-
-        if (error) throw error
+        // Server action ile güncelle
+        const result = await updateUser(editingUser.id, {
+          full_name: formData.full_name,
+          role: formData.role
+        })
+        
+        if (!result.success) {
+          throw new Error(result.error)
+        }
       } else {
-        // Create new user via Supabase Auth
-        const { data: authData, error: authError } = await supabase.auth.signUp({
+        // Server action ile oluştur
+        const result = await createUser({
           email: formData.email,
           password: formData.password,
-          options: {
-            data: {
-              full_name: formData.full_name
-            }
-          }
+          full_name: formData.full_name,
+          role: formData.role
         })
-
-        if (authError) throw authError
-
-        // Insert into public.users table
-        if (authData.user) {
-          const { error: insertError } = await (supabase
-            .from('users') as any)
-            .insert({
-              id: authData.user.id,
-              email: formData.email,
-              full_name: formData.full_name,
-              role: formData.role,
-              is_active: true
-            })
-
-          if (insertError) throw insertError
+        
+        if (!result.success) {
+          throw new Error(result.error)
         }
       }
 
@@ -155,15 +132,10 @@ export function UsersTab() {
 
   async function toggleUserStatus(user: User) {
     try {
-      const { error } = await (supabase
-        .from('users') as any)
-        .update({ 
-          is_active: !user.is_active,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id)
-
-      if (error) throw error
+      const result = await updateUser(user.id, { is_active: !user.is_active })
+      if (!result.success) {
+        throw new Error(result.error)
+      }
       await fetchUsers()
     } catch (err: any) {
       console.error('Error toggling user status:', err)
@@ -212,6 +184,9 @@ export function UsersTab() {
         <div className="flex items-center gap-2 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           {error}
+          <button onClick={() => setError(null)} className="ml-auto">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
@@ -220,29 +195,16 @@ export function UsersTab() {
         <table className="w-full">
           <thead>
             <tr className="border-b border-zinc-200 dark:border-white/10">
-              <th className="text-left px-6 py-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                Kullanıcı
-              </th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                Rol
-              </th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                Durum
-              </th>
-              <th className="text-left px-6 py-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                Kayıt Tarihi
-              </th>
-              <th className="text-right px-6 py-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                İşlemler
-              </th>
+              <th className="text-left px-6 py-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Kullanıcı</th>
+              <th className="text-left px-6 py-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Rol</th>
+              <th className="text-left px-6 py-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Durum</th>
+              <th className="text-left px-6 py-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Kayıt</th>
+              <th className="text-right px-6 py-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">İşlemler</th>
             </tr>
           </thead>
           <tbody>
             {users.map((user) => (
-              <tr 
-                key={user.id} 
-                className="border-b border-zinc-200 dark:border-white/5 hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors"
-              >
+              <tr key={user.id} className="border-b border-zinc-200 dark:border-white/5 hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
@@ -259,10 +221,7 @@ export function UsersTab() {
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <span className={cn(
-                    "px-2.5 py-1 rounded-full text-xs font-medium border",
-                    getRoleBadgeClasses(user.role)
-                  )}>
+                  <span className={cn("px-2.5 py-1 rounded-full text-xs font-medium border", getRoleBadgeClasses(user.role))}>
                     {ROLES.find(r => r.value === user.role)?.label || user.role}
                   </span>
                 </td>
@@ -297,17 +256,11 @@ export function UsersTab() {
                       onClick={() => toggleUserStatus(user)}
                       className={cn(
                         "p-2 rounded-lg transition-colors",
-                        user.is_active 
-                          ? "hover:bg-red-500/10 text-red-400" 
-                          : "hover:bg-emerald-500/10 text-emerald-400"
+                        user.is_active ? "hover:bg-red-500/10 text-red-400" : "hover:bg-emerald-500/10 text-emerald-400"
                       )}
                       title={user.is_active ? 'Deaktif Et' : 'Aktif Et'}
                     >
-                      {user.is_active ? (
-                        <UserX className="w-4 h-4" />
-                      ) : (
-                        <UserCheck className="w-4 h-4" />
-                      )}
+                      {user.is_active ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
                     </button>
                   </div>
                 </td>
@@ -324,22 +277,16 @@ export function UsersTab() {
         )}
       </div>
 
-      {/* Add/Edit Modal */}
+      {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div 
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setIsModalOpen(false)}
-          />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
           <div className="relative w-full max-w-md bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl">
             <div className="flex items-center justify-between p-6 border-b border-white/10">
               <h3 className="text-lg font-semibold text-white">
                 {editingUser ? 'Kullanıcı Düzenle' : 'Yeni Kullanıcı'}
               </h3>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-              >
+              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
                 <X className="w-5 h-5 text-zinc-400" />
               </button>
             </div>
@@ -347,9 +294,7 @@ export function UsersTab() {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">
-                  E-posta
-                </label>
+                <label className="block text-sm font-medium text-zinc-400 mb-2">E-posta</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                   <input
@@ -369,9 +314,7 @@ export function UsersTab() {
 
               {/* Full Name */}
               <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">
-                  Ad Soyad
-                </label>
+                <label className="block text-sm font-medium text-zinc-400 mb-2">Ad Soyad</label>
                 <input
                   type="text"
                   value={formData.full_name}
@@ -381,12 +324,10 @@ export function UsersTab() {
                 />
               </div>
 
-              {/* Password (only for new users) */}
+              {/* Password - only for new */}
               {!editingUser && (
                 <div>
-                  <label className="block text-sm font-medium text-zinc-400 mb-2">
-                    Şifre
-                  </label>
+                  <label className="block text-sm font-medium text-zinc-400 mb-2">Şifre</label>
                   <input
                     type="password"
                     value={formData.password}
@@ -401,32 +342,19 @@ export function UsersTab() {
 
               {/* Role */}
               <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">
-                  Rol
-                </label>
+                <label className="block text-sm font-medium text-zinc-400 mb-2">Rol</label>
                 <div className="grid grid-cols-3 gap-2">
                   {ROLES.map((role) => (
                     <button
                       key={role.value}
                       type="button"
                       onClick={() => setFormData({ ...formData, role: role.value as any })}
-                      className={cn(
-                        "px-3 py-2.5 rounded-lg border text-sm font-medium transition-all",
-                        formData.role === role.value
-                          ? ""
-                          : "bg-white/5 border-white/10 text-zinc-400 hover:border-white/20"
-                      )}
+                      className="px-3 py-2.5 rounded-lg border text-sm font-medium transition-all"
                       style={formData.role === role.value ? {
-                        backgroundColor: role.color === 'emerald' ? 'rgba(16,185,129,0.2)' : 
-                                        role.color === 'violet' ? 'rgba(139,92,246,0.2)' : 
-                                        'rgba(59,130,246,0.2)',
-                        borderColor: role.color === 'emerald' ? 'rgba(16,185,129,0.5)' : 
-                                    role.color === 'violet' ? 'rgba(139,92,246,0.5)' : 
-                                    'rgba(59,130,246,0.5)',
-                        color: role.color === 'emerald' ? 'rgb(52,211,153)' : 
-                              role.color === 'violet' ? 'rgb(167,139,250)' : 
-                              'rgb(96,165,250)'
-                      } : {}}
+                        backgroundColor: role.color === 'emerald' ? 'rgba(16,185,129,0.2)' : role.color === 'violet' ? 'rgba(139,92,246,0.2)' : 'rgba(59,130,246,0.2)',
+                        borderColor: role.color === 'emerald' ? 'rgba(16,185,129,0.5)' : role.color === 'violet' ? 'rgba(139,92,246,0.5)' : 'rgba(59,130,246,0.5)',
+                        color: role.color === 'emerald' ? 'rgb(52,211,153)' : role.color === 'violet' ? 'rgb(167,139,250)' : 'rgb(96,165,250)'
+                      } : { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)', color: 'rgb(161,161,170)' }}
                     >
                       {role.label}
                     </button>
@@ -437,10 +365,10 @@ export function UsersTab() {
                 </p>
               </div>
 
-              {/* Error in modal */}
+              {/* Error */}
               {error && (
                 <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <AlertCircle className="w-4 h-4" />
                   {error}
                 </div>
               )}
@@ -459,11 +387,7 @@ export function UsersTab() {
                   disabled={saving}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg text-white text-sm font-medium transition-colors"
                 >
-                  {saving ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Check className="w-4 h-4" />
-                  )}
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                   {editingUser ? 'Güncelle' : 'Oluştur'}
                 </button>
               </div>
