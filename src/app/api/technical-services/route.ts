@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import type { TechnicalServiceInsert } from '@/lib/types'
 
 // Zod schema for validation
 const technicalServiceSchema = z.object({
@@ -66,9 +67,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues }, { status: 400 })
     }
 
+    const insertData: TechnicalServiceInsert = parsed.data
+
     const { data, error } = await supabase
       .from('technical_services')
-      .insert(parsed.data)
+      .insert(insertData)
       .select(`
         *,
         provider:service_providers(id, name, base_price_usd, billing_cycle),
