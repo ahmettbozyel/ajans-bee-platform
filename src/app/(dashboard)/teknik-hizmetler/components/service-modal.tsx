@@ -1,9 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Loader2, Server, Globe, ShieldCheck, Mail, Calendar, Building2 } from 'lucide-react'
+import { X, Loader2, Server, Globe, ShieldCheck, Mail, Calendar, Building2, Check, ChevronsUpDown, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { cn } from '@/lib/utils'
 import type { ServiceType } from '@/lib/service-provider-types'
 import { SERVICE_TYPES, SERVICE_TYPE_COLORS } from '@/lib/service-provider-types'
@@ -44,6 +48,11 @@ export function ServiceModal({ isOpen, onClose, onSave, editingService }: Servic
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  // Popover states
+  const [brandPopoverOpen, setBrandPopoverOpen] = useState(false)
+  const [providerPopoverOpen, setProviderPopoverOpen] = useState(false)
+  const [statusPopoverOpen, setStatusPopoverOpen] = useState(false)
 
   const [formData, setFormData] = useState({
     brand_id: '',
@@ -81,7 +90,6 @@ export function ServiceModal({ isOpen, onClose, onSave, editingService }: Servic
         notes: editingService.notes || ''
       })
     } else {
-      // Reset form for new service
       setFormData({
         brand_id: '',
         provider_id: '',
@@ -100,15 +108,15 @@ export function ServiceModal({ isOpen, onClose, onSave, editingService }: Servic
   async function loadData() {
     setIsLoading(true)
     try {
-      // Load brands (customers)
-      const brandsRes = await fetch('/api/customers?minimal=true')
+      const [brandsRes, providersRes] = await Promise.all([
+        fetch('/api/customers?minimal=true'),
+        fetch('/api/service-providers')
+      ])
+      
       if (brandsRes.ok) {
         const brandsData = await brandsRes.json()
         setBrands(brandsData)
       }
-
-      // Load providers
-      const providersRes = await fetch('/api/service-providers')
       if (providersRes.ok) {
         const providersData = await providersRes.json()
         setProviders(providersData)
@@ -123,16 +131,17 @@ export function ServiceModal({ isOpen, onClose, onSave, editingService }: Servic
   // Filter providers by selected service type
   const filteredProviders = providers.filter(p => p.service_type === formData.service_type)
 
-  // Get selected provider for price display
+  // Get selected items for display
+  const selectedBrand = brands.find(b => b.id === formData.brand_id)
   const selectedProvider = providers.find(p => p.id === formData.provider_id)
+  const selectedStatus = SERVICE_STATUSES.find(s => s.value === formData.status)
 
   // Calculate price
   const calculatedPrice = selectedProvider 
     ? selectedProvider.base_price_usd * formData.quantity * (1 - formData.discount_percent / 100)
     : 0
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleSubmit() {
     setError(null)
     setIsSaving(true)
 
@@ -168,284 +177,332 @@ export function ServiceModal({ isOpen, onClose, onSave, editingService }: Servic
     }
   }
 
-  if (!isOpen) return null
-
-  const Icon = SERVICE_ICONS[formData.service_type]
   const colors = SERVICE_TYPE_COLORS[formData.service_type]
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      
-      {/* Modal */}
-      <div className="relative w-full max-w-2xl mx-4 glass-card rounded-2xl border border-zinc-200 dark:border-white/10 shadow-2xl max-h-[90vh] overflow-hidden">
-        {/* Header */}
-        <div className={cn("px-6 py-4 border-b border-zinc-200 dark:border-white/10 flex items-center justify-between", colors.bg)}>
-          <div className="flex items-center gap-3">
-            <div className={cn("p-2 rounded-lg", colors.bg, "border", colors.border)}>
-              <Icon className={cn("w-5 h-5", colors.text)} />
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent 
+        className="sm:max-w-lg border border-zinc-700 rounded-2xl shadow-2xl"
+        style={{ backgroundColor: '#18181b' }}
+      >
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
+            <div className={cn("p-2 rounded-lg", colors.bg)}>
+              {(() => {
+                const Icon = SERVICE_ICONS[formData.service_type]
+                return <Icon className={cn("w-5 h-5", colors.text)} />
+              })()}
             </div>
-            <h2 className={cn("text-lg font-semibold", colors.text)}>
-              {editingService ? 'Hizmeti Düzenle' : 'Yeni Hizmet Ekle'}
-            </h2>
+            {editingService ? 'Hizmeti Düzenle' : 'Yeni Hizmet Ekle'}
+          </DialogTitle>
+          <DialogDescription className="text-zinc-400">
+            Teknik hizmet bilgilerini gir.
+          </DialogDescription>
+        </DialogHeader>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
           </div>
-          <button 
-            onClick={onClose}
-            className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5 text-zinc-500" />
-          </button>
-        </div>
+        ) : (
+          <div className="space-y-5 py-4">
+            {/* Error Message */}
+            {error && (
+              <div className="p-3 rounded-lg bg-rose-500/20 border border-rose-500/30 text-rose-400 text-sm">
+                {error}
+              </div>
+            )}
 
-        {/* Content */}
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+            {/* Service Type */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-zinc-300">Hizmet Tipi</Label>
+              <div className="grid grid-cols-4 gap-2">
+                {SERVICE_TYPES.map(({ value, label }) => {
+                  const TypeIcon = SERVICE_ICONS[value]
+                  const typeColors = SERVICE_TYPE_COLORS[value]
+                  const isSelected = formData.service_type === value
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, service_type: value, provider_id: '' })}
+                      className={cn(
+                        "p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1.5",
+                        isSelected 
+                          ? `border-current ${typeColors.bg} ${typeColors.text}` 
+                          : "border-zinc-700 hover:border-zinc-600 text-zinc-400"
+                      )}
+                    >
+                      <TypeIcon className="w-5 h-5" />
+                      <span className="text-xs font-medium">{label}</span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
-          ) : (
-            <div className="space-y-6">
-              {/* Error Message */}
-              {error && (
-                <div className="p-3 rounded-lg bg-rose-100 dark:bg-rose-500/20 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-400 text-sm">
-                  {error}
-                </div>
-              )}
 
-              {/* Service Type */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Hizmet Tipi
-                </label>
-                <div className="grid grid-cols-4 gap-2">
-                  {SERVICE_TYPES.map(({ value, label }) => {
-                    const TypeIcon = SERVICE_ICONS[value]
-                    const typeColors = SERVICE_TYPE_COLORS[value]
-                    const isSelected = formData.service_type === value
-                    return (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() => {
-                          setFormData({ ...formData, service_type: value, provider_id: '' })
-                        }}
-                        className={cn(
-                          "p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-2",
-                          isSelected 
-                            ? `${typeColors.bg} ${typeColors.border} ${typeColors.text}` 
-                            : "bg-zinc-50 dark:bg-white/5 border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-white/20"
-                        )}
-                      >
-                        <TypeIcon className="w-5 h-5" />
-                        <span className="text-sm font-medium">{label}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Brand & Provider Row */}
-              <div className="grid grid-cols-2 gap-4">
-                {/* Brand */}
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                    <Building2 className="w-4 h-4 inline mr-1" />
-                    Marka
-                  </label>
-                  <select
-                    value={formData.brand_id}
-                    onChange={(e) => setFormData({ ...formData, brand_id: e.target.value })}
-                    required
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            {/* Brand - Combobox */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-zinc-300">
+                <Building2 className="w-4 h-4 inline mr-1" />
+                Marka <span className="text-rose-500">*</span>
+              </Label>
+              <Popover open={brandPopoverOpen} onOpenChange={setBrandPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-between bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700 hover:text-white"
                   >
-                    <option value="">Marka seçin...</option>
-                    {brands.map(brand => (
-                      <option key={brand.id} value={brand.id} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white">
-                        {brand.brand_name || brand.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                    {selectedBrand ? (selectedBrand.brand_name || selectedBrand.name) : "Marka seç..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent 
+                  className="w-[var(--radix-popover-trigger-width)] p-0 border-zinc-700 shadow-2xl rounded-xl overflow-hidden"
+                  align="start"
+                  style={{ backgroundColor: '#18181b' }}
+                >
+                  <Command style={{ backgroundColor: '#18181b' }}>
+                    <CommandInput placeholder="Marka ara..." className="h-11 border-b border-zinc-700 text-white placeholder:text-zinc-500" />
+                    <CommandList className="max-h-64 overflow-auto" style={{ backgroundColor: '#18181b' }}>
+                      <CommandEmpty className="py-6 text-center text-sm text-zinc-500">Marka bulunamadı.</CommandEmpty>
+                      <CommandGroup style={{ backgroundColor: '#18181b' }}>
+                        {brands.map((brand) => (
+                          <CommandItem
+                            key={brand.id}
+                            value={brand.brand_name || brand.name}
+                            onSelect={() => {
+                              setFormData({ ...formData, brand_id: brand.id })
+                              setBrandPopoverOpen(false)
+                            }}
+                            className="px-3 py-2.5 cursor-pointer text-zinc-300 hover:!bg-zinc-800 aria-selected:!bg-zinc-800"
+                          >
+                            <Check className={cn("mr-2 h-4 w-4 text-indigo-400", formData.brand_id === brand.id ? "opacity-100" : "opacity-0")} />
+                            <span className={cn(formData.brand_id === brand.id && "text-indigo-400 font-medium")}>
+                              {brand.brand_name || brand.name}
+                            </span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
 
-                {/* Provider */}
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                    Sağlayıcı
-                  </label>
-                  <select
-                    value={formData.provider_id}
-                    onChange={(e) => setFormData({ ...formData, provider_id: e.target.value })}
-                    required
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            {/* Provider - Combobox */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-zinc-300">
+                Sağlayıcı <span className="text-rose-500">*</span>
+              </Label>
+              <Popover open={providerPopoverOpen} onOpenChange={setProviderPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-between bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700 hover:text-white"
+                    disabled={filteredProviders.length === 0}
                   >
-                    <option value="">Sağlayıcı seçin...</option>
-                    {filteredProviders.map(provider => (
-                      <option key={provider.id} value={provider.id} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white">
-                        {provider.name} (${provider.base_price_usd}/{provider.billing_cycle === 'monthly' ? 'ay' : 'yıl'})
-                      </option>
-                    ))}
-                  </select>
-                  {filteredProviders.length === 0 && (
-                    <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
-                      Bu tip için sağlayıcı yok. Önce Ayarlar'dan ekleyin.
-                    </p>
-                  )}
-                </div>
-              </div>
+                    {selectedProvider 
+                      ? `${selectedProvider.name} ($${selectedProvider.base_price_usd}/${selectedProvider.billing_cycle === 'monthly' ? 'ay' : 'yıl'})`
+                      : filteredProviders.length === 0 
+                        ? "Bu tip için sağlayıcı yok"
+                        : "Sağlayıcı seç..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent 
+                  className="w-[var(--radix-popover-trigger-width)] p-0 border-zinc-700 shadow-2xl rounded-xl overflow-hidden"
+                  align="start"
+                  style={{ backgroundColor: '#18181b' }}
+                >
+                  <Command style={{ backgroundColor: '#18181b' }}>
+                    <CommandInput placeholder="Sağlayıcı ara..." className="h-11 border-b border-zinc-700 text-white placeholder:text-zinc-500" />
+                    <CommandList className="max-h-64 overflow-auto" style={{ backgroundColor: '#18181b' }}>
+                      <CommandEmpty className="py-6 text-center text-sm text-zinc-500">Sağlayıcı bulunamadı.</CommandEmpty>
+                      <CommandGroup style={{ backgroundColor: '#18181b' }}>
+                        {filteredProviders.map((provider) => (
+                          <CommandItem
+                            key={provider.id}
+                            value={provider.name}
+                            onSelect={() => {
+                              setFormData({ ...formData, provider_id: provider.id })
+                              setProviderPopoverOpen(false)
+                            }}
+                            className="px-3 py-2.5 cursor-pointer text-zinc-300 hover:!bg-zinc-800 aria-selected:!bg-zinc-800"
+                          >
+                            <Check className={cn("mr-2 h-4 w-4 text-indigo-400", formData.provider_id === provider.id ? "opacity-100" : "opacity-0")} />
+                            <span className={cn(formData.provider_id === provider.id && "text-indigo-400 font-medium")}>
+                              {provider.name}
+                            </span>
+                            <span className="ml-auto text-xs text-zinc-500 font-mono">
+                              ${provider.base_price_usd}/{provider.billing_cycle === 'monthly' ? 'ay' : 'yıl'}
+                            </span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
 
-              {/* Identifier & Renewal Date Row */}
-              <div className="grid grid-cols-2 gap-4">
-                {/* Identifier */}
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                    Tanımlayıcı
-                    <span className="text-xs text-zinc-400 ml-1">
-                      ({formData.service_type === 'domain' ? 'domain adı' : 
-                        formData.service_type === 'hosting' ? 'site/hesap adı' :
-                        formData.service_type === 'ssl' ? 'domain' : 'e-posta hesabı'})
+            {/* Identifier & Renewal Date */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-zinc-300">
+                  Tanımlayıcı <span className="text-rose-500">*</span>
+                </Label>
+                <Input
+                  value={formData.identifier}
+                  onChange={(e) => setFormData({ ...formData, identifier: e.target.value })}
+                  placeholder={formData.service_type === 'email' ? 'info@ornek.com' : 'ornek.com'}
+                  className="input-glow bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-zinc-300">
+                  <Calendar className="w-4 h-4 inline mr-1" />
+                  Yenileme Tarihi
+                </Label>
+                <Input
+                  type="date"
+                  value={formData.renewal_date}
+                  onChange={(e) => setFormData({ ...formData, renewal_date: e.target.value })}
+                  className="input-glow bg-zinc-800 border-zinc-700 text-white [color-scheme:dark]"
+                />
+              </div>
+            </div>
+
+            {/* Quantity, Discount, Status */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-zinc-300">Miktar</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={formData.quantity}
+                  onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
+                  className="input-glow bg-zinc-800 border-zinc-700 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-zinc-300">İndirim (%)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={formData.discount_percent}
+                  onChange={(e) => setFormData({ ...formData, discount_percent: parseInt(e.target.value) || 0 })}
+                  className="input-glow bg-zinc-800 border-zinc-700 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-zinc-300">Durum</Label>
+                <Popover open={statusPopoverOpen} onOpenChange={setStatusPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className="w-full justify-between bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700 hover:text-white text-sm"
+                    >
+                      {selectedStatus?.label || 'Seç...'}
+                      <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent 
+                    className="w-[var(--radix-popover-trigger-width)] p-0 border-zinc-700 shadow-2xl rounded-xl overflow-hidden"
+                    align="start"
+                    style={{ backgroundColor: '#18181b' }}
+                  >
+                    <Command style={{ backgroundColor: '#18181b' }}>
+                      <CommandList style={{ backgroundColor: '#18181b' }}>
+                        <CommandGroup style={{ backgroundColor: '#18181b' }}>
+                          {SERVICE_STATUSES.map((status) => (
+                            <CommandItem
+                              key={status.value}
+                              value={status.value}
+                              onSelect={() => {
+                                setFormData({ ...formData, status: status.value })
+                                setStatusPopoverOpen(false)
+                              }}
+                              className="px-3 py-2 cursor-pointer text-zinc-300 hover:!bg-zinc-800 aria-selected:!bg-zinc-800"
+                            >
+                              <Check className={cn("mr-2 h-4 w-4 text-indigo-400", formData.status === status.value ? "opacity-100" : "opacity-0")} />
+                              {status.label}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            {/* Auto Renew Toggle */}
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-zinc-800/50 border border-zinc-700">
+              <input
+                type="checkbox"
+                id="auto_renew"
+                checked={formData.auto_renew}
+                onChange={(e) => setFormData({ ...formData, auto_renew: e.target.checked })}
+                className="w-4 h-4 rounded border-zinc-600 bg-zinc-700 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-0"
+              />
+              <label htmlFor="auto_renew" className="text-sm text-zinc-300 cursor-pointer">
+                Otomatik yenileme aktif
+              </label>
+            </div>
+
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-zinc-300">Notlar</Label>
+              <textarea
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                rows={2}
+                className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                placeholder="Opsiyonel notlar..."
+              />
+            </div>
+
+            {/* Price Preview */}
+            {selectedProvider && (
+              <div className={cn("p-4 rounded-xl", colors.bg, "border", colors.border)}>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-zinc-400">Hesaplanan Fiyat:</span>
+                  <div className="text-right">
+                    <span className={cn("text-2xl font-bold", colors.text)}>
+                      ${calculatedPrice.toFixed(2)}
                     </span>
-                  </label>
-                  <Input
-                    type="text"
-                    value={formData.identifier}
-                    onChange={(e) => setFormData({ ...formData, identifier: e.target.value })}
-                    placeholder={
-                      formData.service_type === 'domain' ? 'ornek.com' : 
-                      formData.service_type === 'hosting' ? 'ornek.com' :
-                      formData.service_type === 'ssl' ? 'ornek.com' : 'info@ornek.com'
-                    }
-                    required
-                  />
-                </div>
-
-                {/* Renewal Date */}
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                    <Calendar className="w-4 h-4 inline mr-1" />
-                    Yenileme Tarihi
-                  </label>
-                  <Input
-                    type="date"
-                    value={formData.renewal_date}
-                    onChange={(e) => setFormData({ ...formData, renewal_date: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              {/* Quantity, Discount, Auto Renew Row */}
-              <div className="grid grid-cols-3 gap-4">
-                {/* Quantity */}
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                    Miktar
-                  </label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={formData.quantity}
-                    onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
-                  />
-                </div>
-
-                {/* Discount */}
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                    İndirim (%)
-                  </label>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={formData.discount_percent}
-                    onChange={(e) => setFormData({ ...formData, discount_percent: parseInt(e.target.value) || 0 })}
-                  />
-                </div>
-
-                {/* Status */}
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                    Durum
-                  </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    {SERVICE_STATUSES.map(status => (
-                      <option key={status.value} value={status.value} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white">
-                        {status.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Auto Renew */}
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="auto_renew"
-                  checked={formData.auto_renew}
-                  onChange={(e) => setFormData({ ...formData, auto_renew: e.target.checked })}
-                  className="w-4 h-4 rounded border-zinc-300 dark:border-zinc-600 text-indigo-600 focus:ring-indigo-500"
-                />
-                <label htmlFor="auto_renew" className="text-sm text-zinc-700 dark:text-zinc-300">
-                  Otomatik yenileme aktif
-                </label>
-              </div>
-
-              {/* Notes */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Notlar
-                </label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  rows={3}
-                  className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-                  placeholder="Opsiyonel notlar..."
-                />
-              </div>
-
-              {/* Price Preview */}
-              {selectedProvider && (
-                <div className={cn("p-4 rounded-xl", colors.bg, "border", colors.border)}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-zinc-600 dark:text-zinc-400">Hesaplanan Fiyat:</span>
-                    <div className="text-right">
-                      <span className={cn("text-2xl font-bold", colors.text)}>
-                        ${calculatedPrice.toFixed(2)}
-                      </span>
-                      <span className="text-sm text-zinc-500 ml-1">
-                        /{selectedProvider.billing_cycle === 'monthly' ? 'ay' : 'yıl'}
-                      </span>
-                    </div>
+                    <span className="text-sm text-zinc-500 ml-1">
+                      /{selectedProvider.billing_cycle === 'monthly' ? 'ay' : 'yıl'}
+                    </span>
                   </div>
-                  {formData.discount_percent > 0 && (
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                      Orijinal: ${(selectedProvider.base_price_usd * formData.quantity).toFixed(2)} - %{formData.discount_percent} indirim
-                    </p>
-                  )}
                 </div>
-              )}
-            </div>
-          )}
-        </form>
+                {formData.discount_percent > 0 && (
+                  <p className="text-xs text-zinc-500 mt-1">
+                    Orijinal: ${(selectedProvider.base_price_usd * formData.quantity).toFixed(2)} - %{formData.discount_percent} indirim
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-zinc-200 dark:border-white/10 flex items-center justify-end gap-3 bg-zinc-50 dark:bg-white/[0.02]">
-          <Button type="button" variant="outline" onClick={onClose}>
+        <DialogFooter className="gap-2">
+          <Button 
+            variant="outline" 
+            onClick={onClose}
+            className="rounded-xl border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+          >
             İptal
           </Button>
           <Button 
             onClick={handleSubmit}
             disabled={isSaving || !formData.brand_id || !formData.provider_id || !formData.identifier}
-            className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white"
+            className="btn-press rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25"
           >
             {isSaving ? (
               <>
@@ -453,11 +510,14 @@ export function ServiceModal({ isOpen, onClose, onSave, editingService }: Servic
                 Kaydediliyor...
               </>
             ) : (
-              editingService ? 'Güncelle' : 'Kaydet'
+              <>
+                <Plus className="w-4 h-4 mr-2" />
+                {editingService ? 'Güncelle' : 'Kaydet'}
+              </>
             )}
           </Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
