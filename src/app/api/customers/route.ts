@@ -18,17 +18,11 @@ export async function GET(request: NextRequest) {
 
     const adminClient = createAdminClient()
     
-    let query = adminClient.from('customers')
+    const selectFields = minimal ? 'id, name, brand_name' : '*'
     
-    if (minimal) {
-      // Sadece dropdown için gerekli alanlar
-      query = query.select('id, name, brand_name')
-    } else {
-      // Tüm alanlar
-      query = query.select('*')
-    }
-
-    const { data, error } = await query
+    const { data, error } = await adminClient
+      .from('customers')
+      .select(selectFields)
       .eq('status', 'active')
       .order('name', { ascending: true })
 
