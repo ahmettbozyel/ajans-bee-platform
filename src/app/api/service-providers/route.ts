@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     // Validation
     const parsed = serviceProviderSchema.safeParse(body)
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.errors }, { status: 400 })
+      return NextResponse.json({ error: parsed.error.issues }, { status: 400 })
     }
 
     const { data, error } = await supabase
