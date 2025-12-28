@@ -36,8 +36,15 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  let user = null
+  
+  try {
+    const supabase = await createClient()
+    const { data } = await supabase.auth.getUser()
+    user = data?.user
+  } catch (error) {
+    console.error('Auth error:', error)
+  }
 
   if (!user) {
     redirect('/login')
@@ -54,7 +61,7 @@ export default async function DashboardLayout({
           <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-500/10 border border-amber-500/30 flex items-center justify-center">
             <AjansBeeLogoSVG className="w-5 h-5" />
           </div>
-          <span className="font-semibold">Ajans Bee</span>
+          <span className="font-semibold text-zinc-900 dark:text-white">Ajans Bee</span>
         </div>
       </header>
 
@@ -116,7 +123,7 @@ export default async function DashboardLayout({
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
                     <span className="text-white text-sm font-semibold">
-                      {user.email?.charAt(0).toUpperCase()}
+                      {user.email?.charAt(0).toUpperCase() || 'U'}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
