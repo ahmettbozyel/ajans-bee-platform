@@ -23,6 +23,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // @ts-expect-error - Table exists but types not generated yet
     const { data, error } = await supabase
       .from('service_providers')
       .select('*')
@@ -59,12 +60,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues }, { status: 400 })
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const insertData: any = parsed.data
-
+    // @ts-expect-error - Table exists but types not generated yet
     const { data, error } = await supabase
       .from('service_providers')
-      .insert(insertData)
+      .insert(parsed.data)
       .select()
       .single()
 
