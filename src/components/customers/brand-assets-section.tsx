@@ -1,7 +1,7 @@
 // @ts-nocheck
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Palette, Type, Plus, X, ChevronDown } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,6 +16,25 @@ interface BrandAssetsSectionProps {
   defaultExpanded?: boolean
 }
 
+// Validate HEX color
+function isValidHex(color: string): boolean {
+  if (!color) return false
+  // Clean and check
+  const hex = color.trim()
+  return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(hex)
+}
+
+// Get display color for swatch
+function getSwatchColor(value?: string): string {
+  if (!value) return 'transparent'
+  // Handle comma-separated values (take first)
+  const firstColor = value.split(',')[0].trim()
+  if (isValidHex(firstColor)) return firstColor
+  // Try adding # if missing
+  if (isValidHex('#' + firstColor)) return '#' + firstColor
+  return 'transparent'
+}
+
 // Color input with preview
 function ColorInput({ 
   label, 
@@ -28,20 +47,28 @@ function ColorInput({
   onChange: (value: string) => void
   placeholder?: string
 }) {
+  const swatchColor = useMemo(() => getSwatchColor(value), [value])
+  const hasValidColor = swatchColor !== 'transparent'
+  
   return (
     <div className="space-y-1.5">
       <Label className="text-xs text-zinc-600 dark:text-zinc-400">{label}</Label>
       <div className="flex gap-2">
         <div 
-          className="w-10 h-10 rounded-lg border border-zinc-200 dark:border-white/10 flex-shrink-0"
-          style={{ backgroundColor: value || '#e5e5e5' }}
+          className={cn(
+            "w-10 h-10 rounded-lg border flex-shrink-0 transition-colors",
+            hasValidColor 
+              ? "border-zinc-300 dark:border-white/20" 
+              : "border-dashed border-zinc-300 dark:border-white/10 bg-zinc-100 dark:bg-white/5"
+          )}
+          style={hasValidColor ? { backgroundColor: swatchColor } : undefined}
         />
         <Input
           type="text"
           value={value || ''}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="font-mono text-sm h-10"
+          className="font-mono text-sm h-10 text-zinc-900 dark:text-white placeholder:text-zinc-400"
         />
       </div>
     </div>
@@ -59,8 +86,9 @@ function ExtraColorsList({
   const [newColor, setNewColor] = useState('')
 
   const addColor = () => {
-    if (newColor && !colors.includes(newColor)) {
-      onChange([...colors, newColor])
+    const trimmed = newColor.trim()
+    if (trimmed && !colors.includes(trimmed)) {
+      onChange([...colors, trimmed])
       setNewColor('')
     }
   }
@@ -69,6 +97,8 @@ function ExtraColorsList({
     onChange(colors.filter((_, i) => i !== index))
   }
 
+  const newSwatchColor = useMemo(() => getSwatchColor(newColor), [newColor])
+
   return (
     <div className="space-y-2">
       <Label className="text-xs text-zinc-600 dark:text-zinc-400">Ek Renkler</Label>
@@ -76,40 +106,48 @@ function ExtraColorsList({
       {/* Existing colors */}
       {colors.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-2">
-          {colors.map((color, index) => (
-            <div 
-              key={index}
-              className="flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-lg bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10"
-            >
+          {colors.map((color, index) => {
+            const swatch = getSwatchColor(color)
+            return (
               <div 
-                className="w-5 h-5 rounded"
-                style={{ backgroundColor: color }}
-              />
-              <span className="text-xs font-mono text-zinc-700 dark:text-zinc-300">{color}</span>
-              <button
-                type="button"
-                onClick={() => removeColor(index)}
-                className="text-zinc-400 hover:text-rose-500 transition-colors"
+                key={index}
+                className="flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-lg bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10"
               >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
+                <div 
+                  className="w-5 h-5 rounded border border-zinc-300 dark:border-white/20"
+                  style={{ backgroundColor: swatch !== 'transparent' ? swatch : '#888' }}
+                />
+                <span className="text-xs font-mono text-zinc-700 dark:text-zinc-300">{color}</span>
+                <button
+                  type="button"
+                  onClick={() => removeColor(index)}
+                  className="text-zinc-400 hover:text-rose-500 transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )
+          })}
         </div>
       )}
       
       {/* Add new */}
       <div className="flex gap-2">
         <div 
-          className="w-9 h-9 rounded-lg border border-dashed border-zinc-300 dark:border-white/10 flex-shrink-0"
-          style={{ backgroundColor: newColor || 'transparent' }}
+          className={cn(
+            "w-9 h-9 rounded-lg border flex-shrink-0 transition-colors",
+            newSwatchColor !== 'transparent'
+              ? "border-zinc-300 dark:border-white/20"
+              : "border-dashed border-zinc-300 dark:border-white/10 bg-zinc-100 dark:bg-white/5"
+          )}
+          style={newSwatchColor !== 'transparent' ? { backgroundColor: newSwatchColor } : undefined}
         />
         <Input
           type="text"
           value={newColor}
           onChange={(e) => setNewColor(e.target.value)}
           placeholder="#FF5733"
-          className="font-mono text-sm h-9"
+          className="font-mono text-sm h-9 text-zinc-900 dark:text-white placeholder:text-zinc-400"
           onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addColor())}
         />
         <Button
@@ -288,7 +326,7 @@ export function BrandAssetsSection({
                       value={fonts.corporate?.heading || ''}
                       onChange={(e) => updateFont('corporate', 'heading', e.target.value)}
                       placeholder="Montserrat"
-                      className="h-10"
+                      className="h-10 text-zinc-900 dark:text-white placeholder:text-zinc-400"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -298,7 +336,7 @@ export function BrandAssetsSection({
                       value={fonts.corporate?.body || ''}
                       onChange={(e) => updateFont('corporate', 'body', e.target.value)}
                       placeholder="Open Sans"
-                      className="h-10"
+                      className="h-10 text-zinc-900 dark:text-white placeholder:text-zinc-400"
                     />
                   </div>
                 </div>
@@ -315,7 +353,7 @@ export function BrandAssetsSection({
                       value={fonts.web?.heading || ''}
                       onChange={(e) => updateFont('web', 'heading', e.target.value)}
                       placeholder="Inter"
-                      className="h-10"
+                      className="h-10 text-zinc-900 dark:text-white placeholder:text-zinc-400"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -325,7 +363,7 @@ export function BrandAssetsSection({
                       value={fonts.web?.body || ''}
                       onChange={(e) => updateFont('web', 'body', e.target.value)}
                       placeholder="Inter"
-                      className="h-10"
+                      className="h-10 text-zinc-900 dark:text-white placeholder:text-zinc-400"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -335,7 +373,7 @@ export function BrandAssetsSection({
                       value={fonts.web?.fallback || ''}
                       onChange={(e) => updateFont('web', 'fallback', e.target.value)}
                       placeholder="system-ui, sans-serif"
-                      className="h-10"
+                      className="h-10 text-zinc-900 dark:text-white placeholder:text-zinc-400"
                     />
                   </div>
                 </div>
