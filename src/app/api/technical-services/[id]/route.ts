@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { z } from 'zod'
 
 // Zod schema for update validation
@@ -36,8 +35,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const adminClient = createAdminClient()
-    const { data, error } = await adminClient
+    const { data, error } = await supabase
       .from('technical_services')
       .select(`
         *,
@@ -89,8 +87,7 @@ export async function PATCH(
       updated_at: new Date().toISOString()
     }
 
-    const adminClient = createAdminClient()
-    const { data, error } = await adminClient
+    const { data, error } = await supabase
       .from('technical_services')
       .update(updateData)
       .eq('id', id)
@@ -105,6 +102,7 @@ export async function PATCH(
       if (error.code === 'PGRST116') {
         return NextResponse.json({ error: 'Hizmet bulunamadı' }, { status: 404 })
       }
+      console.error('Supabase PATCH error:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
@@ -130,13 +128,13 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const adminClient = createAdminClient()
-    const { error } = await adminClient
+    const { error } = await supabase
       .from('technical_services')
       .delete()
       .eq('id', id)
 
     if (error) {
+      console.error('Supabase DELETE error:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
