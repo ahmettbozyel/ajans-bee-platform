@@ -365,12 +365,13 @@ export default function AdminGunlukIslerPage() {
                       type="button"
                       onClick={() => setFormData({ ...formData, category_id: cat.id })}
                       className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                        formData.category_id === cat.id ? 'ring-2 ring-offset-2 ring-offset-zinc-900' : 'hover:opacity-80'
+                        formData.category_id === cat.id 
+                          ? 'ring-2 ring-indigo-500 ring-offset-2 ring-offset-zinc-900' 
+                          : 'hover:opacity-80'
                       }`}
                       style={{ 
                         backgroundColor: `${cat.color}20`,
-                        color: cat.color,
-                        ringColor: formData.category_id === cat.id ? cat.color : undefined
+                        color: cat.color
                       }}
                     >
                       {cat.name}
