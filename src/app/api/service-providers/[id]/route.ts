@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { z } from 'zod'
 
 // Zod schema for validation
@@ -31,7 +32,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data, error } = await supabase
+    const adminClient = createAdminClient()
+    const { data, error } = await adminClient
       .from('service_providers')
       .select('*')
       .eq('id', id)
@@ -79,9 +81,10 @@ export async function PATCH(
       updated_at: new Date().toISOString()
     }
 
-    const { data, error } = await supabase
+    const adminClient = createAdminClient()
+    const { data, error } = await adminClient
       .from('service_providers')
-      .update(updateData as Record<string, unknown>)
+      .update(updateData)
       .eq('id', id)
       .select()
       .single()
@@ -115,7 +118,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { count } = await supabase
+    const adminClient = createAdminClient()
+    
+    // Önce bu sağlayıcıya bağlı servis var mı kontrol et
+    const { count } = await adminClient
       .from('technical_services')
       .select('*', { count: 'exact', head: true })
       .eq('provider_id', id)
@@ -127,7 +133,7 @@ export async function DELETE(
       )
     }
 
-    const { error } = await supabase
+    const { error } = await adminClient
       .from('service_providers')
       .delete()
       .eq('id', id)
