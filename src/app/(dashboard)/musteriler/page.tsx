@@ -9,11 +9,13 @@ import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Search, Pencil, Trash2, Building2, Eye, EyeOff, Sparkles, PauseCircle, Loader2 } from 'lucide-react'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
+import { Plus, Search, Pencil, Trash2, Building2, Eye, EyeOff, Sparkles, PauseCircle, Loader2, ChevronsUpDown, Check } from 'lucide-react'
 import { getRecentCustomers, addToRecentCustomers, type RecentCustomer } from '@/lib/local-storage'
 import type { Customer } from '@/lib/customer-types'
 import { SECTORS, calculateBriefCompletion, getCustomerTypeLabel } from '@/lib/customer-types'
+import { cn } from '@/lib/utils'
 
 function getSectorLabel(value: string): string {
   return SECTORS.find(s => s.value === value)?.label || value
@@ -57,6 +59,7 @@ export default function MusterilerPage() {
   const [formLoading, setFormLoading] = useState(false)
   const [showInactive, setShowInactive] = useState(false)
   const [newBrandForm, setNewBrandForm] = useState(initialNewBrandForm)
+  const [sectorPopoverOpen, setSectorPopoverOpen] = useState(false)
 
   const supabase = createClient()
 
@@ -499,26 +502,57 @@ export default function MusterilerPage() {
               </div>
             </div>
 
-            {/* Sektör */}
+            {/* Sektör - Combobox with Search */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 Sektör
               </Label>
-              <Select 
-                value={newBrandForm.sector} 
-                onValueChange={(value) => setNewBrandForm(prev => ({ ...prev, sector: value }))}
-              >
-                <SelectTrigger className="input-glow bg-zinc-100 dark:bg-white/5 border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white">
-                  <SelectValue placeholder="Sektör seç..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {SECTORS.map((sector) => (
-                    <SelectItem key={sector.value} value={sector.value}>
-                      {sector.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={sectorPopoverOpen} onOpenChange={setSectorPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={sectorPopoverOpen}
+                    className="w-full justify-between input-glow bg-zinc-100 dark:bg-white/5 border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
+                  >
+                    {newBrandForm.sector
+                      ? getSectorLabel(newBrandForm.sector)
+                      : "Sektör seç..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Sektör ara..." className="h-10" />
+                    <CommandList>
+                      <CommandEmpty>Sektör bulunamadı.</CommandEmpty>
+                      <CommandGroup className="max-h-64 overflow-auto">
+                        {SECTORS.map((sector) => (
+                          <CommandItem
+                            key={sector.value}
+                            value={sector.label}
+                            onSelect={() => {
+                              setNewBrandForm(prev => ({ 
+                                ...prev, 
+                                sector: prev.sector === sector.value ? '' : sector.value 
+                              }))
+                              setSectorPopoverOpen(false)
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                newBrandForm.sector === sector.value ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {sector.label}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
