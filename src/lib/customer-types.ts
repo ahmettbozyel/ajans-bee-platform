@@ -1,6 +1,6 @@
 // =====================================================
 // Customer Types - Genişletilmiş Brief Sistemi
-// Version: 1.3 - Status Eklendi (Karar #14)
+// Version: 2.0 - UI Kit v1.0 Entegrasyonu (Karar #18)
 // =====================================================
 
 // Sosyal medya platform tipi
@@ -147,7 +147,7 @@ export type CustomerType = 'retainer' | 'project';
 // Customer status (Karar #14)
 export type CustomerStatus = 'active' | 'inactive';
 
-// Brand voice options
+// Brand voice options - Karar #18
 export type BrandVoice = 'samimi' | 'kurumsal' | 'enerjik' | 'profesyonel';
 
 // Business type
@@ -158,6 +158,50 @@ export type PriceSegment = 'ekonomik' | 'orta' | 'premium' | 'lüks';
 
 // AI Research status
 export type AIResearchStatus = 'pending' | 'completed' | 'partial' | 'failed';
+
+// =====================================================
+// Teknik Hizmetler Tipleri (Karar #18)
+// =====================================================
+
+export type ServiceType = 'hosting' | 'domain' | 'ssl' | 'email';
+export type PaymentStatus = 'pending' | 'paid' | 'overdue' | 'cancelled';
+
+export interface TechnicalService {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+  customer_id: string;
+  service_type: ServiceType;
+  provider?: string;
+  name: string;
+  renewal_date: string;
+  price?: number;
+  payment_status: PaymentStatus;
+  notes?: string;
+}
+
+// Service type badge renkleri (Karar #18)
+export const SERVICE_TYPE_COLORS = {
+  hosting: { bg: 'bg-cyan-100 dark:bg-cyan-500/20', text: 'text-cyan-700 dark:text-cyan-400', glow: 'glow-cyan' },
+  domain: { bg: 'bg-amber-100 dark:bg-amber-500/20', text: 'text-amber-700 dark:text-amber-400', glow: 'glow-amber' },
+  ssl: { bg: 'bg-emerald-100 dark:bg-emerald-500/20', text: 'text-emerald-700 dark:text-emerald-400', glow: 'glow-emerald' },
+  email: { bg: 'bg-violet-100 dark:bg-violet-500/20', text: 'text-violet-700 dark:text-violet-400', glow: 'glow-violet' }
+} as const;
+
+export const SERVICE_TYPES = [
+  { value: 'hosting', label: 'Hosting', icon: 'Server' },
+  { value: 'domain', label: 'Domain', icon: 'Globe' },
+  { value: 'ssl', label: 'SSL', icon: 'ShieldCheck' },
+  { value: 'email', label: 'E-posta', icon: 'Mail' }
+] as const;
+
+export const PAYMENT_STATUSES = [
+  { value: 'pending', label: 'Bekliyor' },
+  { value: 'paid', label: 'Ödendi' },
+  { value: 'overdue', label: 'Gecikmiş' },
+  { value: 'cancelled', label: 'İptal' }
+] as const;
 
 // =====================================================
 // Ana Customer Interface
@@ -268,8 +312,8 @@ export type CustomerFormData = Partial<Omit<Customer, 'id' | 'created_at' | 'upd
 // =====================================================
 
 export const CUSTOMER_TYPES = [
-  { value: 'retainer', label: 'Retainer', description: 'Aylık düzenli hizmet' },
-  { value: 'project', label: 'Proje', description: 'Proje bazlı hizmet' }
+  { value: 'retainer', label: 'Retainer', description: 'Aylık düzenli hizmet', icon: '🔄' },
+  { value: 'project', label: 'Proje', description: 'Proje bazlı hizmet', icon: '📁' }
 ] as const;
 
 // =====================================================
@@ -277,14 +321,60 @@ export const CUSTOMER_TYPES = [
 // =====================================================
 
 export const CUSTOMER_STATUSES = [
-  { value: 'active', label: 'Aktif', description: 'Aktif müşteri' },
-  { value: 'inactive', label: 'Pasif', description: 'İş bitti, teknik hizmet devam' }
+  { value: 'active', label: 'Aktif', description: 'Aktif müşteri', icon: '✅' },
+  { value: 'inactive', label: 'Pasif', description: 'İş bitti, teknik hizmet devam', icon: '⏸️' }
 ] as const;
 
 // =====================================================
-// Brief Bölüm Tanımları
+// Brief Bölüm Tanımları - 6 Ana Bölüm (Karar #18)
 // =====================================================
 
+export const BRIEF_SECTIONS_NEW = {
+  markaKimligi: {
+    id: 'marka-kimligi',
+    label: 'Marka Kimliği',
+    icon: 'Sparkles',
+    fields: ['name', 'customer_type', 'status', 'website_url', 'sector', 'sub_sector', 'business_type', 'brand_voice', 'social_media', 'brand_description', 'mission', 'vision', 'slogan', 'usp'],
+    required: ['name', 'customer_type']
+  },
+  hedefKitle: {
+    id: 'hedef-kitle',
+    label: 'Hedef Kitle',
+    icon: 'Users',
+    fields: ['target_audience', 'target_age_range', 'target_geography'],
+    required: []
+  },
+  urunHizmet: {
+    id: 'urun-hizmet',
+    label: 'Ürün/Hizmet',
+    icon: 'Package',
+    fields: ['product_categories', 'top_products', 'price_segment'],
+    required: []
+  },
+  rakipler: {
+    id: 'rakipler',
+    label: 'Rakipler',
+    icon: 'Target',
+    fields: ['competitors'],
+    required: []
+  },
+  kurallar: {
+    id: 'kurallar',
+    label: 'Kurallar',
+    icon: 'ShieldCheck',
+    fields: ['do_not_do', 'must_emphasize'],
+    required: []
+  },
+  ozelGunler: {
+    id: 'ozel-gunler',
+    label: 'Özel Günler',
+    icon: 'Calendar',
+    fields: ['special_events'],
+    required: []
+  }
+} as const;
+
+// Eski bölümler (geriye uyumluluk)
 export const BRIEF_SECTIONS = {
   temelBilgiler: {
     id: 'temel',
@@ -431,11 +521,12 @@ export const SECTORS = [
   { value: 'diger', label: 'Diğer' }
 ] as const;
 
+// Marka Sesi - Karar #18 (4 seçenek, emoji'li)
 export const BRAND_VOICES = [
-  { value: 'samimi', label: 'Samimi' },
-  { value: 'kurumsal', label: 'Kurumsal' },
-  { value: 'enerjik', label: 'Enerjik' },
-  { value: 'profesyonel', label: 'Profesyonel' }
+  { value: 'samimi', label: 'Samimi', icon: '🤝', description: 'Arkadaşça, sıcak' },
+  { value: 'profesyonel', label: 'Profesyonel', icon: '💼', description: 'Ciddi, iş odaklı' },
+  { value: 'kurumsal', label: 'Kurumsal', icon: '🏢', description: 'Formal, resmi' },
+  { value: 'enerjik', label: 'Enerjik', icon: '⚡', description: 'Dinamik, heyecanlı' }
 ] as const;
 
 export const BUSINESS_TYPES = [
@@ -450,6 +541,19 @@ export const PRICE_SEGMENTS = [
   { value: 'premium', label: 'Premium' },
   { value: 'luks', label: 'Lüks' }
 ] as const;
+
+// =====================================================
+// Empty State Mesajları (Karar #18)
+// =====================================================
+
+export const EMPTY_STATE_MESSAGES = {
+  dashboard_activity: "Henüz aktivite yok. İlk içeriği üretmek için bir marka seç! 🚀",
+  files: "Henüz dosya yüklenmedi. Logo ve görselleri buraya yükle.",
+  calendar: "Takvim boş. İçerik planlamaya başla!",
+  content: "Henüz içerik üretilmedi. Hemen başla! ✨",
+  performance: "Performans raporları çok yakında burada! 📊",
+  brands: "Henüz marka eklenmedi. İlk markanı ekleyerek başla! 🐝"
+} as const;
 
 // =====================================================
 // Helper Fonksiyonlar
@@ -524,4 +628,25 @@ export function getCustomerTypeLabel(type: CustomerType): string {
 export function getCustomerStatusLabel(status: CustomerStatus): string {
   const found = CUSTOMER_STATUSES.find(s => s.value === status);
   return found?.label || status;
+}
+
+// Helper: Servis tipi renkleri getir
+export function getServiceTypeColors(type: ServiceType) {
+  return SERVICE_TYPE_COLORS[type] || SERVICE_TYPE_COLORS.hosting;
+}
+
+// Helper: Progress bar rengini getir
+export function getProgressColor(value: number): string {
+  if (value >= 100) return 'progress-emerald';
+  if (value >= 71) return 'progress-cyan';
+  if (value >= 31) return 'progress-amber';
+  return 'progress-rose';
+}
+
+// Helper: Progress text rengini getir
+export function getProgressTextColor(value: number): string {
+  if (value >= 100) return 'text-emerald-600 dark:text-emerald-400';
+  if (value >= 71) return 'text-cyan-600 dark:text-cyan-400';
+  if (value >= 31) return 'text-amber-600 dark:text-amber-400';
+  return 'text-rose-600 dark:text-rose-400';
 }
