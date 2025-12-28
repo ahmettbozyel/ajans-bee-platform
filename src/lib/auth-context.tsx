@@ -35,21 +35,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const supabase = createClient()
 
-  const fetchAppUser = async (userId: string) => {
+  const fetchAppUser = async (userId: string): Promise<AppUser | null> => {
     console.log('[AuthContext] Fetching app user for:', userId)
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    
-    if (error) {
-      console.error('[AuthContext] Error fetching app user:', error)
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      
+      if (error) {
+        console.error('[AuthContext] Supabase error fetching app user:', error.message, error.code, error.details)
+        return null
+      }
+      
+      console.log('[AuthContext] App user fetched successfully:', data)
+      return data as AppUser
+    } catch (err) {
+      console.error('[AuthContext] Exception fetching app user:', err)
       return null
     }
-    
-    console.log('[AuthContext] App user fetched:', data)
-    return data as AppUser
   }
 
   const refreshUser = async () => {
@@ -67,17 +72,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('[AuthContext] Initializing auth...')
         const { data: { user }, error } = await supabase.auth.getUser()
         
-        console.log('[AuthContext] Auth user:', user?.email, 'Error:', error)
+        console.log('[AuthContext] Auth user:', user?.email, 'Error:', error?.message)
         
         if (user) {
           setAuthUser(user)
           const appUserData = await fetchAppUser(user.id)
+          console.log('[AuthContext] Setting appUser:', appUserData)
           setAppUser(appUserData)
         }
       } catch (error) {
         console.error('[AuthContext] Auth init error:', error)
       } finally {
-        console.log('[AuthContext] Loading complete')
+        console.log('[AuthContext] Setting loading to false')
         setLoading(false)
       }
     }
@@ -91,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (event === 'SIGNED_IN' && session?.user) {
           setAuthUser(session.user)
           const appUserData = await fetchAppUser(session.user.id)
+          console.log('[AuthContext] After SIGNED_IN, appUser:', appUserData)
           setAppUser(appUserData)
           setLoading(false)
         } else if (event === 'SIGNED_OUT') {
@@ -128,7 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   // Debug log
-  console.log('[AuthContext] State:', { loading, authUser: authUser?.email, appUser: appUser?.email, role })
+  console.log('[AuthContext] Render state:', { loading, authUser: authUser?.email, appUser: appUser?.email, role })
 
   return (
     <AuthContext.Provider value={value}>
