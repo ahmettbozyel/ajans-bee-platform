@@ -1,6 +1,6 @@
 // =====================================================
 // Customer Types - Genişletilmiş Brief Sistemi
-// Version: 2.4 - Genişletilmiş Renk ve Font Yapısı
+// Version: 2.5 - Fatura İletişim Bilgileri Eklendi
 // =====================================================
 
 // Sosyal medya platform tipi
@@ -297,6 +297,11 @@ export interface Customer {
   phone?: string | null;
   location?: string | null;
 
+  // Fatura İletişim (v2.5 - Yenileme hatırlatmaları için)
+  billing_contact_name?: string | null;
+  billing_contact_email?: string | null;
+  billing_contact_phone?: string | null;
+
   // Sosyal medya (JSONB)
   social_media?: SocialMediaData | null;
 
@@ -433,6 +438,13 @@ export const BRIEF_SECTIONS_NEW = {
     icon: 'Calendar',
     fields: ['special_events'],
     required: []
+  },
+  faturaIletisim: {
+    id: 'fatura-iletisim',
+    label: 'Fatura İletişim',
+    icon: 'Receipt',
+    fields: ['billing_contact_name', 'billing_contact_email', 'billing_contact_phone'],
+    required: []
   }
 } as const;
 
@@ -555,6 +567,13 @@ export const BRIEF_SECTIONS = {
     label: 'AI Araştırma',
     icon: 'Bot',
     fields: ['pain_points', 'hook_sentences', 'cta_standards', 'forbidden_words', 'seasonal_calendar'],
+    required: []
+  },
+  faturaIletisim: {
+    id: 'fatura-iletisim',
+    label: 'Fatura İletişim',
+    icon: 'Receipt',
+    fields: ['billing_contact_name', 'billing_contact_email', 'billing_contact_phone'],
     required: []
   }
 } as const;
@@ -726,7 +745,8 @@ export function calculateBriefCompletion(customer: Partial<Customer>): number {
     'word_mapping',
     'brand_colors', 'brand_fonts', 'brand_assets',
     'integrations',
-    'pain_points', 'hook_sentences', 'cta_standards', 'forbidden_words', 'seasonal_calendar'
+    'pain_points', 'hook_sentences', 'cta_standards', 'forbidden_words', 'seasonal_calendar',
+    'billing_contact_name', 'billing_contact_email', 'billing_contact_phone'
   ];
 
   const filledFields = allFields.filter(field => 
