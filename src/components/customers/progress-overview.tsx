@@ -1,3 +1,8 @@
+'use client'
+
+import { ListChecks, CheckCircle, CircleDot, Circle } from 'lucide-react'
+import { cn } from '@/lib/utils'
+
 // Progress Overview Grid - UI Kit HTML ile UYUMLU
 // Artık tıklanabilir ve ilgili section'a scroll ediyor
 // FLEX wrap ile responsive
