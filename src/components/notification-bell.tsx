@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useAuth } from '@/lib/auth-context'
 import { Notification } from '@/lib/notifications'
 import { 
   Bell, 
@@ -15,29 +14,40 @@ import {
 import { cn } from '@/lib/utils'
 
 export function NotificationBell() {
-  const { appUser } = useAuth()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
+  // User ID'yi al
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      console.log('[NotificationBell] Auth user:', user?.id, user?.email)
+      if (user) {
+        setUserId(user.id)
+      }
+    }
+    getUser()
+  }, [])
+
   // Bildirimleri çek
   const fetchNotifications = async () => {
-    console.log('[NotificationBell] appUser:', appUser?.id, appUser?.email)
-    if (!appUser) {
-      console.log('[NotificationBell] No appUser, skipping fetch')
+    if (!userId) {
+      console.log('[NotificationBell] No userId, skipping fetch')
       return
     }
     
-    console.log('[NotificationBell] Fetching notifications for:', appUser.id)
+    console.log('[NotificationBell] Fetching notifications for:', userId)
     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any)
       .from('notifications')
       .select('*')
-      .eq('user_id', appUser.id)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(20)
     
@@ -50,19 +60,16 @@ export function NotificationBell() {
     }
   }
 
-  // İlk yükleme ve polling
+  // userId değişince bildirimleri çek
   useEffect(() => {
-    console.log('[NotificationBell] useEffect triggered, appUser:', appUser?.id)
-    if (appUser) {
+    if (userId) {
       fetchNotifications()
+      
+      // Her 30 saniyede bir kontrol et
+      const interval = setInterval(fetchNotifications, 30000)
+      return () => clearInterval(interval)
     }
-    
-    // Her 30 saniyede bir kontrol et
-    const interval = setInterval(() => {
-      if (appUser) fetchNotifications()
-    }, 30000)
-    return () => clearInterval(interval)
-  }, [appUser])
+  }, [userId])
 
   // Dışarı tıklamada kapat
   useEffect(() => {
@@ -91,14 +98,14 @@ export function NotificationBell() {
 
   // Tümünü okundu işaretle
   const markAllAsRead = async () => {
-    if (!appUser) return
+    if (!userId) return
     setLoading(true)
     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any)
       .from('notifications')
       .update({ is_read: true })
-      .eq('user_id', appUser.id)
+      .eq('user_id', userId)
       .eq('is_read', false)
     
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
@@ -157,7 +164,7 @@ export function NotificationBell() {
   }
 
   const handleBellClick = () => {
-    console.log('[NotificationBell] Bell clicked, current isOpen:', isOpen)
+    console.log('[NotificationBell] Bell clicked, isOpen:', isOpen, '-> ', !isOpen)
     setIsOpen(!isOpen)
   }
 
