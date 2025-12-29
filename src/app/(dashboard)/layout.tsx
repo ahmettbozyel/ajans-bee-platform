@@ -46,7 +46,7 @@ const navTabs = [
 // Erişim kontrolü için izin verilen sayfalar
 const ALLOWED_PAGES: Record<string, string[]> = {
   admin: ['*'], // Her şeye erişebilir
-  operasyon: ['/gunluk-isler', '/giris-cikis', '/teknik-hizmetler'],
+  operasyon: ['/gunluk-isler', '/giris-cikis', '/teknik-hizmetler', '/ayarlar'],
   personel: ['/gunluk-isler', '/giris-cikis']
 }
 
@@ -495,7 +495,7 @@ export default function DashboardLayout({
                 <span className="text-sm font-medium">Giriş/Çıkış</span>
               </Link>
 
-              {/* Ayarlar - sadece admin, ayrı bölüm */}
+              {/* Ayarlar - admin için ayrı bölüm */}
               {isAdmin && (
                 <>
                   <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 mt-5" style={{ color: styles.textMuted }}>Sistem</p>
