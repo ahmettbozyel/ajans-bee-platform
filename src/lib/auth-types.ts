@@ -93,6 +93,11 @@ export interface DailyTask {
   user?: { full_name: string }
 }
 
+// Attendance status types
+export type AttendanceStatus = 'normal' | 'late' | 'early_leave' | 'absent' | 'leave' | 'remote' | 'holiday'
+export type LocationType = 'office' | 'home' | 'other' | 'unknown'
+export type LeaveType = 'annual' | 'sick' | 'remote' | 'half_day' | 'official_holiday' | 'other'
+
 // Giriş/Çıkış
 export interface Attendance {
   id: string
@@ -103,4 +108,19 @@ export interface Attendance {
   notes: string | null
   created_at: string
   updated_at: string
+  // Konum bilgileri
+  check_in_lat?: number | null
+  check_in_lng?: number | null
+  check_out_lat?: number | null
+  check_out_lng?: number | null
+  check_in_location_type?: LocationType | null
+  check_out_location_type?: LocationType | null
+  // Durum ve süreler
+  status?: AttendanceStatus | null
+  late_minutes?: number | null
+  overtime_minutes?: number | null
+  early_leave_minutes?: number | null
+  // İzin bilgileri
+  leave_type?: LeaveType | null
+  leave_reason?: string | null
 }
