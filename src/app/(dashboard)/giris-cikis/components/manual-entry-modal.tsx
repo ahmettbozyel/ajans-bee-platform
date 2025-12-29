@@ -77,15 +77,16 @@ export function ManualEntryModal({ isOpen, onClose, onSuccess, users, selectedDa
     
     try {
       // Önce o tarihte kayıt var mı kontrol et
-      const { data: existing } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: existing } = await (supabase as any)
         .from('attendance')
         .select('id')
         .eq('user_id', selectedUser)
         .eq('date', entryDate)
         .single()
       
-      if (existing) {
-        // Güncelle - eslint-disable ile type bypass
+      if (existing && existing.id) {
+        // Güncelle
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error: updateError } = await (supabase as any)
           .from('attendance')
@@ -111,7 +112,6 @@ export function ManualEntryModal({ isOpen, onClose, onSuccess, users, selectedDa
             admin_notes: notes || null,
             status: recordType === 'remote' ? 'remote' : recordType === 'leave' ? 'leave' : recordType === 'holiday' ? 'holiday' : 'normal',
             check_in_location_type: recordType === 'remote' ? 'home' : null,
-            // İzin ve tatil için giriş/çıkış yok
             check_in: recordType === 'remote' ? new Date(`${entryDate}T09:00:00`).toISOString() : null,
             check_out: recordType === 'remote' ? new Date(`${entryDate}T18:30:00`).toISOString() : null
           })
