@@ -27,7 +27,7 @@ const OFFICE_LOCATION = {
 const WORK_HOURS = {
   start: '09:00',
   end: '18:30',
-  toleranceMinutes: 5
+  toleranceMinutes: 0
 }
 
 // İki koordinat arası mesafe hesapla (metre)
@@ -60,7 +60,7 @@ function calculateLateMinutes(checkInTime: Date): number {
   
   // Tolerans içindeyse 0
   if (diffMinutes <= WORK_HOURS.toleranceMinutes) return 0
-  return diffMinutes
+  return diffMinutes > 0 ? diffMinutes : 0
 }
 
 // Mesai hesapla (dakika)
