@@ -2,7 +2,27 @@
 
 **Amaç:** Claude Desktop bu dosyayı okuyarak proje kurallarını öğrenir.
 **Konum:** `docs/ai-rules.md`
-**Son Güncelleme:** 28 Aralık 2025
+**Son Güncelleme:** 29 Aralık 2025
+
+---
+
+## ✏️ DOSYA DÜZENLEME KURALLARI
+
+### Küçük Değişiklik (1-10 satır)
+**str_replace kullan** - Tüm dosyayı yeniden yazma!
+```
+str_replace:
+  old_str: "değişecek satır"
+  new_str: "yeni satır"
+```
+
+### Büyük Değişiklik (>10 satır veya yeni dosya)
+- `create_or_update_file` kullan
+
+### YASAK
+- Tek satır için 36KB dosya yazmak
+- Gereksiz network kullanımı
+- Zaman kaybı
 
 ---
 
@@ -114,7 +134,7 @@ Perplexity:
 ## 📝 PROMPT KURALLARI (Elif Mirası)
 
 ### Format
-- Claude: XML tags (`<context>`, `<instructions>`, `<output>`)
+- Claude: XML tags (`<context>`, `<instructions>`, `<o>`)
 - Output: Saf JSON (prefill tekniği ile)
 
 ### Prefill Tekniği
@@ -133,6 +153,7 @@ Assistant mesajına `{` başlangıcı ekle → %100 temiz JSON
 3. HTTP Request ile AI API çağırma
 4. Hardcode credentials
 5. Auth kontrolsüz API route
+6. **Küçük değişiklik için tüm dosyayı yazmak**
 
 ---
 
