@@ -155,6 +155,7 @@ export default function GirisCikisPage() {
       const mainData = filteredRecords.map((record: any) => {
         const date = new Date(record.date)
         const dayName = date.toLocaleDateString('tr-TR', { weekday: 'long' })
+        const formattedDate = date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
         const checkIn = record.check_in ? new Date(record.check_in).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '-'
         const checkOut = record.check_out ? new Date(record.check_out).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '-'
         let duration = '-'
@@ -165,7 +166,7 @@ export default function GirisCikisPage() {
         const locationType = record.check_in_location_type === 'office' ? 'Ofis' : record.check_in_location_type === 'home' ? 'Evden' : record.check_in_location_type === 'other' ? 'Dışarı' : '-'
         const recordTypeLabels: Record<string, string> = { normal: 'Normal', leave: 'İzin', sick: 'Rapor', remote: 'Evden Çalışma', holiday: 'Tatil' }
         const status = record.record_type && record.record_type !== 'normal' ? recordTypeLabels[record.record_type] || '-' : record.status === 'late' ? 'Geç' : record.status === 'early_leave' ? 'Erken Çıkış' : record.status === 'normal' ? 'Normal' : '-'
-        return { 'Personel': record.user?.full_name || '-', 'Tarih': new Date(record.date).toLocaleDateString('tr-TR'), 'Gün': dayName, 'Giriş': checkIn, 'Çıkış': checkOut, 'Geç (dk)': record.late_minutes || 0, 'Mesai (dk)': record.overtime_minutes || 0, 'Erken Çıkış (dk)': record.early_leave_minutes || 0, 'Toplam Süre': duration, 'Konum': locationType, 'Durum': status, 'Geç Sebebi': record.late_reason || '', 'Mesai Sebebi': record.overtime_reason || '', 'Admin Notu': record.admin_notes || '' }
+        return { 'Personel': record.user?.full_name || '-', 'Tarih': formattedDate, 'Gün': dayName, 'Giriş': checkIn, 'Çıkış': checkOut, 'Geç (dk)': record.late_minutes || 0, 'Mesai (dk)': record.overtime_minutes || 0, 'Erken Çıkış (dk)': record.early_leave_minutes || 0, 'Toplam Süre': duration, 'Konum': locationType, 'Durum': status, 'Geç Sebebi': record.late_reason || '', 'Mesai Sebebi': record.overtime_reason || '', 'Admin Notu': record.admin_notes || '' }
       })
       const summary: { [key: string]: { late: number; overtime: number; earlyLeave: number; days: number; leave: number; sick: number; remote: number } } = {}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -183,7 +184,7 @@ export default function GirisCikisPage() {
       const summaryData = Object.entries(summary).map(([name, data]) => ({ 'Personel': name, 'Toplam Gün': data.days, 'İzin Günü': data.leave, 'Rapor Günü': data.sick, 'Evden Çalışma': data.remote, 'Toplam Geç (dk)': data.late, 'Toplam Mesai (dk)': data.overtime, 'Toplam Erken Çıkış (dk)': data.earlyLeave }))
       const wb = XLSX.utils.book_new()
       const wsMain = XLSX.utils.json_to_sheet(mainData)
-      wsMain['!cols'] = [{ wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 15 }, { wch: 30 }, { wch: 30 }, { wch: 30 }]
+      wsMain['!cols'] = [{ wch: 20 }, { wch: 18 }, { wch: 12 }, { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 15 }, { wch: 30 }, { wch: 30 }, { wch: 30 }]
       XLSX.utils.book_append_sheet(wb, wsMain, 'Detay')
       const wsSummary = XLSX.utils.json_to_sheet(summaryData)
       wsSummary['!cols'] = [{ wch: 20 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }]
