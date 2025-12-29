@@ -13,7 +13,11 @@ import {
   Check,
   X,
   Loader2,
-  Users
+  Users,
+  CheckCircle2,
+  RotateCcw,
+  Copy,
+  Clock
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -108,23 +112,30 @@ export default function AdminGunlukIslerPage() {
 
     setSaving(true)
     try {
-      const payload = {
-        user_id: appUser.id,
-        brand_id: formData.brand_id || null,
-        category_id: formData.category_id,
-        description: formData.description.trim(),
-        date: formData.date
-      }
-
       if (editingTask) {
+        // Düzenleme - sadece temel alanları güncelle
         await (supabase as any)
           .from('daily_tasks')
-          .update(payload)
+          .update({
+            brand_id: formData.brand_id || null,
+            category_id: formData.category_id,
+            description: formData.description.trim(),
+            date: formData.date
+          })
           .eq('id', editingTask.id)
       } else {
+        // Yeni iş - started_at ve status ekle
         await (supabase as any)
           .from('daily_tasks')
-          .insert(payload)
+          .insert({
+            user_id: appUser.id,
+            brand_id: formData.brand_id || null,
+            category_id: formData.category_id,
+            description: formData.description.trim(),
+            date: formData.date,
+            started_at: new Date().toISOString(),
+            status: 'in_progress'
+          })
       }
 
       setShowModal(false)
@@ -143,6 +154,74 @@ export default function AdminGunlukIslerPage() {
     
     await (supabase as any).from('daily_tasks').delete().eq('id', id)
     fetchData()
+  }
+
+  // Bitti butonu
+  const handleComplete = async (task: DailyTask) => {
+    const now = new Date()
+    const startedAt = task.started_at ? new Date(task.started_at) : now
+    const durationMinutes = Math.round((now.getTime() - startedAt.getTime()) / 60000)
+    
+    await (supabase as any).from('daily_tasks').update({
+      completed_at: now.toISOString(),
+      status: 'completed',
+      duration_minutes: durationMinutes
+    }).eq('id', task.id)
+    
+    fetchData()
+  }
+
+  // Geri Al butonu
+  const handleReopen = async (task: DailyTask) => {
+    await (supabase as any).from('daily_tasks').update({
+      completed_at: null,
+      status: 'in_progress',
+      duration_minutes: null
+    }).eq('id', task.id)
+    
+    fetchData()
+  }
+
+  // Revize butonu
+  const handleRevise = async (task: DailyTask) => {
+    const revisionNumber = (task.revision_number || 0) + 1
+    // Orijinal açıklamayı al ([R1] vs varsa kaldır)
+    const baseDescription = task.description.replace(/\s*\[R\d+\]$/, '')
+    
+    await (supabase as any).from('daily_tasks').insert({
+      user_id: task.user_id,
+      brand_id: task.brand_id,
+      category_id: task.category_id,
+      description: `${baseDescription} [R${revisionNumber}]`,
+      date: task.date,
+      started_at: new Date().toISOString(),
+      status: 'in_progress',
+      parent_id: task.parent_id || task.id, // Orijinal parent'ı koru
+      revision_number: revisionNumber
+    })
+    
+    fetchData()
+  }
+
+  // Süre formatla
+  const formatDuration = (task: DailyTask) => {
+    if (!task.started_at) return null
+    
+    const start = new Date(task.started_at)
+    const end = task.completed_at ? new Date(task.completed_at) : new Date()
+    const diffMinutes = Math.round((end.getTime() - start.getTime()) / 60000)
+    
+    const hours = Math.floor(diffMinutes / 60)
+    const minutes = diffMinutes % 60
+    
+    const startTime = start.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+    const endTime = task.completed_at 
+      ? end.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+      : '...'
+    
+    const duration = hours > 0 ? `${hours}s ${minutes}d` : `${minutes}d`
+    
+    return { startTime, endTime, duration }
   }
 
   const openEditModal = (task: DailyTask) => {
@@ -265,53 +344,114 @@ export default function AdminGunlukIslerPage() {
               
               {/* Tasks */}
               <div className="divide-y divide-zinc-800">
-                {group.tasks.map((task) => (
-                  <div key={task.id} className="p-4 hover:bg-zinc-800/30 transition-colors">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          {task.category && (
-                            <span 
-                              className="text-xs px-2 py-1 rounded-full font-medium"
-                              style={{ 
-                                backgroundColor: `${task.category.color}20`,
-                                color: task.category.color
-                              }}
-                            >
-                              {task.category.name}
-                            </span>
-                          )}
-                          {task.brand && (
-                            <span className="text-xs px-2 py-1 rounded-full bg-violet-500/20 text-violet-400 font-medium flex items-center gap-1">
-                              <Building2 className="w-3 h-3" />
-                              {task.brand.brand_name}
-                            </span>
-                          )}
-                          {!task.brand && (
-                            <span className="text-xs px-2 py-1 rounded-full bg-zinc-700/50 text-zinc-400 font-medium">
-                              Genel
-                            </span>
+                {group.tasks.map((task) => {
+                  const timeInfo = formatDuration(task)
+                  const isCompleted = task.status === 'completed'
+                  
+                  return (
+                    <div key={task.id} className={`p-4 hover:bg-zinc-800/30 transition-colors ${isCompleted ? 'opacity-75' : ''}`}>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            {/* Status Badge */}
+                            {isCompleted ? (
+                              <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-medium flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3" />
+                                Tamamlandı
+                              </span>
+                            ) : (
+                              <span className="text-xs px-2 py-1 rounded-full bg-amber-500/20 text-amber-400 font-medium flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                Devam
+                              </span>
+                            )}
+                            
+                            {task.category && (
+                              <span 
+                                className="text-xs px-2 py-1 rounded-full font-medium"
+                                style={{ 
+                                  backgroundColor: `${task.category.color}20`,
+                                  color: task.category.color
+                                }}
+                              >
+                                {task.category.name}
+                              </span>
+                            )}
+                            {task.brand ? (
+                              <span className="text-xs px-2 py-1 rounded-full bg-violet-500/20 text-violet-400 font-medium flex items-center gap-1">
+                                <Building2 className="w-3 h-3" />
+                                {task.brand.brand_name}
+                              </span>
+                            ) : (
+                              <span className="text-xs px-2 py-1 rounded-full bg-zinc-700/50 text-zinc-400 font-medium">
+                                Genel
+                              </span>
+                            )}
+                          </div>
+                          
+                          <p className={`text-zinc-200 ${isCompleted ? 'line-through text-zinc-400' : ''}`}>
+                            {task.description}
+                          </p>
+                          
+                          {/* Süre Bilgisi */}
+                          {timeInfo && (
+                            <p className="text-xs text-zinc-500 mt-2 flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {timeInfo.startTime} → {timeInfo.endTime}
+                              <span className="text-zinc-400 font-medium ml-1">({timeInfo.duration})</span>
+                            </p>
                           )}
                         </div>
-                        <p className="text-zinc-200">{task.description}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => openEditModal(task)}
-                          className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(task.id)}
-                          className="p-2 rounded-lg hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-1">
+                          {isCompleted ? (
+                            // Tamamlanmış: Geri Al butonu
+                            <button
+                              onClick={() => handleReopen(task)}
+                              className="p-2 rounded-lg hover:bg-amber-500/20 text-zinc-400 hover:text-amber-400 transition-colors"
+                              title="Geri Al"
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                            </button>
+                          ) : (
+                            // Devam eden: Bitti ve Revize butonları
+                            <>
+                              <button
+                                onClick={() => handleComplete(task)}
+                                className="p-2 rounded-lg hover:bg-emerald-500/20 text-zinc-400 hover:text-emerald-400 transition-colors"
+                                title="Bitti"
+                              >
+                                <CheckCircle2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleRevise(task)}
+                                className="p-2 rounded-lg hover:bg-blue-500/20 text-zinc-400 hover:text-blue-400 transition-colors"
+                                title="Revize"
+                              >
+                                <Copy className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                          <button
+                            onClick={() => openEditModal(task)}
+                            className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
+                            title="Düzenle"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(task.id)}
+                            className="p-2 rounded-lg hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 transition-colors"
+                            title="Sil"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           ))}
