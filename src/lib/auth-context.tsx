@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo } from 'react'
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo, useRef } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { User } from '@supabase/supabase-js'
 import { AppUser, UserRole, canAccess, canEdit, getDefaultRoute, ModuleSlug } from './auth-types'
@@ -26,8 +26,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authUser, setAuthUser] = useState<User | null>(null)
   const [appUser, setAppUser] = useState<AppUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const initialized = useRef(false)
   
-  // Stable supabase client - sadece bir kere oluştur
+  // Stable supabase client
   const supabase = useMemo(() => 
     createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -37,6 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchAppUser = useCallback(async (userId: string): Promise<AppUser | null> => {
     try {
+      console.log('[Auth] Fetching app user for:', userId)
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -48,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return null
       }
       
+      console.log('[Auth] App user fetched:', data?.email)
       return data as AppUser
     } catch (err) {
       console.error('[Auth] Exception:', err)
@@ -65,11 +68,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase, fetchAppUser])
 
   useEffect(() => {
+    // Prevent double initialization
+    if (initialized.current) return
+    initialized.current = true
+
     let isMounted = true
 
     const initAuth = async () => {
+      console.log('[Auth] Initializing...')
+      
       try {
-        // getUser() en güvenilir yöntem - server'a gidip token'ı validate eder
+        // getUser - server'a gidip token'ı validate eder
         const { data: { user }, error } = await supabase.auth.getUser()
         
         if (error) {
@@ -82,16 +91,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log('[Auth] User found:', user.email)
           setAuthUser(user)
           
+          // Küçük bir delay - JWT'nin tam hazır olmasını bekle
+          await new Promise(resolve => setTimeout(resolve, 100))
+          
           const appUserData = await fetchAppUser(user.id)
           
           if (isMounted) {
             setAppUser(appUserData)
+            console.log('[Auth] Init complete, loading false')
             setLoading(false)
           }
           return
         }
         
-        // User yoksa
         console.log('[Auth] No user found')
         if (isMounted) setLoading(false)
         
@@ -101,22 +113,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // Auth state change listener
+    // Auth state change listener - sadece sign in/out için
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('[Auth] Event:', event)
         
+        // INITIAL_SESSION ve TOKEN_REFRESHED'ı ignore et - initAuth handle ediyor
+        if (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+          return
+        }
+        
         if (event === 'SIGNED_IN' && session?.user) {
-          setAuthUser(session.user)
-          const appUserData = await fetchAppUser(session.user.id)
-          setAppUser(appUserData)
-          setLoading(false)
+          // Login sonrası - initAuth zaten çalışmış olabilir
+          if (!authUser) {
+            setAuthUser(session.user)
+            await new Promise(resolve => setTimeout(resolve, 100))
+            const appUserData = await fetchAppUser(session.user.id)
+            setAppUser(appUserData)
+            setLoading(false)
+          }
         } else if (event === 'SIGNED_OUT') {
           setAuthUser(null)
           setAppUser(null)
           setLoading(false)
-        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-          setAuthUser(session.user)
         }
       }
     )
