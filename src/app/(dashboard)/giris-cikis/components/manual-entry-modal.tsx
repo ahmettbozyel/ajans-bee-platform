@@ -14,7 +14,8 @@ import {
   Palmtree,
   Stethoscope,
   Home,
-  CalendarOff
+  CalendarOff,
+  CalendarRange
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -58,73 +59,116 @@ const RECORD_TYPES: { value: RecordType; label: string; icon: React.ReactNode; c
   },
 ]
 
+// Tarih aralığındaki tüm günleri al (hafta sonlarını hariç tut)
+function getDateRange(startDate: string, endDate: string): string[] {
+  const dates: string[] = []
+  const current = new Date(startDate)
+  const end = new Date(endDate)
+  
+  while (current <= end) {
+    const dayOfWeek = current.getDay()
+    // Hafta sonlarını hariç tut (0 = Pazar, 6 = Cumartesi)
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      dates.push(current.toISOString().split('T')[0])
+    }
+    current.setDate(current.getDate() + 1)
+  }
+  
+  return dates
+}
+
 export function ManualEntryModal({ isOpen, onClose, onSuccess, users, selectedDate }: ManualEntryModalProps) {
   const [selectedUser, setSelectedUser] = useState<string>('')
-  const [entryDate, setEntryDate] = useState(selectedDate)
+  const [startDate, setStartDate] = useState(selectedDate)
+  const [endDate, setEndDate] = useState(selectedDate)
+  const [isDateRange, setIsDateRange] = useState(false)
   const [recordType, setRecordType] = useState<RecordType>('leave')
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [progress, setProgress] = useState<string>('')
   
   const supabase = createClient()
 
+  // Kaç gün seçildiğini hesapla
+  const selectedDays = isDateRange ? getDateRange(startDate, endDate).length : 1
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedUser || !entryDate || !recordType) return
+    if (!selectedUser || !startDate || !recordType) return
     
     setSaving(true)
     setError(null)
+    setProgress('')
     
     try {
-      // Önce o tarihte kayıt var mı kontrol et
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: existing } = await (supabase as any)
-        .from('attendance')
-        .select('id')
-        .eq('user_id', selectedUser)
-        .eq('date', entryDate)
-        .single()
+      const dates = isDateRange ? getDateRange(startDate, endDate) : [startDate]
       
-      if (existing && existing.id) {
-        // Güncelle
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error: updateError } = await (supabase as any)
-          .from('attendance')
-          .update({
-            record_type: recordType,
-            admin_notes: notes || null,
-            status: recordType === 'remote' ? 'remote' : recordType === 'leave' ? 'leave' : recordType === 'holiday' ? 'holiday' : 'normal',
-            check_in_location_type: recordType === 'remote' ? 'home' : null,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existing.id)
-        
-        if (updateError) throw updateError
-      } else {
-        // Yeni kayıt oluştur
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error: insertError } = await (supabase as any)
-          .from('attendance')
-          .insert({
-            user_id: selectedUser,
-            date: entryDate,
-            record_type: recordType,
-            admin_notes: notes || null,
-            status: recordType === 'remote' ? 'remote' : recordType === 'leave' ? 'leave' : recordType === 'holiday' ? 'holiday' : 'normal',
-            check_in_location_type: recordType === 'remote' ? 'home' : null,
-            check_in: recordType === 'remote' ? new Date(`${entryDate}T09:00:00`).toISOString() : null,
-            check_out: recordType === 'remote' ? new Date(`${entryDate}T18:30:00`).toISOString() : null
-          })
-        
-        if (insertError) throw insertError
+      if (dates.length === 0) {
+        throw new Error('Seçilen tarih aralığında iş günü bulunamadı')
       }
       
-      onSuccess()
-      handleClose()
+      let successCount = 0
+      
+      for (const date of dates) {
+        setProgress(`${successCount + 1}/${dates.length} kayıt işleniyor...`)
+        
+        // O tarihte kayıt var mı kontrol et
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: existing } = await (supabase as any)
+          .from('attendance')
+          .select('id')
+          .eq('user_id', selectedUser)
+          .eq('date', date)
+          .single()
+        
+        if (existing && existing.id) {
+          // Güncelle
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { error: updateError } = await (supabase as any)
+            .from('attendance')
+            .update({
+              record_type: recordType,
+              admin_notes: notes || null,
+              status: recordType === 'remote' ? 'remote' : recordType === 'leave' ? 'leave' : recordType === 'holiday' ? 'holiday' : 'normal',
+              check_in_location_type: recordType === 'remote' ? 'home' : null,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existing.id)
+          
+          if (updateError) throw updateError
+        } else {
+          // Yeni kayıt oluştur
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { error: insertError } = await (supabase as any)
+            .from('attendance')
+            .insert({
+              user_id: selectedUser,
+              date: date,
+              record_type: recordType,
+              admin_notes: notes || null,
+              status: recordType === 'remote' ? 'remote' : recordType === 'leave' ? 'leave' : recordType === 'holiday' ? 'holiday' : 'normal',
+              check_in_location_type: recordType === 'remote' ? 'home' : null,
+              check_in: recordType === 'remote' ? new Date(`${date}T09:00:00`).toISOString() : null,
+              check_out: recordType === 'remote' ? new Date(`${date}T18:30:00`).toISOString() : null
+            })
+          
+          if (insertError) throw insertError
+        }
+        
+        successCount++
+      }
+      
+      setProgress(`${successCount} kayıt başarıyla oluşturuldu!`)
+      setTimeout(() => {
+        onSuccess()
+        handleClose()
+      }, 1000)
     } catch (err: unknown) {
       console.error('Manual entry error:', err)
       const errorMessage = err instanceof Error ? err.message : 'Kayıt eklenirken hata oluştu'
       setError(errorMessage)
+      setProgress('')
     } finally {
       setSaving(false)
     }
@@ -132,10 +176,13 @@ export function ManualEntryModal({ isOpen, onClose, onSuccess, users, selectedDa
 
   const handleClose = () => {
     setSelectedUser('')
-    setEntryDate(selectedDate)
+    setStartDate(selectedDate)
+    setEndDate(selectedDate)
+    setIsDateRange(false)
     setRecordType('leave')
     setNotes('')
     setError(null)
+    setProgress('')
     onClose()
   }
 
@@ -143,9 +190,9 @@ export function ManualEntryModal({ isOpen, onClose, onSuccess, users, selectedDa
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-lg shadow-2xl">
+      <div className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-zinc-800">
+        <div className="flex items-center justify-between p-5 border-b border-zinc-800 sticky top-0 bg-zinc-900">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-indigo-500/20">
               <Plus className="w-5 h-5 text-indigo-400" />
@@ -186,19 +233,64 @@ export function ManualEntryModal({ isOpen, onClose, onSuccess, users, selectedDa
             </select>
           </div>
 
-          {/* Tarih */}
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-zinc-400 mb-2">
-              <Calendar className="w-4 h-4" />
-              Tarih
-            </label>
-            <input
-              type="date"
-              value={entryDate}
-              onChange={(e) => setEntryDate(e.target.value)}
-              className="w-full px-4 py-2.5 bg-zinc-800 border border-zinc-700 rounded-xl text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              required
-            />
+          {/* Tarih Aralığı Toggle */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsDateRange(!isDateRange)}
+              className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-lg border transition-all text-sm",
+                isDateRange 
+                  ? "bg-indigo-500/20 border-indigo-500/50 text-indigo-400" 
+                  : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700"
+              )}
+            >
+              <CalendarRange className="w-4 h-4" />
+              Tarih Aralığı
+            </button>
+            {isDateRange && selectedDays > 0 && (
+              <span className="text-sm text-zinc-500">
+                {selectedDays} iş günü seçildi
+              </span>
+            )}
+          </div>
+
+          {/* Tarih(ler) */}
+          <div className={cn("grid gap-3", isDateRange ? "grid-cols-2" : "grid-cols-1")}>
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-zinc-400 mb-2">
+                <Calendar className="w-4 h-4" />
+                {isDateRange ? 'Başlangıç' : 'Tarih'}
+              </label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value)
+                  if (!isDateRange || e.target.value > endDate) {
+                    setEndDate(e.target.value)
+                  }
+                }}
+                className="w-full px-4 py-2.5 bg-zinc-800 border border-zinc-700 rounded-xl text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                required
+              />
+            </div>
+            {isDateRange && (
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-zinc-400 mb-2">
+                  <Calendar className="w-4 h-4" />
+                  Bitiş
+                </label>
+                <input
+                  type="date"
+                  value={endDate}
+                  min={startDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-zinc-800 border border-zinc-700 rounded-xl text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  required
+                />
+              </div>
+            )}
           </div>
 
           {/* Kayıt Tipi */}
@@ -258,6 +350,13 @@ export function ManualEntryModal({ isOpen, onClose, onSuccess, users, selectedDa
             />
           </div>
 
+          {/* Progress */}
+          {progress && (
+            <div className="p-3 bg-indigo-500/10 border border-indigo-500/30 rounded-lg text-indigo-400 text-sm">
+              {progress}
+            </div>
+          )}
+
           {/* Error */}
           {error && (
             <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
@@ -272,6 +371,7 @@ export function ManualEntryModal({ isOpen, onClose, onSuccess, users, selectedDa
               onClick={handleClose}
               variant="outline"
               className="flex-1 border-zinc-700 text-zinc-400 hover:bg-zinc-800"
+              disabled={saving}
             >
               İptal
             </Button>
@@ -285,7 +385,7 @@ export function ManualEntryModal({ isOpen, onClose, onSuccess, users, selectedDa
               ) : (
                 <CheckCircle2 className="w-4 h-4 mr-2" />
               )}
-              Kaydet
+              {isDateRange ? `${selectedDays} Gün Kaydet` : 'Kaydet'}
             </Button>
           </div>
         </form>
