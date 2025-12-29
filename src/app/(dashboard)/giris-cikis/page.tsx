@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import * as XLSX from 'xlsx'
 
 // Ofis koordinatları - Modda Suites, Bayraklı/İzmir
 const OFFICE_LOCATION = {
@@ -208,7 +209,7 @@ export default function GirisCikisPage() {
     }
   }
 
-  // Excel Export Fonksiyonu
+  // Excel Export Fonksiyonu - Gerçek XLSX formatı
   const handleExportExcel = async () => {
     if (!isAdmin) return
     setExportLoading(true)
@@ -216,7 +217,7 @@ export default function GirisCikisPage() {
     try {
       const [year, month] = selectedMonth.split('-').map(Number)
       const startDate = `${year}-${String(month).padStart(2, '0')}-01`
-      const endDate = new Date(year, month, 0).toISOString().split('T')[0] // Ayın son günü
+      const endDate = new Date(year, month, 0).toISOString().split('T')[0]
       
       // Seçili aydaki tüm kayıtları çek
       const { data: records, error } = await supabase
@@ -230,6 +231,7 @@ export default function GirisCikisPage() {
       if (error) throw error
       
       // Admin kayıtlarını filtrele
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const filteredRecords = (records as any[])?.filter(r => r.user?.role !== 'admin') || []
       
       if (filteredRecords.length === 0) {
@@ -238,11 +240,9 @@ export default function GirisCikisPage() {
         return
       }
       
-      // CSV formatında Excel oluştur (UTF-8 BOM ile Türkçe karakter desteği)
-      const BOM = '\uFEFF'
-      const headers = ['Personel', 'Tarih', 'Gün', 'Giriş', 'Çıkış', 'Geç (dk)', 'Mesai (dk)', 'Erken Çıkış (dk)', 'Toplam Süre', 'Konum', 'Durum', 'Geç Sebebi', 'Mesai Sebebi']
-      
-      const rows = filteredRecords.map(record => {
+      // Ana veri satırları
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mainData = filteredRecords.map((record: any) => {
         const date = new Date(record.date)
         const dayName = date.toLocaleDateString('tr-TR', { weekday: 'long' })
         const checkIn = record.check_in ? new Date(record.check_in).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '-'
@@ -266,26 +266,27 @@ export default function GirisCikisPage() {
                        record.status === 'early_leave' ? 'Erken Çıkış' : 
                        record.status === 'normal' ? 'Normal' : '-'
         
-        return [
-          record.user?.full_name || '-',
-          record.date,
-          dayName,
-          checkIn,
-          checkOut,
-          record.late_minutes || 0,
-          record.overtime_minutes || 0,
-          record.early_leave_minutes || 0,
-          duration,
-          locationType,
-          status,
-          record.late_reason || '',
-          record.overtime_reason || ''
-        ]
+        return {
+          'Personel': record.user?.full_name || '-',
+          'Tarih': record.date,
+          'Gün': dayName,
+          'Giriş': checkIn,
+          'Çıkış': checkOut,
+          'Geç (dk)': record.late_minutes || 0,
+          'Mesai (dk)': record.overtime_minutes || 0,
+          'Erken Çıkış (dk)': record.early_leave_minutes || 0,
+          'Toplam Süre': duration,
+          'Konum': locationType,
+          'Durum': status,
+          'Geç Sebebi': record.late_reason || '',
+          'Mesai Sebebi': record.overtime_reason || ''
+        }
       })
       
-      // Özet satırları ekle
+      // Özet hesapla
       const summary: { [key: string]: { late: number; overtime: number; earlyLeave: number; days: number } } = {}
-      filteredRecords.forEach(record => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      filteredRecords.forEach((record: any) => {
         const name = record.user?.full_name || 'Bilinmeyen'
         if (!summary[name]) {
           summary[name] = { late: 0, overtime: 0, earlyLeave: 0, days: 0 }
@@ -296,37 +297,58 @@ export default function GirisCikisPage() {
         summary[name].days += 1
       })
       
-      // Boş satır + Özet başlığı
-      rows.push([])
-      rows.push(['ÖZET', '', '', '', '', '', '', '', '', '', '', '', ''])
-      rows.push(['Personel', 'Toplam Gün', '', '', '', 'Toplam Geç (dk)', 'Toplam Mesai (dk)', 'Toplam Erken Çıkış (dk)', '', '', '', '', ''])
+      // Özet verileri
+      const summaryData = Object.entries(summary).map(([name, data]) => ({
+        'Personel': name,
+        'Toplam Gün': data.days,
+        'Toplam Geç (dk)': data.late,
+        'Toplam Mesai (dk)': data.overtime,
+        'Toplam Erken Çıkış (dk)': data.earlyLeave
+      }))
       
-      Object.entries(summary).forEach(([name, data]) => {
-        rows.push([name, data.days, '', '', '', data.late, data.overtime, data.earlyLeave, '', '', '', '', ''])
-      })
+      // Workbook oluştur
+      const wb = XLSX.utils.book_new()
       
-      // CSV string oluştur
-      const csvContent = BOM + [headers, ...rows].map(row => 
-        row.map(cell => {
-          const str = String(cell)
-          // Virgül, tırnak veya yeni satır içeriyorsa tırnak içine al
-          if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-            return `"${str.replace(/"/g, '""')}"`
-          }
-          return str
-        }).join(',')
-      ).join('\n')
+      // Ana sayfa
+      const wsMain = XLSX.utils.json_to_sheet(mainData)
+      
+      // Kolon genişlikleri
+      wsMain['!cols'] = [
+        { wch: 20 }, // Personel
+        { wch: 12 }, // Tarih
+        { wch: 12 }, // Gün
+        { wch: 8 },  // Giriş
+        { wch: 8 },  // Çıkış
+        { wch: 10 }, // Geç
+        { wch: 10 }, // Mesai
+        { wch: 15 }, // Erken Çıkış
+        { wch: 12 }, // Toplam Süre
+        { wch: 10 }, // Konum
+        { wch: 12 }, // Durum
+        { wch: 30 }, // Geç Sebebi
+        { wch: 30 }, // Mesai Sebebi
+      ]
+      
+      XLSX.utils.book_append_sheet(wb, wsMain, 'Detay')
+      
+      // Özet sayfası
+      const wsSummary = XLSX.utils.json_to_sheet(summaryData)
+      wsSummary['!cols'] = [
+        { wch: 20 }, // Personel
+        { wch: 12 }, // Toplam Gün
+        { wch: 15 }, // Toplam Geç
+        { wch: 15 }, // Toplam Mesai
+        { wch: 20 }, // Toplam Erken Çıkış
+      ]
+      XLSX.utils.book_append_sheet(wb, wsSummary, 'Özet')
+      
+      // Ay adını Türkçe al
+      const monthNames = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 
+                          'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık']
+      const monthName = monthNames[month - 1]
       
       // Dosyayı indir
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `mesai-raporu-${selectedMonth}.csv`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
+      XLSX.writeFile(wb, `Mesai-Raporu-${monthName}-${year}.xlsx`)
       
     } catch (error) {
       console.error('Export error:', error)
