@@ -54,7 +54,6 @@ export default function DashboardLayout({
   const router = useRouter()
   const pathname = usePathname()
   const { appUser, loading: authLoading, isAdmin, signOut } = useAuth()
-  const [loading, setLoading] = useState(true)
   const [counts, setCounts] = useState({ customers: 0, services: 0 })
   const [isDark, setIsDark] = useState(true)
   const [mounted, setMounted] = useState(false)
@@ -97,7 +96,7 @@ export default function DashboardLayout({
       return
     }
     
-    // Verileri çek
+    // Verileri çek (arka planda, loading bekletmeden)
     async function fetchData() {
       try {
         // Admin için tüm verileri çek
@@ -113,8 +112,6 @@ export default function DashboardLayout({
         }
       } catch (error) {
         console.error('Fetch error:', error)
-      } finally {
-        setLoading(false)
       }
     }
     
@@ -219,7 +216,7 @@ export default function DashboardLayout({
     logoBorder: isDark ? 'rgba(245, 158, 11, 0.3)' : 'rgba(245, 158, 11, 0.4)',
   }
 
-  // Sadece auth loading'i bekle, kendi loading'imizi kaldır
+  // Auth loading bekle
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: styles.bodyBg }}>
