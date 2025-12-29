@@ -28,7 +28,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const initialized = useRef(false)
   
-  // Stable supabase client
   const supabase = useMemo(() => 
     createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -40,27 +39,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log('[Auth] Fetching app user for:', userId)
       
-      // Timeout ile fetch
-      const timeoutPromise = new Promise<null>((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout')), 5000)
-      )
-      
-      const fetchPromise = supabase
+      const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single()
       
-      const result = await Promise.race([fetchPromise, timeoutPromise])
-      
-      if (!result || 'error' in result) {
-        const error = (result as any)?.error
-        console.error('[Auth] Users table error:', error?.message || 'Unknown error')
+      if (error) {
+        console.error('[Auth] Users table error:', error.message, error.code)
         return null
       }
       
-      console.log('[Auth] App user fetched:', (result as any).data?.email)
-      return (result as any).data as AppUser
+      console.log('[Auth] App user fetched:', data?.email)
+      return data as AppUser
     } catch (err: any) {
       console.error('[Auth] Exception:', err?.message || err)
       return null
@@ -77,7 +68,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase, fetchAppUser])
 
   useEffect(() => {
-    // Prevent double initialization
     if (initialized.current) return
     initialized.current = true
 
@@ -103,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           
           if (isMounted) {
             setAppUser(appUserData)
-            console.log('[Auth] Init complete')
+            console.log('[Auth] Init complete, appUser:', appUserData?.email || 'null')
             setLoading(false)
           }
           return
@@ -122,16 +112,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (event, session) => {
         console.log('[Auth] Event:', event)
         
-        if (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
-          return
-        }
-        
-        if (event === 'SIGNED_IN' && session?.user && !authUser) {
-          setAuthUser(session.user)
-          const appUserData = await fetchAppUser(session.user.id)
-          setAppUser(appUserData)
-          setLoading(false)
-        } else if (event === 'SIGNED_OUT') {
+        // Sadece SIGNED_OUT'u handle et, diğerlerini initAuth hallediyor
+        if (event === 'SIGNED_OUT') {
           setAuthUser(null)
           setAppUser(null)
           setLoading(false)
