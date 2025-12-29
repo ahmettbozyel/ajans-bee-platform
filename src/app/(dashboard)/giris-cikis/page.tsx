@@ -307,7 +307,7 @@ export default function GirisCikisPage() {
   const formatMinutes = (minutes: number | null | undefined) => {
     if (!minutes || minutes === 0) return null
     const h = Math.floor(minutes / 60), m = minutes % 60
-    return h > 0 ? `${h}s ${m}d` : `${m}d`
+    return h > 0 ? (m > 0 ? `${h}s ${m}d` : `${h}s`) : `${m}d`
   }
   const getLocationBadge = (type: string | null | undefined) => {
     if (!type || type === 'unknown') return null
@@ -426,8 +426,8 @@ export default function GirisCikisPage() {
                       {!record.record_type || record.record_type === 'normal' ? getLocationBadge(record.check_in_location_type) : null}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
-                      {record.check_in && <span className="text-xs text-emerald-400 flex items-center gap-1"><LogIn className="w-3 h-3" />{formatTime(record.check_in)}{record.late_minutes && record.late_minutes > 0 && <span className="text-rose-400 ml-1">(+{record.late_minutes}d)</span>}</span>}
-                      {record.check_out && <><span className="text-zinc-600">→</span><span className="text-xs text-rose-400 flex items-center gap-1"><LogOut className="w-3 h-3" />{formatTime(record.check_out)}{record.overtime_minutes && record.overtime_minutes > 0 && <span className="text-amber-400 ml-1">(+{record.overtime_minutes}d mesai)</span>}</span></>}
+                      {record.check_in && <span className="text-xs text-emerald-400 flex items-center gap-1"><LogIn className="w-3 h-3" />{formatTime(record.check_in)}{record.late_minutes && record.late_minutes > 0 && <span className="text-rose-400 ml-1">(+{formatMinutes(record.late_minutes)})</span>}</span>}
+                      {record.check_out && <><span className="text-zinc-600">→</span><span className="text-xs text-rose-400 flex items-center gap-1"><LogOut className="w-3 h-3" />{formatTime(record.check_out)}{record.overtime_minutes && record.overtime_minutes > 0 && <span className="text-amber-400 ml-1">(+{formatMinutes(record.overtime_minutes)} mesai)</span>}</span></>}
                       {!record.check_in && record.record_type && record.record_type !== 'normal' && <span className="text-xs text-zinc-500">Tam gün</span>}
                     </div>
                     {(record.late_reason || record.overtime_reason || record.admin_notes) && <div className="flex items-center gap-1 mt-1"><MessageSquare className="w-3 h-3 text-zinc-500" /><span className="text-xs text-zinc-500 italic">{record.late_reason || record.overtime_reason || record.admin_notes}</span></div>}
@@ -476,7 +476,7 @@ export default function GirisCikisPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className={cn("text-xs px-2 py-1 rounded-full border mb-1", colorClasses[status.color] || colorClasses.zinc)}>{status.label}{record.late_minutes && record.late_minutes > 0 && <span className="ml-1">({record.late_minutes}d)</span>}{record.overtime_minutes && record.overtime_minutes > 0 && <span className="ml-1">(+{record.overtime_minutes}d)</span>}</div>
+                    <div className={cn("text-xs px-2 py-1 rounded-full border mb-1", colorClasses[status.color] || colorClasses.zinc)}>{status.label}{record.late_minutes && record.late_minutes > 0 && <span className="ml-1">({formatMinutes(record.late_minutes)})</span>}{record.overtime_minutes && record.overtime_minutes > 0 && <span className="ml-1">(+{formatMinutes(record.overtime_minutes)})</span>}</div>
                     {record.check_out && <p className="text-xs font-mono text-zinc-500">{calculateDuration(record.check_in, record.check_out)}</p>}
                   </div>
                 </div>
