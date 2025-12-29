@@ -60,18 +60,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let isMounted = true
+    let retryCount = 0
+    const maxRetries = 3
 
     const initAuth = async () => {
       try {
+        // Önce session'ı kontrol et
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        if (session?.user && isMounted) {
+          setAuthUser(session.user)
+          const appUserData = await fetchAppUser(session.user.id)
+          if (isMounted) {
+            setAppUser(appUserData)
+            setLoading(false)
+          }
+          return
+        }
+        
+        // Session yoksa getUser dene
         const { data: { user } } = await supabase.auth.getUser()
         
         if (user && isMounted) {
           setAuthUser(user)
           const appUserData = await fetchAppUser(user.id)
-          if (isMounted) setAppUser(appUserData)
+          if (isMounted) {
+            setAppUser(appUserData)
+          }
         }
       } catch (error) {
         console.error('[Auth] Init error:', error)
+        // Retry logic
+        if (retryCount < maxRetries && isMounted) {
+          retryCount++
+          setTimeout(initAuth, 500)
+          return
+        }
       } finally {
         if (isMounted) setLoading(false)
       }
@@ -90,6 +114,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setAuthUser(null)
           setAppUser(null)
           setLoading(false)
+        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+          setAuthUser(session.user)
         }
       }
     )
