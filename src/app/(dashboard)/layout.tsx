@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase/client'
+import { NotificationBell } from '@/components/notification-bell'
 import { 
   LayoutDashboard, 
   Building2,
@@ -602,17 +603,8 @@ export default function DashboardLayout({
                     </kbd>
                   </div>
                   
-                  <button 
-                    className="relative p-2.5 rounded-lg transition-all"
-                    style={{
-                      background: styles.inputBg,
-                      border: `1px solid ${styles.inputBorder}`,
-                      color: styles.textMuted
-                    }}
-                  >
-                    <Bell className="w-5 h-5" />
-                    <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-rose-500" />
-                  </button>
+                  {/* NotificationBell Component */}
+                  <NotificationBell />
                 </div>
               )}
             </header>
