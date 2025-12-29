@@ -76,6 +76,9 @@ export interface TaskCategory {
   is_active: boolean
 }
 
+// Task status
+export type TaskStatus = 'in_progress' | 'completed'
+
 // Günlük iş
 export interface DailyTask {
   id: string
@@ -87,6 +90,13 @@ export interface DailyTask {
   duration_minutes: number | null
   created_at: string
   updated_at: string
+  // Süre takibi
+  started_at: string | null
+  completed_at: string | null
+  status: TaskStatus
+  // Revizyon
+  parent_id: string | null
+  revision_number: number
   // Relations
   category?: TaskCategory
   brand?: { id: string; brand_name: string } | null
