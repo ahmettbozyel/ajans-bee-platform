@@ -169,17 +169,19 @@ export function NotificationBell() {
   }
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative z-50" ref={dropdownRef} style={{ pointerEvents: 'auto' }}>
       {/* Bell Button */}
       <button
+        type="button"
         onClick={handleBellClick}
         className={cn(
-          "relative p-2.5 rounded-lg transition-all",
+          "relative p-2.5 rounded-lg transition-all cursor-pointer",
           isOpen ? "bg-zinc-700" : "hover:bg-zinc-800"
         )}
         style={{
           background: isOpen ? 'rgba(63, 63, 70, 1)' : 'rgba(255, 255, 255, 0.05)',
-          border: '1px solid rgba(255, 255, 255, 0.1)'
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          pointerEvents: 'auto'
         }}
       >
         <Bell className="w-5 h-5 text-zinc-400" />
@@ -192,7 +194,7 @@ export function NotificationBell() {
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden z-50">
+        <div className="absolute right-0 mt-2 w-80 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden z-[100]">
           {/* Header */}
           <div className="px-4 py-3 bg-zinc-800/50 border-b border-zinc-700 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-zinc-100">Bildirimler</h3>
