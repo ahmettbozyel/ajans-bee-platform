@@ -17,10 +17,10 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-// Ofis koordinatları (Supabase'den çekilecek, şimdilik sabit)
+// Ofis koordinatları - Modda Suites, Bayraklı/İzmir
 const OFFICE_LOCATION = {
-  lat: 38.4192,
-  lng: 27.1287,
+  lat: 38.452324,
+  lng: 27.186422,
   radius: 100 // metre
 }
 
