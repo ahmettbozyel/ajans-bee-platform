@@ -378,12 +378,12 @@ export default function GirisCikisPage() {
                 <div className="p-3 rounded-xl bg-zinc-800/50 border border-zinc-700">
                   <div className="flex items-center gap-2 mb-1"><LogIn className="w-4 h-4 text-emerald-400" /><span className="text-xs text-zinc-400">Giriş</span></div>
                   <p className="text-xl font-bold font-mono text-zinc-100">{formatTime(myRecord?.check_in || null)}</p>
-                  {myRecord?.late_minutes && myRecord.late_minutes > 0 && <p className="text-xs text-rose-400 mt-1">+{formatMinutes(myRecord.late_minutes)} geç</p>}
+                  {myRecord?.late_minutes && myRecord.late_minutes > 0 ? <p className="text-xs text-rose-400 mt-1">+{formatMinutes(myRecord.late_minutes)} geç</p> : null}
                 </div>
                 <div className="p-3 rounded-xl bg-zinc-800/50 border border-zinc-700">
                   <div className="flex items-center gap-2 mb-1"><LogOut className="w-4 h-4 text-rose-400" /><span className="text-xs text-zinc-400">Çıkış</span></div>
                   <p className="text-xl font-bold font-mono text-zinc-100">{formatTime(myRecord?.check_out || null)}</p>
-                  {myRecord?.overtime_minutes && myRecord.overtime_minutes > 0 && <p className="text-xs text-amber-400 mt-1">+{formatMinutes(myRecord.overtime_minutes)} mesai</p>}
+                  {myRecord?.overtime_minutes && myRecord.overtime_minutes > 0 ? <p className="text-xs text-amber-400 mt-1">+{formatMinutes(myRecord.overtime_minutes)} mesai</p> : null}
                 </div>
               </div>
               <div className="flex gap-2">
@@ -427,11 +427,26 @@ export default function GirisCikisPage() {
                       {!record.record_type || record.record_type === 'normal' ? getLocationBadge(record.check_in_location_type) : null}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
-                      {record.check_in && <span className="text-xs text-emerald-400 flex items-center gap-1"><LogIn className="w-3 h-3" />{formatTime(record.check_in)}{record.late_minutes && record.late_minutes > 0 && <span className="text-rose-400 ml-1">(+{formatMinutes(record.late_minutes)})</span>}</span>}
-                      {record.check_out && <><span className="text-zinc-600">→</span><span className="text-xs text-rose-400 flex items-center gap-1"><LogOut className="w-3 h-3" />{formatTime(record.check_out)}{record.overtime_minutes > 0 && <span className="text-amber-400 ml-1">(+{formatMinutes(record.overtime_minutes)} mesai)</span>}</span></>}
-                      {!record.check_in && record.record_type && record.record_type !== 'normal' && <span className="text-xs text-zinc-500">Tam gün</span>}
+                      {record.check_in ? (
+                        <span className="text-xs text-emerald-400 flex items-center gap-1">
+                          <LogIn className="w-3 h-3" />
+                          {formatTime(record.check_in)}
+                          {record.late_minutes && record.late_minutes > 0 ? <span className="text-rose-400 ml-1">(+{formatMinutes(record.late_minutes)})</span> : null}
+                        </span>
+                      ) : null}
+                      {record.check_out ? (
+                        <>
+                          <span className="text-zinc-600">→</span>
+                          <span className="text-xs text-rose-400 flex items-center gap-1">
+                            <LogOut className="w-3 h-3" />
+                            {formatTime(record.check_out)}
+                            {record.overtime_minutes && record.overtime_minutes > 0 ? <span className="text-amber-400 ml-1">(+{formatMinutes(record.overtime_minutes)} mesai)</span> : null}
+                          </span>
+                        </>
+                      ) : null}
+                      {!record.check_in && record.record_type && record.record_type !== 'normal' ? <span className="text-xs text-zinc-500">Tam gün</span> : null}
                     </div>
-                    {(record.late_reason || record.overtime_reason || record.admin_notes) && <div className="flex items-center gap-1 mt-1"><MessageSquare className="w-3 h-3 text-zinc-500" /><span className="text-xs text-zinc-500 italic">{record.late_reason || record.overtime_reason || record.admin_notes}</span></div>}
+                    {(record.late_reason || record.overtime_reason || record.admin_notes) ? <div className="flex items-center gap-1 mt-1"><MessageSquare className="w-3 h-3 text-zinc-500" /><span className="text-xs text-zinc-500 italic">{record.late_reason || record.overtime_reason || record.admin_notes}</span></div> : null}
                   </div>
                 </div>
                 <div className="text-right">{record.check_out ? <span className="text-sm font-mono text-zinc-400">{calculateDuration(record.check_in, record.check_out)}</span> : record.check_in ? <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400">Çalışıyor</span> : null}</div>
@@ -446,7 +461,7 @@ export default function GirisCikisPage() {
                 <AlertCircle className="w-5 h-5 text-amber-500/50" />
               </div>
             ))}
-            {todayRecords.length === 0 && usersWithoutCheckIn.length === 0 && <div className="p-8 text-center text-zinc-500">Kayıt bulunamadı</div>}
+            {todayRecords.length === 0 && usersWithoutCheckIn.length === 0 ? <div className="p-8 text-center text-zinc-500">Kayıt bulunamadı</div> : null}
           </div>
         </div>
       )}
@@ -468,17 +483,31 @@ export default function GirisCikisPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-semibold text-zinc-100">{formatShortDate(record.date)}</p>
-                        {record.date === new Date().toISOString().split('T')[0] && <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400">Bugün</span>}
-                        {isHybridDay(new Date(record.date)) && <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400">Hibrit</span>}
+                        {record.date === new Date().toISOString().split('T')[0] ? <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400">Bugün</span> : null}
+                        {isHybridDay(new Date(record.date)) ? <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400">Hibrit</span> : null}
                       </div>
                       <div className="flex items-center gap-3 mt-0.5">
-                        {record.check_in ? <><span className="text-xs text-zinc-400"><LogIn className="w-3 h-3 inline mr-1" />{formatTime(record.check_in)}</span>{record.check_out && <><span className="text-zinc-600">→</span><span className="text-xs text-zinc-400"><LogOut className="w-3 h-3 inline mr-1" />{formatTime(record.check_out)}</span></>}</> : <span className="text-xs text-zinc-500">Tam gün</span>}
+                        {record.check_in ? (
+                          <>
+                            <span className="text-xs text-zinc-400"><LogIn className="w-3 h-3 inline mr-1" />{formatTime(record.check_in)}</span>
+                            {record.check_out ? (
+                              <>
+                                <span className="text-zinc-600">→</span>
+                                <span className="text-xs text-zinc-400"><LogOut className="w-3 h-3 inline mr-1" />{formatTime(record.check_out)}</span>
+                              </>
+                            ) : null}
+                          </>
+                        ) : <span className="text-xs text-zinc-500">Tam gün</span>}
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className={cn("text-xs px-2 py-1 rounded-full border mb-1", colorClasses[status.color] || colorClasses.zinc)}>{status.label}{record.late_minutes && record.late_minutes > 0 && <span className="ml-1">({formatMinutes(record.late_minutes)})</span>}{record.overtime_minutes > 0 && <span className="ml-1">(+{formatMinutes(record.overtime_minutes)})</span>}</div>
-                    {record.check_out && <p className="text-xs font-mono text-zinc-500">{calculateDuration(record.check_in, record.check_out)}</p>}
+                    <div className={cn("text-xs px-2 py-1 rounded-full border mb-1", colorClasses[status.color] || colorClasses.zinc)}>
+                      {status.label}
+                      {record.late_minutes && record.late_minutes > 0 ? <span className="ml-1">({formatMinutes(record.late_minutes)})</span> : null}
+                      {record.overtime_minutes && record.overtime_minutes > 0 ? <span className="ml-1">(+{formatMinutes(record.overtime_minutes)})</span> : null}
+                    </div>
+                    {record.check_out ? <p className="text-xs font-mono text-zinc-500">{calculateDuration(record.check_in, record.check_out)}</p> : null}
                   </div>
                 </div>
               )
@@ -489,7 +518,7 @@ export default function GirisCikisPage() {
 
       <ManualEntryModal isOpen={showManualModal} onClose={() => setShowManualModal(false)} onSuccess={fetchData} users={users} selectedDate={selectedDate} />
 
-      {showLateModal && pendingCheckIn && (
+      {showLateModal && pendingCheckIn ? (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-md mx-4">
             <h3 className="text-lg font-semibold text-zinc-100 mb-2">Geç Kalma Açıklaması</h3>
@@ -501,9 +530,9 @@ export default function GirisCikisPage() {
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
-      {showOvertimeModal && pendingCheckOut && (
+      {showOvertimeModal && pendingCheckOut ? (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-md mx-4">
             <h3 className="text-lg font-semibold text-zinc-100 mb-2">Mesai Açıklaması</h3>
@@ -515,7 +544,7 @@ export default function GirisCikisPage() {
             </div>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   )
 }
