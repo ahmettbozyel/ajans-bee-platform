@@ -96,7 +96,7 @@ export interface DailyTask {
 // Attendance status types
 export type AttendanceStatus = 'normal' | 'late' | 'early_leave' | 'absent' | 'leave' | 'remote' | 'holiday'
 export type LocationType = 'office' | 'home' | 'other' | 'unknown'
-export type LeaveType = 'annual' | 'sick' | 'remote' | 'half_day' | 'official_holiday' | 'other'
+export type RecordType = 'normal' | 'leave' | 'sick' | 'remote' | 'holiday'
 
 // Giriş/Çıkış
 export interface Attendance {
@@ -120,9 +120,9 @@ export interface Attendance {
   late_minutes?: number | null
   overtime_minutes?: number | null
   early_leave_minutes?: number | null
-  // İzin bilgileri
-  leave_type?: LeaveType | null
-  leave_reason?: string | null
+  // Kayıt tipi ve admin notları
+  record_type?: RecordType | null
+  admin_notes?: string | null
   // Açıklamalar
   late_reason?: string | null
   overtime_reason?: string | null
