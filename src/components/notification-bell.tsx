@@ -25,15 +25,23 @@ export function NotificationBell() {
 
   // Bildirimleri çek
   const fetchNotifications = async () => {
-    if (!appUser) return
+    console.log('[NotificationBell] appUser:', appUser?.id, appUser?.email)
+    if (!appUser) {
+      console.log('[NotificationBell] No appUser, skipping fetch')
+      return
+    }
+    
+    console.log('[NotificationBell] Fetching notifications for:', appUser.id)
     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any)
       .from('notifications')
-      .select('*, related_user:users!related_user_id(full_name)')
+      .select('*')
       .eq('user_id', appUser.id)
       .order('created_at', { ascending: false })
       .limit(20)
+    
+    console.log('[NotificationBell] Result:', { data, error })
     
     if (!error && data) {
       setNotifications(data as Notification[])
@@ -44,10 +52,15 @@ export function NotificationBell() {
 
   // İlk yükleme ve polling
   useEffect(() => {
-    fetchNotifications()
+    console.log('[NotificationBell] useEffect triggered, appUser:', appUser?.id)
+    if (appUser) {
+      fetchNotifications()
+    }
     
     // Her 30 saniyede bir kontrol et
-    const interval = setInterval(fetchNotifications, 30000)
+    const interval = setInterval(() => {
+      if (appUser) fetchNotifications()
+    }, 30000)
     return () => clearInterval(interval)
   }, [appUser])
 
@@ -143,15 +156,24 @@ export function NotificationBell() {
     return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })
   }
 
+  const handleBellClick = () => {
+    console.log('[NotificationBell] Bell clicked, current isOpen:', isOpen)
+    setIsOpen(!isOpen)
+  }
+
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Bell Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleBellClick}
         className={cn(
-          "relative p-2 rounded-lg transition-colors",
+          "relative p-2.5 rounded-lg transition-all",
           isOpen ? "bg-zinc-700" : "hover:bg-zinc-800"
         )}
+        style={{
+          background: isOpen ? 'rgba(63, 63, 70, 1)' : 'rgba(255, 255, 255, 0.05)',
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        }}
       >
         <Bell className="w-5 h-5 text-zinc-400" />
         {unreadCount > 0 && (
