@@ -39,21 +39,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchAppUser = useCallback(async (userId: string): Promise<AppUser | null> => {
     try {
       console.log('[Auth] Fetching app user for:', userId)
-      const { data, error } = await supabase
+      
+      // Timeout ile fetch
+      const timeoutPromise = new Promise<null>((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 5000)
+      )
+      
+      const fetchPromise = supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single()
       
-      if (error) {
-        console.error('[Auth] Users table error:', error.message)
+      const result = await Promise.race([fetchPromise, timeoutPromise])
+      
+      if (!result || 'error' in result) {
+        const error = (result as any)?.error
+        console.error('[Auth] Users table error:', error?.message || 'Unknown error')
         return null
       }
       
-      console.log('[Auth] App user fetched:', data?.email)
-      return data as AppUser
-    } catch (err) {
-      console.error('[Auth] Exception:', err)
+      console.log('[Auth] App user fetched:', (result as any).data?.email)
+      return (result as any).data as AppUser
+    } catch (err: any) {
+      console.error('[Auth] Exception:', err?.message || err)
       return null
     }
   }, [supabase])
@@ -78,7 +87,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('[Auth] Initializing...')
       
       try {
-        // getUser - server'a gidip token'ı validate eder
         const { data: { user }, error } = await supabase.auth.getUser()
         
         if (error) {
@@ -91,14 +99,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log('[Auth] User found:', user.email)
           setAuthUser(user)
           
-          // Küçük bir delay - JWT'nin tam hazır olmasını bekle
-          await new Promise(resolve => setTimeout(resolve, 100))
-          
           const appUserData = await fetchAppUser(user.id)
           
           if (isMounted) {
             setAppUser(appUserData)
-            console.log('[Auth] Init complete, loading false')
+            console.log('[Auth] Init complete')
             setLoading(false)
           }
           return
@@ -107,31 +112,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('[Auth] No user found')
         if (isMounted) setLoading(false)
         
-      } catch (error) {
-        console.error('[Auth] Init error:', error)
+      } catch (error: any) {
+        console.error('[Auth] Init error:', error?.message || error)
         if (isMounted) setLoading(false)
       }
     }
 
-    // Auth state change listener - sadece sign in/out için
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('[Auth] Event:', event)
         
-        // INITIAL_SESSION ve TOKEN_REFRESHED'ı ignore et - initAuth handle ediyor
         if (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
           return
         }
         
-        if (event === 'SIGNED_IN' && session?.user) {
-          // Login sonrası - initAuth zaten çalışmış olabilir
-          if (!authUser) {
-            setAuthUser(session.user)
-            await new Promise(resolve => setTimeout(resolve, 100))
-            const appUserData = await fetchAppUser(session.user.id)
-            setAppUser(appUserData)
-            setLoading(false)
-          }
+        if (event === 'SIGNED_IN' && session?.user && !authUser) {
+          setAuthUser(session.user)
+          const appUserData = await fetchAppUser(session.user.id)
+          setAppUser(appUserData)
+          setLoading(false)
         } else if (event === 'SIGNED_OUT') {
           setAuthUser(null)
           setAppUser(null)
@@ -140,7 +139,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     )
 
-    // Init başlat
     initAuth()
 
     return () => {
