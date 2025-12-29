@@ -13,9 +13,13 @@ import {
   CheckCircle2,
   AlertCircle,
   Users,
-  MessageSquare
+  MessageSquare,
+  History,
+  TrendingUp,
+  AlertTriangle
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 // Ofis koordinatları - Modda Suites, Bayraklı/İzmir
 const OFFICE_LOCATION = {
@@ -98,6 +102,7 @@ function isHybridDay(date: Date = new Date()): boolean {
 export default function GirisCikisPage() {
   const { appUser, isAdmin } = useAuth()
   const [todayRecords, setTodayRecords] = useState<(Attendance & { user?: AppUser })[]>([])
+  const [myHistory, setMyHistory] = useState<Attendance[]>([])
   const [users, setUsers] = useState<AppUser[]>([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
@@ -138,28 +143,57 @@ export default function GirisCikisPage() {
     if (!appUser) return
     setLoading(true)
     try {
-      // Kullanıcılar (admin değilse sadece kendisi hariç)
-      const { data: usersData } = await supabase
-        .from('users')
-        .select('*')
-        .eq('is_active', true)
-        .neq('role', 'admin') // Admin'leri listeden çıkar
-        .order('full_name')
-      
-      if (usersData) setUsers(usersData as AppUser[])
+      if (isAdmin) {
+        // Admin için: Tüm kullanıcılar ve kayıtlar
+        const { data: usersData } = await supabase
+          .from('users')
+          .select('*')
+          .eq('is_active', true)
+          .neq('role', 'admin')
+          .order('full_name')
+        
+        if (usersData) setUsers(usersData as AppUser[])
 
-      // Seçili tarihteki tüm kayıtlar (admin hariç)
-      const { data: recordsData } = await supabase
-        .from('attendance')
-        .select('*, user:users(*)')
-        .eq('date', selectedDate)
-        .order('check_in', { ascending: true })
-      
-      if (recordsData) {
-        // Admin kayıtlarını filtrele
-        const filtered = (recordsData as unknown as (Attendance & { user?: AppUser })[])
-          .filter(r => r.user?.role !== 'admin')
-        setTodayRecords(filtered)
+        const { data: recordsData } = await supabase
+          .from('attendance')
+          .select('*, user:users(*)')
+          .eq('date', selectedDate)
+          .order('check_in', { ascending: true })
+        
+        if (recordsData) {
+          const filtered = (recordsData as unknown as (Attendance & { user?: AppUser })[]
+          ).filter(r => r.user?.role !== 'admin')
+          setTodayRecords(filtered)
+        }
+      } else {
+        // Personel için: Sadece kendi bugünkü kaydı
+        const { data: todayData } = await supabase
+          .from('attendance')
+          .select('*')
+          .eq('user_id', appUser.id)
+          .eq('date', selectedDate)
+          .single()
+        
+        if (todayData) {
+          setTodayRecords([todayData as Attendance])
+        } else {
+          setTodayRecords([])
+        }
+
+        // Son 30 günlük geçmiş
+        const thirtyDaysAgo = new Date()
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+        
+        const { data: historyData } = await supabase
+          .from('attendance')
+          .select('*')
+          .eq('user_id', appUser.id)
+          .gte('date', thirtyDaysAgo.toISOString().split('T')[0])
+          .order('date', { ascending: false })
+        
+        if (historyData) {
+          setMyHistory(historyData as Attendance[])
+        }
       }
     } catch (error) {
       console.error('Fetch error:', error)
@@ -171,7 +205,6 @@ export default function GirisCikisPage() {
   // Konum al - sadece ofis günlerinde
   const getLocation = (): Promise<{lat: number, lng: number} | null> => {
     return new Promise((resolve) => {
-      // Hibrit günde konum alma
       if (isHybridDay()) {
         resolve(null)
         return
@@ -201,7 +234,7 @@ export default function GirisCikisPage() {
     })
   }
 
-  // Kendi giriş/çıkışı için (admin için kullanılmayacak)
+  // Kendi giriş/çıkışı
   const myRecord = todayRecords.find(r => r.user_id === appUser?.id)
   const hasCheckedIn = myRecord?.check_in != null
   const hasCheckedOut = myRecord?.check_out != null
@@ -215,7 +248,6 @@ export default function GirisCikisPage() {
       const location = await getLocation()
       const lateMinutes = calculateLateMinutes(now)
       
-      // Geç kaldıysa modal aç
       if (lateMinutes > 0) {
         setPendingCheckIn({ now, location, lateMinutes })
         setShowLateModal(true)
@@ -223,7 +255,6 @@ export default function GirisCikisPage() {
         return
       }
       
-      // Geç değilse direkt kaydet
       await saveCheckIn(now, location, 0, '')
     } catch (error) {
       console.error('Check-in error:', error)
@@ -287,7 +318,6 @@ export default function GirisCikisPage() {
       const overtimeMinutes = calculateOvertimeMinutes(now)
       const earlyLeaveMinutes = calculateEarlyLeaveMinutes(now)
       
-      // Mesai yaptıysa modal aç
       if (overtimeMinutes > 0) {
         setPendingCheckOut({ now, location, overtimeMinutes, earlyLeaveMinutes })
         setShowOvertimeModal(true)
@@ -295,7 +325,6 @@ export default function GirisCikisPage() {
         return
       }
       
-      // Mesai yoksa direkt kaydet
       await saveCheckOut(now, location, 0, earlyLeaveMinutes, '')
     } catch (error) {
       console.error('Check-out error:', error)
@@ -359,6 +388,15 @@ export default function GirisCikisPage() {
     })
   }
 
+  const formatShortDate = (dateStr: string) => {
+    const date = new Date(dateStr)
+    return date.toLocaleDateString('tr-TR', { 
+      weekday: 'short', 
+      day: 'numeric', 
+      month: 'short'
+    })
+  }
+
   const calculateDuration = (checkIn: string | null, checkOut: string | null) => {
     if (!checkIn || !checkOut) return '-'
     const start = new Date(checkIn)
@@ -389,7 +427,50 @@ export default function GirisCikisPage() {
     return <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">Dışarı</span>
   }
 
-  // Giriş yapmamış kullanıcılar (admin hariç)
+  // Kayıt için renk durumu (personel geçmişi için)
+  const getRecordStatus = (record: Attendance): { color: string; icon: React.ReactNode; label: string } => {
+    const hasLate = record.late_minutes && record.late_minutes > 0
+    const hasOvertime = record.overtime_minutes && record.overtime_minutes > 0
+    const hasEarlyLeave = record.early_leave_minutes && record.early_leave_minutes > 0
+    
+    if (hasLate && hasOvertime) {
+      // Hem geç hem mesai - turuncu (nötr)
+      return { 
+        color: 'amber', 
+        icon: <AlertTriangle className="w-4 h-4" />, 
+        label: 'Geç + Mesai' 
+      }
+    }
+    if (hasLate) {
+      return { 
+        color: 'rose', 
+        icon: <AlertCircle className="w-4 h-4" />, 
+        label: 'Geç Kalma' 
+      }
+    }
+    if (hasOvertime) {
+      return { 
+        color: 'amber', 
+        icon: <TrendingUp className="w-4 h-4" />, 
+        label: 'Mesai' 
+      }
+    }
+    if (hasEarlyLeave) {
+      return { 
+        color: 'orange', 
+        icon: <AlertTriangle className="w-4 h-4" />, 
+        label: 'Erken Çıkış' 
+      }
+    }
+    // Normal - zamanında
+    return { 
+      color: 'emerald', 
+      icon: <CheckCircle2 className="w-4 h-4" />, 
+      label: 'Zamanında' 
+    }
+  }
+
+  // Giriş yapmamış kullanıcılar (admin için)
   const usersWithoutCheckIn = users.filter(u => 
     !todayRecords.some(r => r.user_id === u.id) && u.role !== 'admin'
   )
@@ -410,10 +491,12 @@ export default function GirisCikisPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-zinc-100">Giriş / Çıkış Takibi</h1>
-        <p className="text-sm text-zinc-400 mt-1">Personel mesai takibi</p>
+        <p className="text-sm text-zinc-400 mt-1">
+          {isAdmin ? 'Personel mesai takibi' : 'Mesai kayıtlarım'}
+        </p>
       </div>
 
-      {/* Current Time + My Status - Sadece personel için, admin için sadece saat */}
+      {/* Current Time + My Status */}
       {isToday && (
         <div className={`grid grid-cols-1 ${!isAdmin ? 'md:grid-cols-2' : ''} gap-4`}>
           {/* Current Time */}
@@ -444,7 +527,7 @@ export default function GirisCikisPage() {
                     {formatTime(myRecord?.check_in || null)}
                   </p>
                   {myRecord?.late_minutes && myRecord.late_minutes > 0 && (
-                    <p className="text-xs text-amber-400 mt-1">
+                    <p className="text-xs text-rose-400 mt-1">
                       +{formatMinutes(myRecord.late_minutes)} geç
                     </p>
                   )}
@@ -458,7 +541,7 @@ export default function GirisCikisPage() {
                     {formatTime(myRecord?.check_out || null)}
                   </p>
                   {myRecord?.overtime_minutes && myRecord.overtime_minutes > 0 && (
-                    <p className="text-xs text-emerald-400 mt-1">
+                    <p className="text-xs text-amber-400 mt-1">
                       +{formatMinutes(myRecord.overtime_minutes)} mesai
                     </p>
                   )}
@@ -501,134 +584,246 @@ export default function GirisCikisPage() {
         </div>
       )}
 
-      {/* Date Filter */}
-      <div className="flex items-center gap-4 p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
-        <Calendar className="w-5 h-5 text-indigo-400" />
-        <input
-          type="date"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          className="bg-transparent border-none text-zinc-100 font-medium focus:outline-none"
-        />
-        <span className="text-zinc-400 text-sm">{formatDate(selectedDate)}</span>
-        {isToday && (
-          <span className="ml-2 text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400">
-            Bugün
-          </span>
-        )}
-        {todayIsHybrid && (
-          <span className="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400">
-            Hibrit
-          </span>
-        )}
-      </div>
-
-      {/* All Records */}
-      <div className="rounded-2xl bg-zinc-900/50 border border-zinc-800 overflow-hidden">
-        <div className="px-4 py-3 bg-zinc-800/50 border-b border-zinc-700 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-zinc-100 flex items-center gap-2">
-            <Users className="w-5 h-5 text-indigo-400" />
-            Personel Durumu
-          </h2>
-          <span className="text-sm text-zinc-400">
-            {todayRecords.length} / {users.length} kişi
-          </span>
+      {/* Date Filter - Sadece admin için */}
+      {isAdmin && (
+        <div className="flex items-center gap-4 p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
+          <Calendar className="w-5 h-5 text-indigo-400" />
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="bg-transparent border-none text-zinc-100 font-medium focus:outline-none"
+          />
+          <span className="text-zinc-400 text-sm">{formatDate(selectedDate)}</span>
+          {isToday && (
+            <span className="ml-2 text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400">
+              Bugün
+            </span>
+          )}
+          {todayIsHybrid && (
+            <span className="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400">
+              Hibrit
+            </span>
+          )}
         </div>
-        
-        <div className="divide-y divide-zinc-800">
-          {/* Giriş yapmış olanlar */}
-          {todayRecords.map((record) => (
-            <div key={record.id} className="flex items-center justify-between p-4 hover:bg-zinc-800/30 transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">
-                    {record.user?.full_name?.charAt(0) || '?'}
-                  </span>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-zinc-100">
-                      {record.user?.full_name || 'Bilinmeyen'}
-                    </p>
-                    {isAdmin && getLocationBadge(record.check_in_location_type)}
+      )}
+
+      {/* Admin: Personel Durumu */}
+      {isAdmin && (
+        <div className="rounded-2xl bg-zinc-900/50 border border-zinc-800 overflow-hidden">
+          <div className="px-4 py-3 bg-zinc-800/50 border-b border-zinc-700 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-zinc-100 flex items-center gap-2">
+              <Users className="w-5 h-5 text-indigo-400" />
+              Personel Durumu
+            </h2>
+            <span className="text-sm text-zinc-400">
+              {todayRecords.length} / {users.length} kişi
+            </span>
+          </div>
+          
+          <div className="divide-y divide-zinc-800">
+            {/* Giriş yapmış olanlar */}
+            {todayRecords.map((record) => (
+              <div key={record.id} className="flex items-center justify-between p-4 hover:bg-zinc-800/30 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+                    <span className="text-white text-sm font-bold">
+                      {record.user?.full_name?.charAt(0) || '?'}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    {record.check_in && (
-                      <span className="text-xs text-emerald-400 flex items-center gap-1">
-                        <LogIn className="w-3 h-3" />
-                        {formatTime(record.check_in)}
-                        {record.late_minutes && record.late_minutes > 0 && (
-                          <span className="text-amber-400 ml-1">
-                            (+{record.late_minutes}d)
-                          </span>
-                        )}
-                      </span>
-                    )}
-                    {record.check_out && (
-                      <>
-                        <span className="text-zinc-600">→</span>
-                        <span className="text-xs text-rose-400 flex items-center gap-1">
-                          <LogOut className="w-3 h-3" />
-                          {formatTime(record.check_out)}
-                          {record.overtime_minutes && record.overtime_minutes > 0 && (
-                            <span className="text-emerald-400 ml-1">
-                              (+{record.overtime_minutes}d mesai)
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-zinc-100">
+                        {record.user?.full_name || 'Bilinmeyen'}
+                      </p>
+                      {getLocationBadge(record.check_in_location_type)}
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {record.check_in && (
+                        <span className="text-xs text-emerald-400 flex items-center gap-1">
+                          <LogIn className="w-3 h-3" />
+                          {formatTime(record.check_in)}
+                          {record.late_minutes && record.late_minutes > 0 && (
+                            <span className="text-rose-400 ml-1">
+                              (+{record.late_minutes}d)
                             </span>
                           )}
                         </span>
-                      </>
+                      )}
+                      {record.check_out && (
+                        <>
+                          <span className="text-zinc-600">→</span>
+                          <span className="text-xs text-rose-400 flex items-center gap-1">
+                            <LogOut className="w-3 h-3" />
+                            {formatTime(record.check_out)}
+                            {record.overtime_minutes && record.overtime_minutes > 0 && (
+                              <span className="text-amber-400 ml-1">
+                                (+{record.overtime_minutes}d mesai)
+                              </span>
+                            )}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    {(record.late_reason || record.overtime_reason) && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <MessageSquare className="w-3 h-3 text-zinc-500" />
+                        <span className="text-xs text-zinc-500 italic">
+                          {record.late_reason || record.overtime_reason}
+                        </span>
+                      </div>
                     )}
                   </div>
-                  {/* Açıklamalar - sadece admin görür */}
-                  {isAdmin && (record.late_reason || record.overtime_reason) && (
-                    <div className="flex items-center gap-1 mt-1">
-                      <MessageSquare className="w-3 h-3 text-zinc-500" />
-                      <span className="text-xs text-zinc-500 italic">
-                        {record.late_reason || record.overtime_reason}
-                      </span>
-                    </div>
-                  )}
+                </div>
+                <div className="text-right">
+                  {record.check_out ? (
+                    <span className="text-sm font-mono text-zinc-400">
+                      {calculateDuration(record.check_in, record.check_out)}
+                    </span>
+                  ) : record.check_in ? (
+                    <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400">
+                      Çalışıyor
+                    </span>
+                  ) : null}
                 </div>
               </div>
-              <div className="text-right">
-                {record.check_out ? (
-                  <span className="text-sm font-mono text-zinc-400">
-                    {calculateDuration(record.check_in, record.check_out)}
-                  </span>
-                ) : record.check_in ? (
-                  <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400">
-                    Çalışıyor
-                  </span>
-                ) : null}
-              </div>
-            </div>
-          ))}
-          
-          {/* Giriş yapmamış olanlar */}
-          {usersWithoutCheckIn.map((user) => (
-            <div key={user.id} className="flex items-center justify-between p-4 opacity-50">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-zinc-700 flex items-center justify-center">
-                  <span className="text-zinc-400 text-sm font-bold">
-                    {user.full_name?.charAt(0) || '?'}
-                  </span>
+            ))}
+            
+            {/* Giriş yapmamış olanlar */}
+            {usersWithoutCheckIn.map((user) => (
+              <div key={user.id} className="flex items-center justify-between p-4 opacity-50">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-zinc-700 flex items-center justify-center">
+                    <span className="text-zinc-400 text-sm font-bold">
+                      {user.full_name?.charAt(0) || '?'}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-zinc-400">{user.full_name}</p>
+                    <p className="text-xs text-zinc-500">Henüz giriş yapmadı</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-zinc-400">{user.full_name}</p>
-                  <p className="text-xs text-zinc-500">Henüz giriş yapmadı</p>
-                </div>
+                <AlertCircle className="w-5 h-5 text-amber-500/50" />
               </div>
-              <AlertCircle className="w-5 h-5 text-amber-500/50" />
-            </div>
-          ))}
-          
-          {todayRecords.length === 0 && usersWithoutCheckIn.length === 0 && (
-            <div className="p-8 text-center text-zinc-500">
-              Kayıt bulunamadı
-            </div>
-          )}
+            ))}
+            
+            {todayRecords.length === 0 && usersWithoutCheckIn.length === 0 && (
+              <div className="p-8 text-center text-zinc-500">
+                Kayıt bulunamadı
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Personel: Geçmiş Kayıtlarım */}
+      {!isAdmin && (
+        <div className="rounded-2xl bg-zinc-900/50 border border-zinc-800 overflow-hidden">
+          <div className="px-4 py-3 bg-zinc-800/50 border-b border-zinc-700 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-zinc-100 flex items-center gap-2">
+              <History className="w-5 h-5 text-indigo-400" />
+              Geçmiş Kayıtlarım
+            </h2>
+            <span className="text-sm text-zinc-400">
+              Son 30 gün
+            </span>
+          </div>
+          
+          <div className="divide-y divide-zinc-800">
+            {myHistory.length > 0 ? (
+              myHistory.map((record) => {
+                const status = getRecordStatus(record)
+                const colorClasses = {
+                  emerald: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400',
+                  rose: 'bg-rose-500/10 border-rose-500/30 text-rose-400',
+                  amber: 'bg-amber-500/10 border-amber-500/30 text-amber-400',
+                  orange: 'bg-orange-500/10 border-orange-500/30 text-orange-400'
+                }
+                
+                return (
+                  <div 
+                    key={record.id} 
+                    className={cn(
+                      "flex items-center justify-between p-4 transition-colors",
+                      record.date === selectedDate ? 'bg-indigo-500/5' : 'hover:bg-zinc-800/30'
+                    )}
+                  >
+                    <div className="flex items-center gap-4">
+                      {/* Status Icon */}
+                      <div className={cn(
+                        "h-10 w-10 rounded-xl flex items-center justify-center border",
+                        colorClasses[status.color as keyof typeof colorClasses]
+                      )}>
+                        {status.icon}
+                      </div>
+                      
+                      {/* Date & Times */}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold text-zinc-100">
+                            {formatShortDate(record.date)}
+                          </p>
+                          {record.date === new Date().toISOString().split('T')[0] && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400">
+                              Bugün
+                            </span>
+                          )}
+                          {isHybridDay(new Date(record.date)) && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400">
+                              Hibrit
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 mt-0.5">
+                          <span className="text-xs text-zinc-400">
+                            <LogIn className="w-3 h-3 inline mr-1" />
+                            {formatTime(record.check_in)}
+                          </span>
+                          {record.check_out && (
+                            <>
+                              <span className="text-zinc-600">→</span>
+                              <span className="text-xs text-zinc-400">
+                                <LogOut className="w-3 h-3 inline mr-1" />
+                                {formatTime(record.check_out)}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Right Side: Duration & Status */}
+                    <div className="text-right">
+                      <div className={cn(
+                        "text-xs px-2 py-1 rounded-full border mb-1",
+                        colorClasses[status.color as keyof typeof colorClasses]
+                      )}>
+                        {status.label}
+                        {record.late_minutes && record.late_minutes > 0 && (
+                          <span className="ml-1">({record.late_minutes}d)</span>
+                        )}
+                        {record.overtime_minutes && record.overtime_minutes > 0 && (
+                          <span className="ml-1">(+{record.overtime_minutes}d)</span>
+                        )}
+                      </div>
+                      {record.check_out && (
+                        <p className="text-xs font-mono text-zinc-500">
+                          {calculateDuration(record.check_in, record.check_out)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )
+              })
+            ) : (
+              <div className="p-8 text-center text-zinc-500">
+                <History className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p>Henüz kayıt bulunmuyor</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Geç Kalma Açıklaması Modal */}
       {showLateModal && pendingCheckIn && (
