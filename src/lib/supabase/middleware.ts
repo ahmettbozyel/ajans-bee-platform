@@ -27,18 +27,25 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // IMPORTANT: Avoid writing any logic between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
+  // Refresh session
+  const { data: { user } } = await supabase.auth.getUser()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  // Protected routes
-  const protectedRoutes = ['/dashboard', '/icerik-uret', '/gorseller', '/gecmis', '/musteriler']
-  const isProtectedRoute = protectedRoutes.some(route => 
-    request.nextUrl.pathname.startsWith(route)
+  // Protected routes - tüm dashboard sayfaları
+  const protectedPaths = [
+    '/dashboard',
+    '/icerik-uret',
+    '/gorseller',
+    '/gecmis',
+    '/musteriler',
+    '/customers',
+    '/teknik-hizmetler',
+    '/ayarlar',
+    '/gunluk-isler',
+    '/giris-cikis'
+  ]
+  
+  const isProtectedRoute = protectedPaths.some(path => 
+    request.nextUrl.pathname.startsWith(path)
   )
 
   if (isProtectedRoute && !user) {
