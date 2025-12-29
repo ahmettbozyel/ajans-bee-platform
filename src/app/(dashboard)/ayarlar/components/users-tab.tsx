@@ -59,7 +59,8 @@ export function UsersTab() {
       const { data, error } = await (supabase
         .from('users') as any)
         .select('*')
-        .order('created_at', { ascending: false })
+        .order('is_active', { ascending: false }) // Aktifler önce
+        .order('full_name', { ascending: true })  // Sonra isme göre
 
       if (error) throw error
       setUsers(data || [])
@@ -154,6 +155,10 @@ export function UsersTab() {
     }
   }
 
+  // Aktif ve pasif kullanıcıları ayır
+  const activeUsers = users.filter(u => u.is_active)
+  const inactiveUsers = users.filter(u => !u.is_active)
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -203,7 +208,8 @@ export function UsersTab() {
             </tr>
           </thead>
           <tbody>
-            {users.map((user) => (
+            {/* Aktif kullanıcılar */}
+            {activeUsers.map((user) => (
               <tr key={user.id} className="border-b border-zinc-200 dark:border-white/5 hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
@@ -226,17 +232,10 @@ export function UsersTab() {
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  {user.is_active ? (
-                    <span className="flex items-center gap-1.5 text-emerald-400 text-sm">
-                      <UserCheck className="w-4 h-4" />
-                      Aktif
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1.5 text-zinc-500 text-sm">
-                      <UserX className="w-4 h-4" />
-                      Pasif
-                    </span>
-                  )}
+                  <span className="flex items-center gap-1.5 text-emerald-400 text-sm">
+                    <UserCheck className="w-4 h-4" />
+                    Aktif
+                  </span>
                 </td>
                 <td className="px-6 py-4">
                   <span className="text-sm text-zinc-500">
@@ -254,18 +253,82 @@ export function UsersTab() {
                     </button>
                     <button
                       onClick={() => toggleUserStatus(user)}
-                      className={cn(
-                        "p-2 rounded-lg transition-colors",
-                        user.is_active ? "hover:bg-red-500/10 text-red-400" : "hover:bg-emerald-500/10 text-emerald-400"
-                      )}
-                      title={user.is_active ? 'Deaktif Et' : 'Aktif Et'}
+                      className="p-2 rounded-lg transition-colors hover:bg-red-500/10 text-red-400"
+                      title="Deaktif Et"
                     >
-                      {user.is_active ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                      <UserX className="w-4 h-4" />
                     </button>
                   </div>
                 </td>
               </tr>
             ))}
+            
+            {/* Pasif kullanıcılar - soluk görünüm */}
+            {inactiveUsers.length > 0 && (
+              <>
+                {/* Ayırıcı */}
+                {activeUsers.length > 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-2 bg-zinc-100 dark:bg-white/5">
+                      <span className="text-xs text-zinc-500 font-medium">Pasif Kullanıcılar ({inactiveUsers.length})</span>
+                    </td>
+                  </tr>
+                )}
+                {inactiveUsers.map((user) => (
+                  <tr key={user.id} className="border-b border-zinc-200 dark:border-white/5 opacity-50 hover:opacity-75 transition-opacity">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-zinc-400 dark:bg-zinc-700 flex items-center justify-center">
+                          <span className="text-white text-sm font-bold">
+                            {user.full_name?.charAt(0) || user.email.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                            {user.full_name || 'İsimsiz'}
+                          </p>
+                          <p className="text-xs text-zinc-400">{user.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={cn("px-2.5 py-1 rounded-full text-xs font-medium border opacity-50", getRoleBadgeClasses(user.role))}>
+                        {ROLES.find(r => r.value === user.role)?.label || user.role}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="flex items-center gap-1.5 text-zinc-500 text-sm">
+                        <UserX className="w-4 h-4" />
+                        Pasif
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-zinc-500">
+                        {new Date(user.created_at).toLocaleDateString('tr-TR')}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => openEditModal(user)}
+                          className="p-2 hover:bg-zinc-100 dark:hover:bg-white/10 rounded-lg transition-colors"
+                          title="Düzenle"
+                        >
+                          <Pencil className="w-4 h-4 text-zinc-400" />
+                        </button>
+                        <button
+                          onClick={() => toggleUserStatus(user)}
+                          className="p-2 rounded-lg transition-colors hover:bg-emerald-500/10 text-emerald-400"
+                          title="Aktif Et"
+                        >
+                          <UserCheck className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </>
+            )}
           </tbody>
         </table>
 
