@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { Search, Sun, Moon, Bell, Sparkles } from 'lucide-react'
+import { Search, Sun, Moon } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { NotificationBell } from '@/components/notification-bell'
 
 // Sayfa başlıkları
 const pageTitles: Record<string, { title: string; subtitle: string }> = {
@@ -16,6 +17,8 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/gorseller': { title: 'Görseller', subtitle: 'AI ile görsel oluştur' },
   '/gecmis': { title: 'Geçmiş', subtitle: 'Önceki içerikler' },
   '/ayarlar': { title: 'Ayarlar', subtitle: 'Hesap ve uygulama ayarları' },
+  '/gunluk-isler': { title: 'Günlük İşler', subtitle: 'Günlük görev takibi' },
+  '/giris-cikis': { title: 'Giriş / Çıkış', subtitle: 'Mesai takibi' },
 }
 
 // Üst Navigation Tabs
@@ -207,23 +210,8 @@ export function TopBar() {
             </kbd>
           </div>
           
-          {/* Notifications with Dot */}
-          <button 
-            className="relative p-2.5 rounded-lg transition-all hover:bg-white/10"
-            style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.1)'
-            }}
-          >
-            <Bell className="h-5 w-5 text-zinc-400" />
-            <span 
-              className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full"
-              style={{
-                background: '#f43f5e',
-                boxShadow: '0 0 0 2px rgba(9, 9, 11, 1)'
-              }}
-            />
-          </button>
+          {/* Notifications Bell */}
+          <NotificationBell />
         </div>
       </div>
     </header>
