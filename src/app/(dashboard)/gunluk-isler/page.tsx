@@ -203,20 +203,42 @@ export default function AdminGunlukIslerPage() {
     fetchData()
   }
 
-  // Süre formatla
+  // Süre formatla - Türkiye timezone'u ile
   const formatDuration = (task: DailyTask) => {
     if (!task.started_at) return null
     
-    const start = new Date(task.started_at)
-    const end = task.completed_at ? new Date(task.completed_at) : new Date()
+    // DB'den gelen değer timezone bilgisi içermiyorsa UTC olarak kabul et
+    const startStr = task.started_at.includes('Z') || task.started_at.includes('+') 
+      ? task.started_at 
+      : task.started_at + 'Z'
+    const start = new Date(startStr)
+    
+    let end: Date
+    if (task.completed_at) {
+      const endStr = task.completed_at.includes('Z') || task.completed_at.includes('+')
+        ? task.completed_at
+        : task.completed_at + 'Z'
+      end = new Date(endStr)
+    } else {
+      end = new Date()
+    }
+    
     const diffMinutes = Math.round((end.getTime() - start.getTime()) / 60000)
     
     const hours = Math.floor(diffMinutes / 60)
     const minutes = diffMinutes % 60
     
-    const startTime = start.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+    const startTime = start.toLocaleTimeString('tr-TR', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      timeZone: 'Europe/Istanbul'
+    })
     const endTime = task.completed_at 
-      ? end.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+      ? end.toLocaleTimeString('tr-TR', { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          timeZone: 'Europe/Istanbul'
+        })
       : '...'
     
     const duration = hours > 0 ? `${hours}s ${minutes}d` : `${minutes}d`
