@@ -1,7 +1,7 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo } from 'react'
+import { createBrowserClient } from '@supabase/ssr'
 import { User } from '@supabase/supabase-js'
 import { AppUser, UserRole, canAccess, canEdit, getDefaultRoute, ModuleSlug } from './auth-types'
 
@@ -26,14 +26,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authUser, setAuthUser] = useState<User | null>(null)
   const [appUser, setAppUser] = useState<AppUser | null>(null)
   const [loading, setLoading] = useState(true)
-  const initRef = useRef(false)
   
-  const supabase = createClient()
+  // Stable supabase client - sadece bir kere oluştur
+  const supabase = useMemo(() => 
+    createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    ), 
+  [])
 
   const fetchAppUser = useCallback(async (userId: string): Promise<AppUser | null> => {
     try {
-      const { data, error } = await (supabase
-        .from('users') as any)
+      const { data, error } = await supabase
+        .from('users')
         .select('*')
         .eq('id', userId)
         .single()
@@ -60,25 +65,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase, fetchAppUser])
 
   useEffect(() => {
-    // Prevent double init in strict mode
-    if (initRef.current) return
-    initRef.current = true
-
     let isMounted = true
 
     const initAuth = async () => {
       try {
-        // 1. Önce getUser ile direkt kontrol et (en güvenilir yöntem)
-        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        // getUser() en güvenilir yöntem - server'a gidip token'ı validate eder
+        const { data: { user }, error } = await supabase.auth.getUser()
         
-        if (userError) {
-          console.error('[Auth] getUser error:', userError.message)
+        if (error) {
+          console.error('[Auth] getUser error:', error.message)
+          if (isMounted) setLoading(false)
+          return
         }
         
         if (user && isMounted) {
+          console.log('[Auth] User found:', user.email)
           setAuthUser(user)
           
-          // AppUser'ı fetch et
           const appUserData = await fetchAppUser(user.id)
           
           if (isMounted) {
@@ -88,15 +91,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return
         }
         
-        // User yoksa loading'i kapat
-        if (isMounted) {
-          setLoading(false)
-        }
+        // User yoksa
+        console.log('[Auth] No user found')
+        if (isMounted) setLoading(false)
+        
       } catch (error) {
         console.error('[Auth] Init error:', error)
-        if (isMounted) {
-          setLoading(false)
-        }
+        if (isMounted) setLoading(false)
       }
     }
 
@@ -116,27 +117,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setLoading(false)
         } else if (event === 'TOKEN_REFRESHED' && session?.user) {
           setAuthUser(session.user)
-        } else if (event === 'INITIAL_SESSION') {
-          // Initial session event - initAuth zaten handle ediyor
-          // Ama session varsa ve henüz user set edilmediyse set et
-          if (session?.user && !authUser) {
-            setAuthUser(session.user)
-            const appUserData = await fetchAppUser(session.user.id)
-            setAppUser(appUserData)
-            setLoading(false)
-          }
         }
       }
     )
 
-    // Init'i başlat
+    // Init başlat
     initAuth()
 
     return () => {
       isMounted = false
       subscription.unsubscribe()
     }
-  }, []) // Empty deps - sadece mount'ta çalışsın
+  }, [supabase, fetchAppUser])
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut()
