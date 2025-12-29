@@ -12,8 +12,7 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
-  Users,
-  MapPin
+  Users
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -95,7 +94,6 @@ export default function GirisCikisPage() {
   const [actionLoading, setActionLoading] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
-  const [locationError, setLocationError] = useState<string | null>(null)
 
   const supabase = createClient()
 
@@ -122,7 +120,7 @@ export default function GirisCikisPage() {
       if (usersData) setUsers(usersData as AppUser[])
 
       // Seçili tarihteki tüm kayıtlar
-      const { data: recordsData } = await (supabase as any)
+      const { data: recordsData } = await supabase
         .from('attendance')
         .select('*, user:users(*)')
         .eq('date', selectedDate)
@@ -172,7 +170,6 @@ export default function GirisCikisPage() {
   const handleCheckIn = async () => {
     if (!appUser) return
     setActionLoading(true)
-    setLocationError(null)
     
     try {
       const now = new Date()
@@ -183,7 +180,7 @@ export default function GirisCikisPage() {
       const locationType = location ? getLocationType(location.lat, location.lng) : 'unknown'
       const status = lateMinutes > 0 ? 'late' : 'normal'
       
-      const checkInData: any = {
+      const checkInData: Record<string, unknown> = {
         user_id: appUser.id,
         date: today,
         check_in: now.toISOString(),
@@ -198,7 +195,7 @@ export default function GirisCikisPage() {
       }
       
       if (myRecord) {
-        await (supabase as any)
+        await supabase
           .from('attendance')
           .update({ 
             ...checkInData, 
@@ -206,7 +203,7 @@ export default function GirisCikisPage() {
           })
           .eq('id', myRecord.id)
       } else {
-        await (supabase as any)
+        await supabase
           .from('attendance')
           .insert(checkInData)
       }
@@ -234,7 +231,7 @@ export default function GirisCikisPage() {
       let status = myRecord.status || 'normal'
       if (earlyLeaveMinutes > 0) status = 'early_leave'
       
-      const checkOutData: any = {
+      const checkOutData: Record<string, unknown> = {
         check_out: now.toISOString(),
         overtime_minutes: overtimeMinutes,
         early_leave_minutes: earlyLeaveMinutes,
@@ -248,7 +245,7 @@ export default function GirisCikisPage() {
         checkOutData.check_out_lng = location.lng
       }
       
-      await (supabase as any)
+      await supabase
         .from('attendance')
         .update(checkOutData)
         .eq('id', myRecord.id)
@@ -352,9 +349,9 @@ export default function GirisCikisPage() {
                 <p className="text-xl font-bold font-mono text-zinc-100">
                   {formatTime(myRecord?.check_in || null)}
                 </p>
-                {(myRecord as any)?.late_minutes > 0 && (
+                {myRecord?.late_minutes && myRecord.late_minutes > 0 && (
                   <p className="text-xs text-amber-400 mt-1">
-                    +{formatMinutes((myRecord as any)?.late_minutes)} geç
+                    +{formatMinutes(myRecord.late_minutes)} geç
                   </p>
                 )}
               </div>
@@ -366,9 +363,9 @@ export default function GirisCikisPage() {
                 <p className="text-xl font-bold font-mono text-zinc-100">
                   {formatTime(myRecord?.check_out || null)}
                 </p>
-                {(myRecord as any)?.overtime_minutes > 0 && (
+                {myRecord?.overtime_minutes && myRecord.overtime_minutes > 0 && (
                   <p className="text-xs text-emerald-400 mt-1">
-                    +{formatMinutes((myRecord as any)?.overtime_minutes)} mesai
+                    +{formatMinutes(myRecord.overtime_minutes)} mesai
                   </p>
                 )}
               </div>
@@ -454,16 +451,16 @@ export default function GirisCikisPage() {
                       {record.user?.full_name || 'Bilinmeyen'}
                     </p>
                     {/* Admin için konum badge'i göster */}
-                    {isAdmin && getLocationBadge((record as any)?.check_in_location_type)}
+                    {isAdmin && getLocationBadge(record.check_in_location_type)}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
                     {record.check_in && (
                       <span className="text-xs text-emerald-400 flex items-center gap-1">
                         <LogIn className="w-3 h-3" />
                         {formatTime(record.check_in)}
-                        {(record as any)?.late_minutes > 0 && (
+                        {record.late_minutes && record.late_minutes > 0 && (
                           <span className="text-amber-400 ml-1">
-                            (+{(record as any)?.late_minutes}d)
+                            (+{record.late_minutes}d)
                           </span>
                         )}
                       </span>
@@ -474,9 +471,9 @@ export default function GirisCikisPage() {
                         <span className="text-xs text-rose-400 flex items-center gap-1">
                           <LogOut className="w-3 h-3" />
                           {formatTime(record.check_out)}
-                          {(record as any)?.overtime_minutes > 0 && (
+                          {record.overtime_minutes && record.overtime_minutes > 0 && (
                             <span className="text-emerald-400 ml-1">
-                              (+{(record as any)?.overtime_minutes}d mesai)
+                              (+{record.overtime_minutes}d mesai)
                             </span>
                           )}
                         </span>
