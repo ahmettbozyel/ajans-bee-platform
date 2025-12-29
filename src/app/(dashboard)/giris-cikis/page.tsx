@@ -16,7 +16,9 @@ import {
   MessageSquare,
   History,
   TrendingUp,
-  AlertTriangle
+  AlertTriangle,
+  Download,
+  FileSpreadsheet
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -106,8 +108,13 @@ export default function GirisCikisPage() {
   const [users, setUsers] = useState<AppUser[]>([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
+  const [exportLoading, setExportLoading] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date()
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  })
   
   // Geç kalma açıklaması modal state
   const [showLateModal, setShowLateModal] = useState(false)
@@ -161,8 +168,7 @@ export default function GirisCikisPage() {
           .order('check_in', { ascending: true })
         
         if (recordsData) {
-          const filtered = (recordsData as unknown as (Attendance & { user?: AppUser })[]
-          ).filter(r => r.user?.role !== 'admin')
+          const filtered = (recordsData as unknown as (Attendance & { user?: AppUser })[]).filter(r => r.user?.role !== 'admin')
           setTodayRecords(filtered)
         }
       } else {
@@ -199,6 +205,134 @@ export default function GirisCikisPage() {
       console.error('Fetch error:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Excel Export Fonksiyonu
+  const handleExportExcel = async () => {
+    if (!isAdmin) return
+    setExportLoading(true)
+    
+    try {
+      const [year, month] = selectedMonth.split('-').map(Number)
+      const startDate = `${year}-${String(month).padStart(2, '0')}-01`
+      const endDate = new Date(year, month, 0).toISOString().split('T')[0] // Ayın son günü
+      
+      // Seçili aydaki tüm kayıtları çek
+      const { data: records, error } = await supabase
+        .from('attendance')
+        .select('*, user:users(full_name, email, role)')
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .order('date', { ascending: true })
+        .order('user_id', { ascending: true })
+      
+      if (error) throw error
+      
+      // Admin kayıtlarını filtrele
+      const filteredRecords = (records as any[])?.filter(r => r.user?.role !== 'admin') || []
+      
+      if (filteredRecords.length === 0) {
+        alert('Bu ay için kayıt bulunamadı.')
+        setExportLoading(false)
+        return
+      }
+      
+      // CSV formatında Excel oluştur (UTF-8 BOM ile Türkçe karakter desteği)
+      const BOM = '\uFEFF'
+      const headers = ['Personel', 'Tarih', 'Gün', 'Giriş', 'Çıkış', 'Geç (dk)', 'Mesai (dk)', 'Erken Çıkış (dk)', 'Toplam Süre', 'Konum', 'Durum', 'Geç Sebebi', 'Mesai Sebebi']
+      
+      const rows = filteredRecords.map(record => {
+        const date = new Date(record.date)
+        const dayName = date.toLocaleDateString('tr-TR', { weekday: 'long' })
+        const checkIn = record.check_in ? new Date(record.check_in).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '-'
+        const checkOut = record.check_out ? new Date(record.check_out).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '-'
+        
+        let duration = '-'
+        if (record.check_in && record.check_out) {
+          const start = new Date(record.check_in)
+          const end = new Date(record.check_out)
+          const diff = end.getTime() - start.getTime()
+          const hours = Math.floor(diff / (1000 * 60 * 60))
+          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+          duration = `${hours}s ${minutes}d`
+        }
+        
+        const locationType = record.check_in_location_type === 'office' ? 'Ofis' : 
+                            record.check_in_location_type === 'home' ? 'Evden' : 
+                            record.check_in_location_type === 'other' ? 'Dışarı' : '-'
+        
+        const status = record.status === 'late' ? 'Geç' : 
+                       record.status === 'early_leave' ? 'Erken Çıkış' : 
+                       record.status === 'normal' ? 'Normal' : '-'
+        
+        return [
+          record.user?.full_name || '-',
+          record.date,
+          dayName,
+          checkIn,
+          checkOut,
+          record.late_minutes || 0,
+          record.overtime_minutes || 0,
+          record.early_leave_minutes || 0,
+          duration,
+          locationType,
+          status,
+          record.late_reason || '',
+          record.overtime_reason || ''
+        ]
+      })
+      
+      // Özet satırları ekle
+      const summary: { [key: string]: { late: number; overtime: number; earlyLeave: number; days: number } } = {}
+      filteredRecords.forEach(record => {
+        const name = record.user?.full_name || 'Bilinmeyen'
+        if (!summary[name]) {
+          summary[name] = { late: 0, overtime: 0, earlyLeave: 0, days: 0 }
+        }
+        summary[name].late += record.late_minutes || 0
+        summary[name].overtime += record.overtime_minutes || 0
+        summary[name].earlyLeave += record.early_leave_minutes || 0
+        summary[name].days += 1
+      })
+      
+      // Boş satır + Özet başlığı
+      rows.push([])
+      rows.push(['ÖZET', '', '', '', '', '', '', '', '', '', '', '', ''])
+      rows.push(['Personel', 'Toplam Gün', '', '', '', 'Toplam Geç (dk)', 'Toplam Mesai (dk)', 'Toplam Erken Çıkış (dk)', '', '', '', '', ''])
+      
+      Object.entries(summary).forEach(([name, data]) => {
+        rows.push([name, data.days, '', '', '', data.late, data.overtime, data.earlyLeave, '', '', '', '', ''])
+      })
+      
+      // CSV string oluştur
+      const csvContent = BOM + [headers, ...rows].map(row => 
+        row.map(cell => {
+          const str = String(cell)
+          // Virgül, tırnak veya yeni satır içeriyorsa tırnak içine al
+          if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+            return `"${str.replace(/"/g, '""')}"`
+          }
+          return str
+        }).join(',')
+      ).join('\n')
+      
+      // Dosyayı indir
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `mesai-raporu-${selectedMonth}.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+      
+    } catch (error) {
+      console.error('Export error:', error)
+      alert('Excel oluşturulurken hata oluştu.')
+    } finally {
+      setExportLoading(false)
     }
   }
 
@@ -434,7 +568,6 @@ export default function GirisCikisPage() {
     const hasEarlyLeave = record.early_leave_minutes && record.early_leave_minutes > 0
     
     if (hasLate && hasOvertime) {
-      // Hem geç hem mesai - turuncu (nötr)
       return { 
         color: 'amber', 
         icon: <AlertTriangle className="w-4 h-4" />, 
@@ -462,7 +595,6 @@ export default function GirisCikisPage() {
         label: 'Erken Çıkış' 
       }
     }
-    // Normal - zamanında
     return { 
       color: 'emerald', 
       icon: <CheckCircle2 className="w-4 h-4" />, 
@@ -489,11 +621,41 @@ export default function GirisCikisPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-zinc-100">Giriş / Çıkış Takibi</h1>
-        <p className="text-sm text-zinc-400 mt-1">
-          {isAdmin ? 'Personel mesai takibi' : 'Mesai kayıtlarım'}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-100">Giriş / Çıkış Takibi</h1>
+          <p className="text-sm text-zinc-400 mt-1">
+            {isAdmin ? 'Personel mesai takibi' : 'Mesai kayıtlarım'}
+          </p>
+        </div>
+        
+        {/* Excel Export - Sadece Admin */}
+        {isAdmin && (
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-800/50 border border-zinc-700">
+              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+              <input
+                type="month"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="bg-transparent border-none text-zinc-100 text-sm focus:outline-none w-32"
+              />
+            </div>
+            <Button
+              onClick={handleExportExcel}
+              disabled={exportLoading}
+              size="sm"
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {exportLoading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 mr-2" />
+              )}
+              Excel İndir
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Current Time + My Status */}
