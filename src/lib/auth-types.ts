@@ -123,4 +123,7 @@ export interface Attendance {
   // İzin bilgileri
   leave_type?: LeaveType | null
   leave_reason?: string | null
+  // Açıklamalar
+  late_reason?: string | null
+  overtime_reason?: string | null
 }
