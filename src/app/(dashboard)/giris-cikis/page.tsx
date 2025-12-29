@@ -31,9 +31,10 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import * as XLSX from 'xlsx'
 
-const OFFICE_LOCATION = { lat: 38.452324, lng: 27.186422, radius: 100 }
+// Ofis lokasyonu - Ajans Bee İzmir
+const OFFICE_LOCATION = { lat: 38.450621, lng: 27.186334, radius: 100 }
 const WORK_HOURS = { start: '09:00', end: '18:30', toleranceMinutes: 0 }
-const HYBRID_DAYS = [2, 4]
+const HYBRID_DAYS = [2, 4] // Salı ve Perşembe
 
 function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371000
