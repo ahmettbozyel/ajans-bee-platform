@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase/client'
 import { Attendance, AppUser } from '@/lib/auth-types'
+import { ManualEntryModal } from './components/manual-entry-modal'
 import { 
   Clock, 
   LogIn, 
@@ -18,7 +19,12 @@ import {
   TrendingUp,
   AlertTriangle,
   Download,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Plus,
+  Palmtree,
+  Stethoscope,
+  Home as HomeIcon,
+  CalendarOff
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -68,7 +74,6 @@ function calculateLateMinutes(checkInTime: Date): number {
   const diffMs = checkInTime.getTime() - workStart.getTime()
   const diffMinutes = Math.floor(diffMs / (1000 * 60))
   
-  // Tolerans içindeyse 0
   if (diffMinutes <= WORK_HOURS.toleranceMinutes) return 0
   return diffMinutes > 0 ? diffMinutes : 0
 }
@@ -102,6 +107,44 @@ function isHybridDay(date: Date = new Date()): boolean {
   return HYBRID_DAYS.includes(date.getDay())
 }
 
+// Kayıt tipi badge'i
+function getRecordTypeBadge(recordType: string | null | undefined) {
+  if (!recordType || recordType === 'normal') return null
+  
+  const badges: Record<string, { icon: React.ReactNode; label: string; className: string }> = {
+    leave: { 
+      icon: <Palmtree className="w-3 h-3" />, 
+      label: 'İzin', 
+      className: 'bg-emerald-500/20 text-emerald-400' 
+    },
+    sick: { 
+      icon: <Stethoscope className="w-3 h-3" />, 
+      label: 'Rapor', 
+      className: 'bg-rose-500/20 text-rose-400' 
+    },
+    remote: { 
+      icon: <HomeIcon className="w-3 h-3" />, 
+      label: 'Evden', 
+      className: 'bg-blue-500/20 text-blue-400' 
+    },
+    holiday: { 
+      icon: <CalendarOff className="w-3 h-3" />, 
+      label: 'Tatil', 
+      className: 'bg-amber-500/20 text-amber-400' 
+    },
+  }
+  
+  const badge = badges[recordType]
+  if (!badge) return null
+  
+  return (
+    <span className={cn("text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1", badge.className)}>
+      {badge.icon}
+      {badge.label}
+    </span>
+  )
+}
+
 export default function GirisCikisPage() {
   const { appUser, isAdmin } = useAuth()
   const [todayRecords, setTodayRecords] = useState<(Attendance & { user?: AppUser })[]>([])
@@ -116,6 +159,9 @@ export default function GirisCikisPage() {
     const now = new Date()
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })
+  
+  // Manuel kayıt modal
+  const [showManualModal, setShowManualModal] = useState(false)
   
   // Geç kalma açıklaması modal state
   const [showLateModal, setShowLateModal] = useState(false)
@@ -152,7 +198,6 @@ export default function GirisCikisPage() {
     setLoading(true)
     try {
       if (isAdmin) {
-        // Admin için: Tüm kullanıcılar ve kayıtlar
         const { data: usersData } = await supabase
           .from('users')
           .select('*')
@@ -173,7 +218,6 @@ export default function GirisCikisPage() {
           setTodayRecords(filtered)
         }
       } else {
-        // Personel için: Sadece kendi bugünkü kaydı
         const { data: todayData } = await supabase
           .from('attendance')
           .select('*')
@@ -187,7 +231,6 @@ export default function GirisCikisPage() {
           setTodayRecords([])
         }
 
-        // Son 30 günlük geçmiş
         const thirtyDaysAgo = new Date()
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
         
@@ -209,7 +252,7 @@ export default function GirisCikisPage() {
     }
   }
 
-  // Excel Export Fonksiyonu - Gerçek XLSX formatı
+  // Excel Export Fonksiyonu
   const handleExportExcel = async () => {
     if (!isAdmin) return
     setExportLoading(true)
@@ -219,7 +262,6 @@ export default function GirisCikisPage() {
       const startDate = `${year}-${String(month).padStart(2, '0')}-01`
       const endDate = new Date(year, month, 0).toISOString().split('T')[0]
       
-      // Seçili aydaki tüm kayıtları çek
       const { data: records, error } = await supabase
         .from('attendance')
         .select('*, user:users(full_name, email, role)')
@@ -230,7 +272,6 @@ export default function GirisCikisPage() {
       
       if (error) throw error
       
-      // Admin kayıtlarını filtrele
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const filteredRecords = (records as any[])?.filter(r => r.user?.role !== 'admin') || []
       
@@ -240,7 +281,6 @@ export default function GirisCikisPage() {
         return
       }
       
-      // Ana veri satırları
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mainData = filteredRecords.map((record: any) => {
         const date = new Date(record.date)
@@ -262,9 +302,19 @@ export default function GirisCikisPage() {
                             record.check_in_location_type === 'home' ? 'Evden' : 
                             record.check_in_location_type === 'other' ? 'Dışarı' : '-'
         
-        const status = record.status === 'late' ? 'Geç' : 
-                       record.status === 'early_leave' ? 'Erken Çıkış' : 
-                       record.status === 'normal' ? 'Normal' : '-'
+        const recordTypeLabels: Record<string, string> = {
+          normal: 'Normal',
+          leave: 'İzin',
+          sick: 'Rapor',
+          remote: 'Evden Çalışma',
+          holiday: 'Tatil'
+        }
+        
+        const status = record.record_type && record.record_type !== 'normal' 
+          ? recordTypeLabels[record.record_type] || '-'
+          : record.status === 'late' ? 'Geç' : 
+            record.status === 'early_leave' ? 'Erken Çıkış' : 
+            record.status === 'normal' ? 'Normal' : '-'
         
         return {
           'Personel': record.user?.full_name || '-',
@@ -279,75 +329,60 @@ export default function GirisCikisPage() {
           'Konum': locationType,
           'Durum': status,
           'Geç Sebebi': record.late_reason || '',
-          'Mesai Sebebi': record.overtime_reason || ''
+          'Mesai Sebebi': record.overtime_reason || '',
+          'Admin Notu': record.admin_notes || ''
         }
       })
       
-      // Özet hesapla
-      const summary: { [key: string]: { late: number; overtime: number; earlyLeave: number; days: number } } = {}
+      const summary: { [key: string]: { late: number; overtime: number; earlyLeave: number; days: number; leave: number; sick: number; remote: number } } = {}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       filteredRecords.forEach((record: any) => {
         const name = record.user?.full_name || 'Bilinmeyen'
         if (!summary[name]) {
-          summary[name] = { late: 0, overtime: 0, earlyLeave: 0, days: 0 }
+          summary[name] = { late: 0, overtime: 0, earlyLeave: 0, days: 0, leave: 0, sick: 0, remote: 0 }
         }
         summary[name].late += record.late_minutes || 0
         summary[name].overtime += record.overtime_minutes || 0
         summary[name].earlyLeave += record.early_leave_minutes || 0
         summary[name].days += 1
+        if (record.record_type === 'leave') summary[name].leave += 1
+        if (record.record_type === 'sick') summary[name].sick += 1
+        if (record.record_type === 'remote') summary[name].remote += 1
       })
       
-      // Özet verileri
       const summaryData = Object.entries(summary).map(([name, data]) => ({
         'Personel': name,
         'Toplam Gün': data.days,
+        'İzin Günü': data.leave,
+        'Rapor Günü': data.sick,
+        'Evden Çalışma': data.remote,
         'Toplam Geç (dk)': data.late,
         'Toplam Mesai (dk)': data.overtime,
         'Toplam Erken Çıkış (dk)': data.earlyLeave
       }))
       
-      // Workbook oluştur
       const wb = XLSX.utils.book_new()
-      
-      // Ana sayfa
       const wsMain = XLSX.utils.json_to_sheet(mainData)
       
-      // Kolon genişlikleri
       wsMain['!cols'] = [
-        { wch: 20 }, // Personel
-        { wch: 12 }, // Tarih
-        { wch: 12 }, // Gün
-        { wch: 8 },  // Giriş
-        { wch: 8 },  // Çıkış
-        { wch: 10 }, // Geç
-        { wch: 10 }, // Mesai
-        { wch: 15 }, // Erken Çıkış
-        { wch: 12 }, // Toplam Süre
-        { wch: 10 }, // Konum
-        { wch: 12 }, // Durum
-        { wch: 30 }, // Geç Sebebi
-        { wch: 30 }, // Mesai Sebebi
+        { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 8 }, { wch: 8 },
+        { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 12 }, { wch: 10 },
+        { wch: 15 }, { wch: 30 }, { wch: 30 }, { wch: 30 }
       ]
       
       XLSX.utils.book_append_sheet(wb, wsMain, 'Detay')
       
-      // Özet sayfası
       const wsSummary = XLSX.utils.json_to_sheet(summaryData)
       wsSummary['!cols'] = [
-        { wch: 20 }, // Personel
-        { wch: 12 }, // Toplam Gün
-        { wch: 15 }, // Toplam Geç
-        { wch: 15 }, // Toplam Mesai
-        { wch: 20 }, // Toplam Erken Çıkış
+        { wch: 20 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 15 },
+        { wch: 15 }, { wch: 15 }, { wch: 20 }
       ]
       XLSX.utils.book_append_sheet(wb, wsSummary, 'Özet')
       
-      // Ay adını Türkçe al
       const monthNames = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 
                           'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık']
       const monthName = monthNames[month - 1]
       
-      // Dosyayı indir
       XLSX.writeFile(wb, `Mesai-Raporu-${monthName}-${year}.xlsx`)
       
     } catch (error) {
@@ -358,7 +393,6 @@ export default function GirisCikisPage() {
     }
   }
 
-  // Konum al - sadece ofis günlerinde
   const getLocation = (): Promise<{lat: number, lng: number} | null> => {
     return new Promise((resolve) => {
       if (isHybridDay()) {
@@ -381,16 +415,11 @@ export default function GirisCikisPage() {
         () => {
           resolve(null)
         },
-        { 
-          enableHighAccuracy: true, 
-          timeout: 5000, 
-          maximumAge: 0 
-        }
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
       )
     })
   }
 
-  // Kendi giriş/çıkışı
   const myRecord = todayRecords.find(r => r.user_id === appUser?.id)
   const hasCheckedIn = myRecord?.check_in != null
   const hasCheckedOut = myRecord?.check_out != null
@@ -436,7 +465,8 @@ export default function GirisCikisPage() {
       late_minutes: lateMinutes,
       status: status,
       check_in_location_type: locationType,
-      late_reason: reason || null
+      late_reason: reason || null,
+      record_type: 'normal'
     }
     
     if (location) {
@@ -537,19 +567,14 @@ export default function GirisCikisPage() {
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
     return date.toLocaleDateString('tr-TR', { 
-      weekday: 'long', 
-      day: 'numeric', 
-      month: 'long', 
-      year: 'numeric' 
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
     })
   }
 
   const formatShortDate = (dateStr: string) => {
     const date = new Date(dateStr)
     return date.toLocaleDateString('tr-TR', { 
-      weekday: 'short', 
-      day: 'numeric', 
-      month: 'short'
+      weekday: 'short', day: 'numeric', month: 'short'
     })
   }
 
@@ -571,7 +596,6 @@ export default function GirisCikisPage() {
     return `${m}d`
   }
 
-  // Konum tipi badge
   const getLocationBadge = (type: string | null | undefined) => {
     if (!type || type === 'unknown') return null
     if (type === 'office') {
@@ -583,48 +607,37 @@ export default function GirisCikisPage() {
     return <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">Dışarı</span>
   }
 
-  // Kayıt için renk durumu (personel geçmişi için)
   const getRecordStatus = (record: Attendance): { color: string; icon: React.ReactNode; label: string } => {
+    // Önce record_type kontrol et
+    if (record.record_type && record.record_type !== 'normal') {
+      const types: Record<string, { color: string; icon: React.ReactNode; label: string }> = {
+        leave: { color: 'emerald', icon: <Palmtree className="w-4 h-4" />, label: 'İzin' },
+        sick: { color: 'rose', icon: <Stethoscope className="w-4 h-4" />, label: 'Rapor' },
+        remote: { color: 'blue', icon: <HomeIcon className="w-4 h-4" />, label: 'Evden' },
+        holiday: { color: 'amber', icon: <CalendarOff className="w-4 h-4" />, label: 'Tatil' },
+      }
+      return types[record.record_type] || { color: 'zinc', icon: <AlertCircle className="w-4 h-4" />, label: '-' }
+    }
+    
     const hasLate = record.late_minutes && record.late_minutes > 0
     const hasOvertime = record.overtime_minutes && record.overtime_minutes > 0
     const hasEarlyLeave = record.early_leave_minutes && record.early_leave_minutes > 0
     
     if (hasLate && hasOvertime) {
-      return { 
-        color: 'amber', 
-        icon: <AlertTriangle className="w-4 h-4" />, 
-        label: 'Geç + Mesai' 
-      }
+      return { color: 'amber', icon: <AlertTriangle className="w-4 h-4" />, label: 'Geç + Mesai' }
     }
     if (hasLate) {
-      return { 
-        color: 'rose', 
-        icon: <AlertCircle className="w-4 h-4" />, 
-        label: 'Geç Kalma' 
-      }
+      return { color: 'rose', icon: <AlertCircle className="w-4 h-4" />, label: 'Geç Kalma' }
     }
     if (hasOvertime) {
-      return { 
-        color: 'amber', 
-        icon: <TrendingUp className="w-4 h-4" />, 
-        label: 'Mesai' 
-      }
+      return { color: 'amber', icon: <TrendingUp className="w-4 h-4" />, label: 'Mesai' }
     }
     if (hasEarlyLeave) {
-      return { 
-        color: 'orange', 
-        icon: <AlertTriangle className="w-4 h-4" />, 
-        label: 'Erken Çıkış' 
-      }
+      return { color: 'orange', icon: <AlertTriangle className="w-4 h-4" />, label: 'Erken Çıkış' }
     }
-    return { 
-      color: 'emerald', 
-      icon: <CheckCircle2 className="w-4 h-4" />, 
-      label: 'Zamanında' 
-    }
+    return { color: 'emerald', icon: <CheckCircle2 className="w-4 h-4" />, label: 'Zamanında' }
   }
 
-  // Giriş yapmamış kullanıcılar (admin için)
   const usersWithoutCheckIn = users.filter(u => 
     !todayRecords.some(r => r.user_id === u.id) && u.role !== 'admin'
   )
@@ -651,9 +664,21 @@ export default function GirisCikisPage() {
           </p>
         </div>
         
-        {/* Excel Export - Sadece Admin */}
+        {/* Admin Actions */}
         {isAdmin && (
           <div className="flex items-center gap-3">
+            {/* Manuel Kayıt Butonu */}
+            <Button
+              onClick={() => setShowManualModal(true)}
+              size="sm"
+              variant="outline"
+              className="border-indigo-500/50 text-indigo-400 hover:bg-indigo-500/10"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Manuel Kayıt
+            </Button>
+            
+            {/* Excel Export */}
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-800/50 border border-zinc-700">
               <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
               <input
@@ -683,7 +708,6 @@ export default function GirisCikisPage() {
       {/* Current Time + My Status */}
       {isToday && (
         <div className={`grid grid-cols-1 ${!isAdmin ? 'md:grid-cols-2' : ''} gap-4`}>
-          {/* Current Time */}
           <div className={`p-6 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/30 text-center ${isAdmin ? 'md:max-w-md' : ''}`}>
             <Clock className="w-8 h-8 mx-auto text-indigo-400 mb-2" />
             <p className="text-4xl font-bold font-mono text-zinc-100">
@@ -697,7 +721,6 @@ export default function GirisCikisPage() {
             )}
           </div>
 
-          {/* My Status - Sadece personel için */}
           {!isAdmin && (
             <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800">
               <h3 className="text-sm font-medium text-zinc-400 mb-3">Benim Durumum</h3>
@@ -768,7 +791,7 @@ export default function GirisCikisPage() {
         </div>
       )}
 
-      {/* Date Filter - Sadece admin için */}
+      {/* Date Filter - Admin */}
       {isAdmin && (
         <div className="flex items-center gap-4 p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
           <Calendar className="w-5 h-5 text-indigo-400" />
@@ -806,7 +829,6 @@ export default function GirisCikisPage() {
           </div>
           
           <div className="divide-y divide-zinc-800">
-            {/* Giriş yapmış olanlar */}
             {todayRecords.map((record) => (
               <div key={record.id} className="flex items-center justify-between p-4 hover:bg-zinc-800/30 transition-colors">
                 <div className="flex items-center gap-3">
@@ -820,7 +842,8 @@ export default function GirisCikisPage() {
                       <p className="text-sm font-semibold text-zinc-100">
                         {record.user?.full_name || 'Bilinmeyen'}
                       </p>
-                      {getLocationBadge(record.check_in_location_type)}
+                      {getRecordTypeBadge(record.record_type)}
+                      {!record.record_type || record.record_type === 'normal' ? getLocationBadge(record.check_in_location_type) : null}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
                       {record.check_in && (
@@ -828,9 +851,7 @@ export default function GirisCikisPage() {
                           <LogIn className="w-3 h-3" />
                           {formatTime(record.check_in)}
                           {record.late_minutes && record.late_minutes > 0 && (
-                            <span className="text-rose-400 ml-1">
-                              (+{record.late_minutes}d)
-                            </span>
+                            <span className="text-rose-400 ml-1">(+{record.late_minutes}d)</span>
                           )}
                         </span>
                       )}
@@ -841,19 +862,20 @@ export default function GirisCikisPage() {
                             <LogOut className="w-3 h-3" />
                             {formatTime(record.check_out)}
                             {record.overtime_minutes && record.overtime_minutes > 0 && (
-                              <span className="text-amber-400 ml-1">
-                                (+{record.overtime_minutes}d mesai)
-                              </span>
+                              <span className="text-amber-400 ml-1">(+{record.overtime_minutes}d mesai)</span>
                             )}
                           </span>
                         </>
                       )}
+                      {!record.check_in && record.record_type && record.record_type !== 'normal' && (
+                        <span className="text-xs text-zinc-500">Tam gün</span>
+                      )}
                     </div>
-                    {(record.late_reason || record.overtime_reason) && (
+                    {(record.late_reason || record.overtime_reason || record.admin_notes) && (
                       <div className="flex items-center gap-1 mt-1">
                         <MessageSquare className="w-3 h-3 text-zinc-500" />
                         <span className="text-xs text-zinc-500 italic">
-                          {record.late_reason || record.overtime_reason}
+                          {record.late_reason || record.overtime_reason || record.admin_notes}
                         </span>
                       </div>
                     )}
@@ -873,7 +895,6 @@ export default function GirisCikisPage() {
               </div>
             ))}
             
-            {/* Giriş yapmamış olanlar */}
             {usersWithoutCheckIn.map((user) => (
               <div key={user.id} className="flex items-center justify-between p-4 opacity-50">
                 <div className="flex items-center gap-3">
@@ -892,9 +913,7 @@ export default function GirisCikisPage() {
             ))}
             
             {todayRecords.length === 0 && usersWithoutCheckIn.length === 0 && (
-              <div className="p-8 text-center text-zinc-500">
-                Kayıt bulunamadı
-              </div>
+              <div className="p-8 text-center text-zinc-500">Kayıt bulunamadı</div>
             )}
           </div>
         </div>
@@ -908,20 +927,20 @@ export default function GirisCikisPage() {
               <History className="w-5 h-5 text-indigo-400" />
               Geçmiş Kayıtlarım
             </h2>
-            <span className="text-sm text-zinc-400">
-              Son 30 gün
-            </span>
+            <span className="text-sm text-zinc-400">Son 30 gün</span>
           </div>
           
           <div className="divide-y divide-zinc-800">
             {myHistory.length > 0 ? (
               myHistory.map((record) => {
                 const status = getRecordStatus(record)
-                const colorClasses = {
+                const colorClasses: Record<string, string> = {
                   emerald: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400',
                   rose: 'bg-rose-500/10 border-rose-500/30 text-rose-400',
                   amber: 'bg-amber-500/10 border-amber-500/30 text-amber-400',
-                  orange: 'bg-orange-500/10 border-orange-500/30 text-orange-400'
+                  orange: 'bg-orange-500/10 border-orange-500/30 text-orange-400',
+                  blue: 'bg-blue-500/10 border-blue-500/30 text-blue-400',
+                  zinc: 'bg-zinc-500/10 border-zinc-500/30 text-zinc-400'
                 }
                 
                 return (
@@ -933,15 +952,13 @@ export default function GirisCikisPage() {
                     )}
                   >
                     <div className="flex items-center gap-4">
-                      {/* Status Icon */}
                       <div className={cn(
                         "h-10 w-10 rounded-xl flex items-center justify-center border",
-                        colorClasses[status.color as keyof typeof colorClasses]
+                        colorClasses[status.color] || colorClasses.zinc
                       )}>
                         {status.icon}
                       </div>
                       
-                      {/* Date & Times */}
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-semibold text-zinc-100">
@@ -959,28 +976,33 @@ export default function GirisCikisPage() {
                           )}
                         </div>
                         <div className="flex items-center gap-3 mt-0.5">
-                          <span className="text-xs text-zinc-400">
-                            <LogIn className="w-3 h-3 inline mr-1" />
-                            {formatTime(record.check_in)}
-                          </span>
-                          {record.check_out && (
+                          {record.check_in ? (
                             <>
-                              <span className="text-zinc-600">→</span>
                               <span className="text-xs text-zinc-400">
-                                <LogOut className="w-3 h-3 inline mr-1" />
-                                {formatTime(record.check_out)}
+                                <LogIn className="w-3 h-3 inline mr-1" />
+                                {formatTime(record.check_in)}
                               </span>
+                              {record.check_out && (
+                                <>
+                                  <span className="text-zinc-600">→</span>
+                                  <span className="text-xs text-zinc-400">
+                                    <LogOut className="w-3 h-3 inline mr-1" />
+                                    {formatTime(record.check_out)}
+                                  </span>
+                                </>
+                              )}
                             </>
+                          ) : (
+                            <span className="text-xs text-zinc-500">Tam gün</span>
                           )}
                         </div>
                       </div>
                     </div>
                     
-                    {/* Right Side: Duration & Status */}
                     <div className="text-right">
                       <div className={cn(
                         "text-xs px-2 py-1 rounded-full border mb-1",
-                        colorClasses[status.color as keyof typeof colorClasses]
+                        colorClasses[status.color] || colorClasses.zinc
                       )}>
                         {status.label}
                         {record.late_minutes && record.late_minutes > 0 && (
@@ -1009,13 +1031,20 @@ export default function GirisCikisPage() {
         </div>
       )}
 
-      {/* Geç Kalma Açıklaması Modal */}
+      {/* Manuel Kayıt Modal */}
+      <ManualEntryModal
+        isOpen={showManualModal}
+        onClose={() => setShowManualModal(false)}
+        onSuccess={fetchData}
+        users={users}
+        selectedDate={selectedDate}
+      />
+
+      {/* Geç Kalma Modal */}
       {showLateModal && pendingCheckIn && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold text-zinc-100 mb-2">
-              Geç Kalma Açıklaması
-            </h3>
+            <h3 className="text-lg font-semibold text-zinc-100 mb-2">Geç Kalma Açıklaması</h3>
             <p className="text-sm text-zinc-400 mb-4">
               {pendingCheckIn.lateMinutes} dakika geç kaldınız. Lütfen sebebini yazın.
             </p>
@@ -1028,11 +1057,7 @@ export default function GirisCikisPage() {
             />
             <div className="flex gap-2 mt-4">
               <Button
-                onClick={() => {
-                  setShowLateModal(false)
-                  setPendingCheckIn(null)
-                  setLateReason('')
-                }}
+                onClick={() => { setShowLateModal(false); setPendingCheckIn(null); setLateReason('') }}
                 variant="outline"
                 size="sm"
                 className="flex-1 border-zinc-700 text-zinc-400"
@@ -1042,12 +1067,7 @@ export default function GirisCikisPage() {
               <Button
                 onClick={() => {
                   if (!lateReason.trim()) return
-                  saveCheckIn(
-                    pendingCheckIn.now,
-                    pendingCheckIn.location,
-                    pendingCheckIn.lateMinutes,
-                    lateReason.trim()
-                  )
+                  saveCheckIn(pendingCheckIn.now, pendingCheckIn.location, pendingCheckIn.lateMinutes, lateReason.trim())
                 }}
                 disabled={!lateReason.trim()}
                 size="sm"
@@ -1060,13 +1080,11 @@ export default function GirisCikisPage() {
         </div>
       )}
 
-      {/* Mesai Açıklaması Modal */}
+      {/* Mesai Modal */}
       {showOvertimeModal && pendingCheckOut && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold text-zinc-100 mb-2">
-              Mesai Açıklaması
-            </h3>
+            <h3 className="text-lg font-semibold text-zinc-100 mb-2">Mesai Açıklaması</h3>
             <p className="text-sm text-zinc-400 mb-4">
               {pendingCheckOut.overtimeMinutes} dakika mesai yaptınız. Lütfen ne için çalıştığınızı yazın.
             </p>
@@ -1079,11 +1097,7 @@ export default function GirisCikisPage() {
             />
             <div className="flex gap-2 mt-4">
               <Button
-                onClick={() => {
-                  setShowOvertimeModal(false)
-                  setPendingCheckOut(null)
-                  setOvertimeReason('')
-                }}
+                onClick={() => { setShowOvertimeModal(false); setPendingCheckOut(null); setOvertimeReason('') }}
                 variant="outline"
                 size="sm"
                 className="flex-1 border-zinc-700 text-zinc-400"
@@ -1093,13 +1107,7 @@ export default function GirisCikisPage() {
               <Button
                 onClick={() => {
                   if (!overtimeReason.trim()) return
-                  saveCheckOut(
-                    pendingCheckOut.now,
-                    pendingCheckOut.location,
-                    pendingCheckOut.overtimeMinutes,
-                    pendingCheckOut.earlyLeaveMinutes,
-                    overtimeReason.trim()
-                  )
+                  saveCheckOut(pendingCheckOut.now, pendingCheckOut.location, pendingCheckOut.overtimeMinutes, pendingCheckOut.earlyLeaveMinutes, overtimeReason.trim())
                 }}
                 disabled={!overtimeReason.trim()}
                 size="sm"
