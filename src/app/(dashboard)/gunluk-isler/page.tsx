@@ -182,18 +182,21 @@ export default function AdminGunlukIslerPage() {
     fetchData()
   }
 
-  // Revize butonu
+  // Revize butonu - bugünün tarihiyle yeni iş açar
   const handleRevise = async (task: DailyTask) => {
     const revisionNumber = (task.revision_number || 0) + 1
     // Orijinal açıklamayı al ([R1] vs varsa kaldır)
     const baseDescription = task.description.replace(/\s*\[R\d+\]$/, '')
+    
+    // Revize bugünün tarihine açılır
+    const today = new Date().toISOString().split('T')[0]
     
     await (supabase as any).from('daily_tasks').insert({
       user_id: task.user_id,
       brand_id: task.brand_id,
       category_id: task.category_id,
       description: `${baseDescription} [R${revisionNumber}]`,
-      date: task.date,
+      date: today, // Bugünün tarihi
       started_at: new Date().toISOString(),
       status: 'in_progress',
       parent_id: task.parent_id || task.id, // Orijinal parent'ı koru
@@ -437,24 +440,23 @@ export default function AdminGunlukIslerPage() {
                               <RotateCcw className="w-4 h-4" />
                             </button>
                           ) : (
-                            // Devam eden: Bitti ve Revize butonları
-                            <>
-                              <button
-                                onClick={() => handleComplete(task)}
-                                className="p-2 rounded-lg hover:bg-emerald-500/20 text-zinc-400 hover:text-emerald-400 transition-colors"
-                                title="Bitti"
-                              >
-                                <CheckCircle2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleRevise(task)}
-                                className="p-2 rounded-lg hover:bg-blue-500/20 text-zinc-400 hover:text-blue-400 transition-colors"
-                                title="Revize"
-                              >
-                                <Copy className="w-4 h-4" />
-                              </button>
-                            </>
+                            // Devam eden: Bitti butonu
+                            <button
+                              onClick={() => handleComplete(task)}
+                              className="p-2 rounded-lg hover:bg-emerald-500/20 text-zinc-400 hover:text-emerald-400 transition-colors"
+                              title="Bitti"
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                            </button>
                           )}
+                          {/* Revize butonu - her zaman görünür */}
+                          <button
+                            onClick={() => handleRevise(task)}
+                            className="p-2 rounded-lg hover:bg-blue-500/20 text-zinc-400 hover:text-blue-400 transition-colors"
+                            title="Revize"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
                           <button
                             onClick={() => openEditModal(task)}
                             className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
