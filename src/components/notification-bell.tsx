@@ -10,8 +10,7 @@ import {
   TrendingUp, 
   AlertTriangle,
   Check,
-  CheckCheck,
-  X
+  CheckCheck
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -28,7 +27,8 @@ export function NotificationBell() {
   const fetchNotifications = async () => {
     if (!appUser) return
     
-    const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
       .from('notifications')
       .select('*, related_user:users!related_user_id(full_name)')
       .eq('user_id', appUser.id)
@@ -36,7 +36,8 @@ export function NotificationBell() {
       .limit(20)
     
     if (!error && data) {
-      setNotifications(data as unknown as Notification[])
+      setNotifications(data as Notification[])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setUnreadCount(data.filter((n: any) => !n.is_read).length)
     }
   }
@@ -63,7 +64,8 @@ export function NotificationBell() {
 
   // Tek bildirimi okundu işaretle
   const markAsRead = async (id: string) => {
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
       .from('notifications')
       .update({ is_read: true })
       .eq('id', id)
@@ -79,7 +81,8 @@ export function NotificationBell() {
     if (!appUser) return
     setLoading(true)
     
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
       .from('notifications')
       .update({ is_read: true })
       .eq('user_id', appUser.id)
