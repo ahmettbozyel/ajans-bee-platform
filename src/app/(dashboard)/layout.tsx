@@ -43,8 +43,12 @@ const navTabs = [
   { label: 'Components', href: '#' },
 ]
 
-// Personel sayfaları - admin olmayanlar sadece bunlara erişebilir
-const STAFF_PAGES = ['/gunluk-isler', '/giris-cikis']
+// Erişim kontrolü için izin verilen sayfalar
+const ALLOWED_PAGES: Record<string, string[]> = {
+  admin: ['*'], // Her şeye erişebilir
+  operasyon: ['/gunluk-isler', '/giris-cikis', '/teknik-hizmetler'],
+  personel: ['/gunluk-isler', '/giris-cikis']
+}
 
 export default function DashboardLayout({
   children,
@@ -64,8 +68,12 @@ export default function DashboardLayout({
   const isCustomerDetailPage = pathname.startsWith('/customers/') || pathname.startsWith('/musteriler/')
   const isDetailPage = pathname.includes('/customers/') && pathname.split('/').length > 2
   
-  // Personel sayfasında mı?
-  const isStaffPage = STAFF_PAGES.some(page => pathname.startsWith(page))
+  // Kullanıcının bu sayfaya erişimi var mı?
+  const hasAccess = (role: string, path: string): boolean => {
+    if (role === 'admin') return true
+    const allowedPaths = ALLOWED_PAGES[role] || []
+    return allowedPaths.some(p => path.startsWith(p))
+  }
 
   useEffect(() => {
     setMounted(true)
@@ -90,8 +98,9 @@ export default function DashboardLayout({
       return
     }
     
-    // Admin değilse VE personel sayfasında DEĞİLSE → personel sayfasına yönlendir
-    if (!isAdmin && !isStaffPage) {
+    // Erişim kontrolü
+    const userRole = appUser.role || 'personel'
+    if (!hasAccess(userRole, pathname)) {
       router.push('/gunluk-isler')
       return
     }
@@ -99,8 +108,8 @@ export default function DashboardLayout({
     // Verileri çek (arka planda, loading bekletmeden)
     async function fetchData() {
       try {
-        // Admin için tüm verileri çek
-        if (isAdmin) {
+        // Admin veya operasyon için verileri çek
+        if (isAdmin || appUser?.role === 'operasyon') {
           const [customersRes, servicesRes] = await Promise.all([
             supabase.from('customers').select('id', { count: 'exact', head: true }),
             supabase.from('technical_services').select('id', { count: 'exact', head: true })
@@ -116,7 +125,7 @@ export default function DashboardLayout({
     }
     
     fetchData()
-  }, [authLoading, appUser, isAdmin, isStaffPage, router, supabase, pathname])
+  }, [authLoading, appUser, isAdmin, router, supabase, pathname])
 
   const toggleTheme = () => {
     const newIsDark = !isDark
@@ -159,6 +168,9 @@ export default function DashboardLayout({
     if (appUser?.role === 'operasyon') return { label: 'Operasyon', color: 'violet' }
     return { label: 'Personel', color: 'blue' }
   }
+
+  // Operasyon mu?
+  const isOperasyon = appUser?.role === 'operasyon'
 
   // ==========================================
   // THEME-AWARE STYLES
@@ -230,8 +242,9 @@ export default function DashboardLayout({
 
   if (!appUser) return null
   
-  // Admin değilse ve personel sayfasında değilse hiçbir şey gösterme (yönlendirme yapılıyor)
-  if (!isAdmin && !isStaffPage) return null
+  // Erişim yoksa hiçbir şey gösterme (yönlendirme yapılıyor)
+  const userRole = appUser.role || 'personel'
+  if (!hasAccess(userRole, pathname)) return null
 
   const TOP_BAR_HEIGHT = 48
   const roleBadge = getRoleBadge()
@@ -385,7 +398,7 @@ export default function DashboardLayout({
                     )}
                   </Link>
 
-                  {/* Teknik Hizmetler */}
+                  {/* Teknik Hizmetler - Admin */}
                   <Link
                     href="/teknik-hizmetler"
                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
@@ -425,6 +438,29 @@ export default function DashboardLayout({
                     >
                       AI
                     </span>
+                  </Link>
+                </>
+              )}
+
+              {/* Operasyon için Teknik Hizmetler */}
+              {isOperasyon && (
+                <>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2" style={{ color: styles.textMuted }}>Araçlar</p>
+                  
+                  <Link
+                    href="/teknik-hizmetler"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
+                    style={{
+                      background: isActive('/teknik-hizmetler') ? styles.menuActiveBg : 'transparent',
+                      borderLeft: isActive('/teknik-hizmetler') ? '3px solid #6366f1' : '3px solid transparent',
+                      color: isActive('/teknik-hizmetler') ? styles.textPrimary : styles.textSecondary
+                    }}
+                  >
+                    <Server className="w-5 h-5" />
+                    <span className="text-sm font-medium">Teknik Hizmetler</span>
+                    {counts.services > 0 && (
+                      <span className="ml-auto text-[11px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-mono">{counts.services}</span>
+                    )}
                   </Link>
                 </>
               )}
