@@ -638,7 +638,7 @@ export default function GirisCikisPage() {
                                 Evden
                               </span>
                             )}
-                            {record.check_in_location_type === 'other' && (
+                            {record.check_in_location_type === 'other' && !todayIsHybrid && (
                               <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full"
                                 style={{ background: 'rgba(245,158,11,0.2)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.3)' }}>
                                 <AlertTriangle className="w-3 h-3" />
@@ -1114,3 +1114,31 @@ export default function GirisCikisPage() {
               onChange={(e) => setOvertimeReason(e.target.value)}
               placeholder="Mesai sebebinizi yazın..."
               className="w-full h-24 rounded-xl p-3 text-sm resize-none focus:outline-none text-white placeholder:text-zinc-600"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+              autoFocus
+            />
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={() => { setShowOvertimeModal(false); setPendingCheckOut(null); setOvertimeReason('') }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium text-zinc-400"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+              >
+                İptal
+              </button>
+              <button
+                onClick={() => { if (!overtimeReason.trim()) return; saveCheckOut(pendingCheckOut.now, pendingCheckOut.location, pendingCheckOut.overtimeMinutes, pendingCheckOut.earlyLeaveMinutes, overtimeReason.trim()) }}
+                disabled={!overtimeReason.trim()}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white disabled:opacity-50"
+                style={{
+                  background: 'linear-gradient(90deg, #059669 0%, #10b981 100%)',
+                }}
+              >
+                Kaydet
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
