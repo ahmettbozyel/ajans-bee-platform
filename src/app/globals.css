@@ -3,7 +3,7 @@
 /* =====================================================
    AJANS BEE - DESIGN SYSTEM
    Glass Morphism + Glow Border Theme
-   Version: 3.1 - Tailwind v4 Fix
+   Version: 3.2 - Günlük İşler Update
    ===================================================== */
 
 :root {
@@ -393,6 +393,17 @@
   .theme-toggle:hover {
     transform: rotate(15deg);
   }
+
+  /* =====================================================
+     REVIZE DOTS
+     ===================================================== */
+  
+  .revize-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+  }
 }
 
 /* =====================================================
@@ -413,6 +424,16 @@
 
 .pulse-status {
   animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Timer Active Animation */
+@keyframes timer-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.timer-active {
+  animation: timer-pulse 1s ease-in-out infinite;
 }
 
 /* Float Animation (empty states) */
