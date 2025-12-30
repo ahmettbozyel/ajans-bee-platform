@@ -369,6 +369,21 @@ export interface Customer {
 
   // Eski alan (geriye uyumluluk)
   notes?: string | null;
+
+  // Meta Hesap Bilgileri (Performans Ayarları)
+  meta_page_id?: string | null;
+  meta_ig_id?: string | null;
+  meta_ad_account_id?: string | null;
+  meta_last_sync?: string | null;
+  meta_token_expires_at?: string | null;
+
+  // Google Hesap Bilgileri (Yakında)
+  google_ga4_id?: string | null;
+  google_ads_id?: string | null;
+
+  // Senkronizasyon Ayarları
+  auto_sync_enabled?: boolean | null;
+  auto_sync_frequency?: 'disabled' | 'daily' | 'weekly' | null;
 }
 
 // Form için partial tip

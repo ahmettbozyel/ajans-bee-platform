@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react'
 import {
   Fingerprint, Users, Package, Swords, ShieldAlert, CalendarHeart,
   ChevronDown, Bot, Plus, X, Check, Globe, Instagram, Facebook, Linkedin,
-  Youtube, Twitter, Loader2, AlertCircle, Save, Info, ListChecks, CheckCircle, Circle, CircleDot, Link
+  Youtube, Twitter, Loader2, AlertCircle, Save, Info, ListChecks, CheckCircle, Circle, CircleDot
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -90,14 +90,6 @@ const BRIEF_SECTIONS_CONFIG = {
     icon: 'CalendarHeart',
     color: 'fuchsia',
     fields: ['general_holidays', 'special_events']
-  },
-  metaHesaplar: {
-    id: 'meta-hesaplar',
-    label: 'Meta Hesap Bilgileri',
-    description: 'Facebook, Instagram ve Reklam Hesap ID\'leri',
-    icon: 'Link',
-    color: 'blue',
-    fields: ['meta_page_id', 'meta_ig_id', 'meta_ad_account_id']
   }
 } as const
 
@@ -138,8 +130,7 @@ function SectionHeader({ section, isOpen, onToggle, completion }: SectionHeaderP
     Package: <Package className="w-5 h-5" />,
     Swords: <Swords className="w-5 h-5" />,
     ShieldAlert: <ShieldAlert className="w-5 h-5" />,
-    CalendarHeart: <CalendarHeart className="w-5 h-5" />,
-    Link: <Link className="w-5 h-5" />
+    CalendarHeart: <CalendarHeart className="w-5 h-5" />
   }
 
   // HTML ile uyumlu renk mapping
@@ -167,10 +158,6 @@ function SectionHeader({ section, isOpen, onToggle, completion }: SectionHeaderP
     fuchsia: {
       bg: 'bg-fuchsia-100 dark:bg-fuchsia-500/10',
       text: 'text-fuchsia-600 dark:text-fuchsia-400'
-    },
-    blue: {
-      bg: 'bg-blue-100 dark:bg-blue-500/10',
-      text: 'text-blue-600 dark:text-blue-400'
     }
   }
 
@@ -448,8 +435,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
     word_mapping: [],
     brand_colors: {}, brand_fonts: {}, brand_assets: {}, integrations: {},
     pain_points: [], hook_sentences: [],
-    cta_standards: [], forbidden_words: [], seasonal_calendar: [],
-    meta_page_id: '', meta_ig_id: '', meta_ad_account_id: ''
+    cta_standards: [], forbidden_words: [], seasonal_calendar: []
   })
 
   // Extended form fields for new UI
@@ -506,10 +492,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
         hook_sentences: customer.hook_sentences || [],
         cta_standards: customer.cta_standards || [],
         forbidden_words: customer.forbidden_words || [],
-        seasonal_calendar: customer.seasonal_calendar || [],
-        meta_page_id: customer.meta_page_id || '',
-        meta_ig_id: customer.meta_ig_id || '',
-        meta_ad_account_id: customer.meta_ad_account_id || ''
+        seasonal_calendar: customer.seasonal_calendar || []
       })
     }
   }, [customer])
@@ -610,15 +593,6 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
             fonts.corporate?.heading || fonts.web?.heading
           ].filter(Boolean).length,
           total: 4
-        }
-      case 'meta-hesaplar':
-        return {
-          filled: [
-            formData.meta_page_id,
-            formData.meta_ig_id,
-            formData.meta_ad_account_id
-          ].filter(Boolean).length,
-          total: 3
         }
       default:
         return { filled: 0, total: 0 }
@@ -1152,78 +1126,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
         )}
       </div>
       
-      {/* ==================== SECTION 7: META HESAP BİLGİLERİ ==================== */}
-      <div
-        ref={(el) => { sectionRefs.current['meta-hesaplar'] = el }}
-        className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5 bg-white dark:bg-zinc-900/50 scroll-mt-32"
-      >
-        <SectionHeader
-          section={BRIEF_SECTIONS_CONFIG.metaHesaplar}
-          isOpen={openSections.includes('meta-hesaplar')}
-          onToggle={() => toggleSection('meta-hesaplar')}
-          completion={getSectionCompletion('meta-hesaplar')}
-        />
-        {openSections.includes('meta-hesaplar') && (
-          <div className="px-5 pb-5">
-            <div className="pt-4 border-t border-zinc-200 dark:border-white/5 space-y-5">
-
-              {/* Facebook Page ID */}
-              <div>
-                <Label className="flex items-center gap-2 mb-2 text-zinc-700 dark:text-zinc-300">
-                  <Facebook className="w-4 h-4 text-blue-600" />
-                  Facebook Page ID
-                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Facebook sayfanızın benzersiz kimliği">
-                    <Info className="w-3.5 h-3.5" />
-                  </span>
-                </Label>
-                <Input
-                  value={formData.meta_page_id || ''}
-                  onChange={(e) => setFormData({ ...formData, meta_page_id: e.target.value })}
-                  placeholder="Örn: 123456789012345"
-                  className="input-glow text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
-                />
-              </div>
-
-              {/* Instagram Account ID */}
-              <div>
-                <Label className="flex items-center gap-2 mb-2 text-zinc-700 dark:text-zinc-300">
-                  <Instagram className="w-4 h-4 text-pink-600" />
-                  Instagram Account ID
-                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Instagram hesabınızın benzersiz kimliği">
-                    <Info className="w-3.5 h-3.5" />
-                  </span>
-                </Label>
-                <Input
-                  value={formData.meta_ig_id || ''}
-                  onChange={(e) => setFormData({ ...formData, meta_ig_id: e.target.value })}
-                  placeholder="Örn: 17841400000000000"
-                  className="input-glow text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
-                />
-              </div>
-
-              {/* Ad Account ID */}
-              <div>
-                <Label className="flex items-center gap-2 mb-2 text-zinc-700 dark:text-zinc-300">
-                  <Link className="w-4 h-4 text-blue-500" />
-                  Ad Account ID
-                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Meta reklam hesabı kimliği (act_xxx formatında)">
-                    <Info className="w-3.5 h-3.5" />
-                  </span>
-                </Label>
-                <Input
-                  value={formData.meta_ad_account_id || ''}
-                  onChange={(e) => setFormData({ ...formData, meta_ad_account_id: e.target.value })}
-                  placeholder="Örn: act_123456789012345"
-                  className="input-glow text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
-                />
-              </div>
-
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ==================== SECTION 8: MARKA RENK & FONTLAR ==================== */}
+      {/* ==================== SECTION 7: MARKA RENK & FONTLAR ==================== */}
       <div ref={(el) => { sectionRefs.current['marka-assets'] = el }} className="scroll-mt-32">
         <BrandAssetsSection
           colors={(formData.brand_colors as BrandColors) || {}}
