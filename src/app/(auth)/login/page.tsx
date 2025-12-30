@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Mail } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -84,11 +85,12 @@ export default function LoginPage() {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
             </Button>
-            <p className="text-sm text-muted-foreground text-center">
-              Hesabınız yok mu?{' '}
-              <Link href="/register" className="text-primary hover:underline">
-                Kayıt olun
-              </Link>
+            <p className="text-sm text-muted-foreground text-center flex items-center justify-center gap-1.5">
+              <Mail className="w-4 h-4" />
+              İletişim için{' '}
+              <a href="mailto:info@ajansbee.com" className="text-primary hover:underline font-medium">
+                info@ajansbee.com
+              </a>
             </p>
           </CardFooter>
         </form>
