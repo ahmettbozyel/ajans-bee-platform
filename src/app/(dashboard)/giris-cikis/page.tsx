@@ -89,7 +89,7 @@ export default function GirisCikisPage() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date()
-    return \`\${now.getFullYear()}-\${String(now.getMonth() + 1).padStart(2, '0')}\`
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}
   })
   const [showManualModal, setShowManualModal] = useState(false)
   const [showLateModal, setShowLateModal] = useState(false)
