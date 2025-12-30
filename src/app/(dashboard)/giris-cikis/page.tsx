@@ -637,11 +637,11 @@ export default function GirisCikisPage() {
             </div>
             {/* Butonlar YAN YANA */}
             <div className="flex gap-2">
-              <button onClick={handleCheckIn} disabled={actionLoading || hasCheckedIn || hasCheckedOut} className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${hasCheckedIn ? 'text-zinc-500 cursor-default' : 'text-white shadow-lg hover:shadow-emerald-500/40'}`} style={hasCheckedIn ? { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' } : { background: 'linear-gradient(90deg, #059669 0%, #10b981 100%)', boxShadow: '0 10px 25px -5px rgba(16,185,129,0.4)' }}>
+              <button onClick={handleCheckIn} disabled={actionLoading || hasCheckedIn || hasCheckedOut} className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${hasCheckedIn ? 'text-zinc-500 cursor-default bg-zinc-800/50 border border-zinc-700' : 'text-white bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/30'}`}>
                 {actionLoading && !hasCheckedIn ? (<Loader2 className="w-4 h-4 animate-spin" />) : (<LogIn className="w-4 h-4" />)}
                 Geldim
               </button>
-              <button onClick={handleCheckOut} disabled={actionLoading || !hasCheckedIn || hasCheckedOut} className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${hasCheckedOut ? 'text-zinc-500 cursor-default' : !hasCheckedIn ? 'text-zinc-600 cursor-not-allowed' : 'text-white shadow-lg hover:shadow-rose-500/40'}`} style={hasCheckedOut ? { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' } : !hasCheckedIn ? { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' } : { background: 'linear-gradient(90deg, #e11d48 0%, #f43f5e 100%)', boxShadow: '0 10px 25px -5px rgba(244,63,94,0.4)' }}>
+              <button onClick={handleCheckOut} disabled={actionLoading || !hasCheckedIn || hasCheckedOut} className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${hasCheckedOut ? 'text-zinc-500 cursor-default bg-zinc-800/50 border border-zinc-700' : !hasCheckedIn ? 'text-zinc-600 cursor-not-allowed bg-zinc-800/30 border border-zinc-800' : 'text-white bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/30'}`}>
                 {actionLoading && hasCheckedIn && !hasCheckedOut ? (<Loader2 className="w-4 h-4 animate-spin" />) : (<LogOut className="w-4 h-4" />)}
                 Gittim
               </button>
