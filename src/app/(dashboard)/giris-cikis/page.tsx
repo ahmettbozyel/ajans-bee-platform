@@ -15,7 +15,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Users,
-  MessageSquare,
   History,
   TrendingUp,
   AlertTriangle,
@@ -31,8 +30,6 @@ import {
   Trophy,
   Award
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
 import * as XLSX from 'xlsx'
 
 // Ofis lokasyonu - Ajans Bee İzmir
@@ -307,7 +304,7 @@ export default function GirisCikisPage() {
   const formatTime = (isoString: string | null) => !isoString ? '--:--' : new Date(isoString).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
   const formatShortDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('tr-TR', { weekday: 'short', day: 'numeric', month: 'short' })
   const calculateDuration = (checkIn: string | null, checkOut: string | null) => {
-    if (!checkIn || !checkOut) return '-'
+    if (!checkIn || !checkOut) return '--'
     const diff = new Date(checkOut).getTime() - new Date(checkIn).getTime()
     return `${Math.floor(diff / 3600000)}s ${Math.floor((diff % 3600000) / 60000)}d`
   }
@@ -568,70 +565,145 @@ export default function GirisCikisPage() {
                     )}
                   </div>
                 </div>
-                <span className="text-sm text-zinc-500">{todayRecords.length} / {users.length} kişi giriş yaptı</span>
+                <span className="text-sm text-zinc-500">{todayRecords.filter(r => r.check_in).length} / {users.length} kişi giriş yaptı</span>
               </div>
 
               {/* Records List */}
               <div className="divide-y divide-white/5">
-                {todayRecords.map((record) => (
-                  <div key={record.id} className="flex items-center gap-4 px-5 py-4 hover:bg-white/5 transition-colors">
-                    <div className={`h-11 w-11 rounded-xl bg-gradient-to-br ${getAvatarColor(record.user?.full_name || '')} flex items-center justify-center`}>
-                      <span className="text-white text-sm font-bold">{record.user?.full_name?.charAt(0) || '?'}</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-white">{record.user?.full_name || 'Bilinmeyen'}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-emerald-400 text-sm font-mono">→ {formatTime(record.check_in)}</span>
-                        <span className="text-zinc-600">···</span>
-                        <span className="text-zinc-500 text-sm font-mono">← {formatTime(record.check_out)}</span>
+                {todayRecords.map((record) => {
+                  const isLeave = record.record_type === 'leave'
+                  const isSick = record.record_type === 'sick'
+                  const isRemote = record.record_type === 'remote'
+                  const isHoliday = record.record_type === 'holiday'
+                  const isSpecialRecord = isLeave || isSick || isRemote || isHoliday
+                  
+                  return (
+                    <div key={record.id} className="flex items-center gap-4 px-5 py-4 hover:bg-white/5 transition-colors">
+                      <div className={`h-11 w-11 rounded-xl bg-gradient-to-br ${getAvatarColor(record.user?.full_name || '')} flex items-center justify-center`}>
+                        <span className="text-white text-sm font-bold">{record.user?.full_name?.charAt(0) || '?'}</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-white">{record.user?.full_name || 'Bilinmeyen'}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {isSpecialRecord ? (
+                            <span className="text-zinc-500 text-sm">Tam gün</span>
+                          ) : (
+                            <>
+                              <span className="text-emerald-400 text-sm font-mono">→ {formatTime(record.check_in)}</span>
+                              <span className="text-zinc-600">···</span>
+                              <span className="text-zinc-500 text-sm font-mono">← {formatTime(record.check_out)}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {/* İzin/Rapor/Tatil Badge'leri */}
+                        {isLeave && (
+                          <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full"
+                            style={{ background: 'rgba(34,211,238,0.2)', color: '#22d3ee', border: '1px solid rgba(34,211,238,0.3)' }}>
+                            <Palmtree className="w-3 h-3" />
+                            İzin
+                          </span>
+                        )}
+                        {isSick && (
+                          <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full"
+                            style={{ background: 'rgba(244,63,94,0.2)', color: '#fb7185', border: '1px solid rgba(244,63,94,0.3)' }}>
+                            <Stethoscope className="w-3 h-3" />
+                            Rapor
+                          </span>
+                        )}
+                        {isHoliday && (
+                          <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full"
+                            style={{ background: 'rgba(245,158,11,0.2)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.3)' }}>
+                            <CalendarOff className="w-3 h-3" />
+                            Tatil
+                          </span>
+                        )}
+                        
+                        {/* Normal kayıtlar için lokasyon badge'leri */}
+                        {!isSpecialRecord && record.check_in && (
+                          <>
+                            {record.check_in_location_type === 'office' && (
+                              <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full"
+                                style={{ background: 'rgba(16,185,129,0.2)', color: '#34d399', border: '1px solid rgba(16,185,129,0.3)' }}>
+                                <Building2 className="w-3 h-3" />
+                                Ofiste
+                                <CheckCircle2 className="w-3 h-3" />
+                              </span>
+                            )}
+                            {record.check_in_location_type === 'home' && (
+                              <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full"
+                                style={{ background: 'rgba(59,130,246,0.2)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>
+                                <HomeIcon className="w-3 h-3" />
+                                Evden
+                              </span>
+                            )}
+                            {record.check_in_location_type === 'other' && (
+                              <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full"
+                                style={{ background: 'rgba(245,158,11,0.2)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.3)' }}>
+                                <AlertTriangle className="w-3 h-3" />
+                                Dışarıda!
+                              </span>
+                            )}
+                            {todayIsHybrid && record.check_in_location_type === 'home' && (
+                              <span className="text-xs px-2 py-1 rounded-full"
+                                style={{ background: 'rgba(139,92,246,0.2)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.3)' }}>
+                                Hibrit
+                              </span>
+                            )}
+                          </>
+                        )}
+                        
+                        {/* Geç kalma badge */}
+                        {!isSpecialRecord && record.late_minutes && record.late_minutes > 0 && (
+                          <span className="text-xs px-2 py-1 rounded-full font-mono"
+                            style={{ background: 'rgba(244,63,94,0.2)', color: '#fb7185', border: '1px solid rgba(244,63,94,0.3)' }}>
+                            +{record.late_minutes}d geç
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-right min-w-[80px]">
+                        {isSpecialRecord ? (
+                          <span className="text-sm text-zinc-500">--</span>
+                        ) : record.check_out ? (
+                          <span className="text-sm font-mono text-zinc-400">{calculateDuration(record.check_in, record.check_out)}</span>
+                        ) : record.check_in ? (
+                          <div className="text-right">
+                            <span className="text-sm text-zinc-500">--</span>
+                            <p className="text-xs text-emerald-400 mt-0.5">Devam ediyor</p>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-zinc-500">--</span>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {record.check_in_location_type === 'office' && (
-                        <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full"
-                          style={{ background: 'rgba(16,185,129,0.2)', color: '#34d399', border: '1px solid rgba(16,185,129,0.3)' }}>
-                          <Building2 className="w-3 h-3" />
-                          Ofiste
-                          <CheckCircle2 className="w-3 h-3" />
-                        </span>
-                      )}
-                      {record.check_in_location_type === 'home' && (
-                        <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full"
-                          style={{ background: 'rgba(59,130,246,0.2)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>
-                          <HomeIcon className="w-3 h-3" />
-                          Evden
-                        </span>
-                      )}
-                      {record.late_minutes && record.late_minutes > 0 && (
-                        <span className="text-xs px-2 py-1 rounded-full font-mono"
-                          style={{ background: 'rgba(244,63,94,0.2)', color: '#fb7185', border: '1px solid rgba(244,63,94,0.3)' }}>
-                          +{record.late_minutes}d geç
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-right min-w-[60px]">
-                      {record.check_out ? (
-                        <span className="text-sm font-mono text-zinc-400">{calculateDuration(record.check_in, record.check_out)}</span>
-                      ) : record.check_in ? (
-                        <span className="text-xs px-2 py-1 rounded-full" style={{ background: 'rgba(16,185,129,0.2)', color: '#34d399' }}>
-                          Çalışıyor
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
 
                 {/* Henüz gelmeyenler */}
                 {usersWithoutCheckIn.map((user) => (
-                  <div key={user.id} className="flex items-center gap-4 px-5 py-4 opacity-50">
+                  <div key={user.id} className="flex items-center gap-4 px-5 py-4">
                     <div className="h-11 w-11 rounded-xl bg-zinc-700 flex items-center justify-center">
                       <span className="text-zinc-400 text-sm font-bold">{user.full_name?.charAt(0) || '?'}</span>
                     </div>
                     <div className="flex-1">
                       <p className="font-semibold text-zinc-400">{user.full_name}</p>
-                      <p className="text-xs text-zinc-600 mt-1">Henüz giriş yapmadı</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-zinc-600 text-sm font-mono">→ --:--</span>
+                        <span className="text-zinc-700">···</span>
+                        <span className="text-zinc-600 text-sm font-mono">← --:--</span>
+                      </div>
                     </div>
-                    <AlertTriangle className="w-5 h-5 text-amber-500/50" />
+                    <div className="flex items-center gap-2">
+                      <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full"
+                        style={{ background: 'rgba(244,63,94,0.2)', color: '#fb7185', border: '1px solid rgba(244,63,94,0.3)' }}>
+                        <Clock className="w-3 h-3" />
+                        Henüz gelmedi
+                      </span>
+                    </div>
+                    <div className="text-right min-w-[80px]">
+                      <span className="text-sm text-zinc-500">--</span>
+                    </div>
                   </div>
                 ))}
 
@@ -1042,39 +1114,3 @@ export default function GirisCikisPage() {
               onChange={(e) => setOvertimeReason(e.target.value)}
               placeholder="Mesai sebebinizi yazın..."
               className="w-full h-24 rounded-xl p-3 text-sm resize-none focus:outline-none text-white placeholder:text-zinc-600"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
-              autoFocus
-            />
-            <div className="flex gap-2 mt-4">
-              <button
-                onClick={() => { setShowOvertimeModal(false); setPendingCheckOut(null); setOvertimeReason('') }}
-                className="flex-1 py-2.5 rounded-xl text-sm font-medium text-zinc-400"
-                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
-              >
-                İptal
-              </button>
-              <button
-                onClick={() => { if (!overtimeReason.trim()) return; saveCheckOut(pendingCheckOut.now, pendingCheckOut.location, pendingCheckOut.overtimeMinutes, pendingCheckOut.earlyLeaveMinutes, overtimeReason.trim()) }}
-                disabled={!overtimeReason.trim()}
-                className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white disabled:opacity-50"
-                style={{
-                  background: 'linear-gradient(90deg, #059669 0%, #10b981 100%)',
-                }}
-              >
-                Kaydet
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Float Animation */}
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-5px); }
-        }
-      `}</style>
-    </div>
-  )
-}
