@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { CustomerBriefForm } from '@/components/customers/customer-brief-form'
 import { CustomerFilesTab } from '@/components/customers/customer-files-tab'
+import { CustomerPerformanceTab } from '@/components/customers/customer-performance-tab'
 import type { Customer, CustomerFormData } from '@/lib/customer-types'
 import { SECTORS, BRAND_VOICES, calculateBriefCompletion, CUSTOMER_TYPES } from '@/lib/customer-types'
 import { cn } from '@/lib/utils'
@@ -376,12 +377,16 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
               </button>
               
               <button 
-                disabled
-                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-zinc-400 dark:text-zinc-600 cursor-not-allowed rounded-lg"
+                onClick={() => setActiveTab('performans')}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-all",
+                  activeTab === 'performans' 
+                    ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10" 
+                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
+                )}
               >
                 <BarChart3 className="w-4 h-4" />
                 <span className="hidden xl:inline">Performans</span>
-                <span className="text-[10px] bg-zinc-200 dark:bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded">Yakında</span>
               </button>
               
               <button 
@@ -812,6 +817,16 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
         {activeTab === 'dosyalar' && (
           <div className="max-w-4xl mx-auto">
             <CustomerFilesTab 
+              customer={customer} 
+              onUpdate={fetchCustomer}
+            />
+          </div>
+        )}
+
+        {/* Performans Tab */}
+        {activeTab === 'performans' && (
+          <div className="max-w-6xl mx-auto">
+            <CustomerPerformanceTab 
               customer={customer} 
               onUpdate={fetchCustomer}
             />
