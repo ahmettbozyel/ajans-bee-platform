@@ -100,37 +100,37 @@ function RevizeDots({ count }: { count: number }) {
   
   for (let i = 0; i < maxDots; i++) {
     dots.push(
-      <div key={i} className={`revize-dot ${colors[i]}`} title={`${count} Revize`} />
+      <div key={i} className={`w-2 h-2 rounded-full ${colors[i]}`} title={`${count} Revize`} />
     )
   }
   
-  return <div className="flex items-center gap-1 ml-2">{dots}</div>
+  return <div className="flex items-center gap-0.5">{dots}</div>
 }
 
-// Status Badge
+// Status Badge - Kompakt
 function StatusBadge({ status }: { status: TaskStatus }) {
   const config: Record<TaskStatus, { label: string; icon: React.ReactNode; classes: string }> = {
     'active': {
       label: 'Devam Ediyor',
-      icon: <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 timer-active" />,
-      classes: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20'
+      icon: <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />,
+      classes: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
     },
     'paused': {
       label: 'Beklemede',
       icon: <Pause className="w-3 h-3" />,
-      classes: 'bg-amber-500/20 text-amber-400 border-amber-500/20'
+      classes: 'bg-amber-500/20 text-amber-400 border-amber-500/30'
     },
     'completed': {
       label: 'Tamamlandı',
       icon: <CheckCircle className="w-3 h-3" />,
-      classes: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+      classes: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
     }
   }
   
   const { label, icon, classes } = config[status]
   
   return (
-    <span className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border ${classes}`}>
+    <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full border ${classes}`}>
       {icon}
       {label}
     </span>
@@ -184,7 +184,7 @@ function StatCard({ icon, value, label, color, subtitle }: {
   )
 }
 
-// Task Card Component
+// Task Card Component - TEMİZ VE MİNİMAL
 function TaskCard({ 
   task, 
   isAdmin, 
@@ -205,6 +205,7 @@ function TaskCard({
   onDelete: (task: DailyTask) => void
 }) {
   const [currentDuration, setCurrentDuration] = useState(task.total_duration)
+  const [showActions, setShowActions] = useState(false)
   
   useEffect(() => {
     if (task.status !== 'active') {
@@ -228,127 +229,163 @@ function TaskCard({
     if (task.status === 'active') {
       return 'border-emerald-500/30 glow-emerald'
     }
-    if (task.status === 'paused') {
-      return 'border-white/10'
-    }
-    return 'border-white/10 opacity-75'
+    return 'border-white/10'
   }
   
   const categorySlug = task.category?.slug || 'genel'
   const categoryColor = CATEGORY_COLORS[categorySlug] || CATEGORY_COLORS['genel']
   
   return (
-    <div className={`glass-card rounded-2xl p-5 cursor-pointer hover:border-white/20 transition-all ${getCardClasses()}`}>
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          {isAdmin && task.user && (
-            <div className="flex items-center gap-2 mr-2">
-              <div className={`h-7 w-7 rounded-full bg-gradient-to-br ${getAvatarColor(task.user.full_name)} flex items-center justify-center`}>
-                <span className="text-white text-xs font-bold">
-                  {task.user.full_name?.charAt(0) || '?'}
-                </span>
-              </div>
-              <span className="text-sm font-medium text-zinc-300">
-                {task.user.full_name?.split(' ')[0]}
+    <div 
+      className={`glass-card rounded-2xl p-5 transition-all hover:border-white/20 group ${getCardClasses()}`}
+      onMouseEnter={() => setShowActions(true)}
+      onMouseLeave={() => setShowActions(false)}
+    >
+      {/* Üst Satır: Avatar + İsim + Status + Kategori + Marka + Revize Dots + Edit/Delete */}
+      <div className="flex items-center gap-2 mb-3">
+        {/* Avatar + İsim */}
+        {isAdmin && task.user && (
+          <div className="flex items-center gap-2">
+            <div className={`h-7 w-7 rounded-full bg-gradient-to-br ${getAvatarColor(task.user.full_name)} flex items-center justify-center`}>
+              <span className="text-white text-xs font-bold">
+                {task.user.full_name?.charAt(0) || '?'}
               </span>
             </div>
-          )}
-          
-          <StatusBadge status={task.status} />
-          
-          <span className={`text-xs px-2.5 py-1 rounded-full ${categoryColor.bg} ${categoryColor.text} border ${categoryColor.border}`}>
-            {task.category?.name || 'Genel'}
-          </span>
-          
-          {task.brand && (
-            <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/20">
-              <Building2 className="w-3 h-3 inline mr-1" />
-              {task.brand.brand_name}
+            <span className="text-sm font-medium text-zinc-300">
+              {task.user.full_name?.split(' ')[0]}
             </span>
-          )}
-          
-          <RevizeDots count={task.revision_count} />
+          </div>
+        )}
+        
+        {/* Status Badge */}
+        <StatusBadge status={task.status} />
+        
+        {/* Kategori */}
+        <span className={`text-xs px-2 py-0.5 rounded-full ${categoryColor.bg} ${categoryColor.text} border ${categoryColor.border}`}>
+          {task.category?.name || 'Genel'}
+        </span>
+        
+        {/* Marka */}
+        {task.brand && (
+          <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
+            <Building2 className="w-3 h-3 inline mr-1" />
+            {task.brand.brand_name}
+          </span>
+        )}
+        
+        {/* Revize Dots */}
+        <RevizeDots count={task.revision_count} />
+        
+        {/* Spacer */}
+        <div className="flex-1" />
+        
+        {/* Edit/Delete - Her zaman görünür */}
+        <div className="flex items-center gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
+          <button 
+            onClick={(e) => { e.stopPropagation(); onEdit(task) }} 
+            className="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-zinc-200 transition-colors"
+          >
+            <Edit className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={(e) => { e.stopPropagation(); onDelete(task) }} 
+            className="p-1.5 rounded-lg hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
         </div>
       </div>
       
-      <h3 className="text-lg font-semibold text-white mb-2">{task.description}</h3>
+      {/* Açıklama */}
+      <h3 className="text-base font-semibold text-white mb-2">{task.description}</h3>
       
-      <div className="flex items-center gap-4 text-sm">
+      {/* Alt Satır: Saat + Süre + (Revize Badge) */}
+      <div className="flex items-center gap-3 text-sm">
         <div className="flex items-center gap-2 text-zinc-400">
           <Clock className="w-4 h-4" />
-          <span className="font-mono">{formatTime(task.start_time)}</span>
+          <span className="font-mono text-sm">{formatTime(task.start_time)}</span>
           <span className="text-zinc-600">→</span>
           {task.end_time ? (
-            <span className="font-mono">{formatTime(task.end_time)}</span>
+            <span className="font-mono text-sm">{formatTime(task.end_time)}</span>
           ) : (
             <span className="text-zinc-600 font-mono">...</span>
           )}
         </div>
         
+        {/* Süre Badge */}
         {task.status === 'active' ? (
-          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-400">
-            <span className="font-mono font-semibold timer-active">{formatDuration(currentDuration)}</span>
-          </div>
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-400 font-mono text-sm font-semibold">
+            {formatDuration(currentDuration)}
+          </span>
         ) : task.status === 'completed' ? (
-          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-400">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 font-mono text-sm">
             <Check className="w-3 h-3" />
-            <span className="font-mono">{formatDuration(task.total_duration)}</span>
-          </div>
+            {formatDuration(task.total_duration)}
+          </span>
         ) : (
-          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 text-zinc-300">
-            <span className="font-mono">{formatDuration(task.total_duration)}</span>
-          </div>
+          <span className="px-2 py-0.5 rounded-lg bg-white/5 text-zinc-400 font-mono text-sm">
+            {formatDuration(task.total_duration)}
+          </span>
+        )}
+        
+        {/* Revize süresi varsa */}
+        {task.revision_count > 0 && (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-rose-500/10 text-rose-400 font-mono text-sm">
+            <RefreshCw className="w-3 h-3" />
+            {task.revision_count > 0 ? `${task.revision_count * 35}d` : ''}
+          </span>
         )}
       </div>
       
-      {/* Action Buttons - Revize sol alt, düzenle/sil sağ alt */}
-      <div className="flex items-center gap-2 mt-4 pt-4 border-t border-white/5">
-        {task.status === 'active' && (
-          <>
-            <Button size="sm" variant="outline" onClick={() => onPause(task)} className="text-amber-400 border-amber-500/30 hover:bg-amber-500/10">
-              <Pause className="w-3 h-3 mr-1" />
-              Beklemede
-            </Button>
-            <Button size="sm" onClick={() => onComplete(task)} className="bg-emerald-500 hover:bg-emerald-600 text-white">
-              <Check className="w-3 h-3 mr-1" />
-              Bitti
-            </Button>
-          </>
-        )}
-        
-        {task.status === 'paused' && (
-          <>
-            <Button size="sm" variant="outline" onClick={() => onResume(task)} className="text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10">
-              <Play className="w-3 h-3 mr-1" />
-              Devam Et
-            </Button>
-            <Button size="sm" onClick={() => onComplete(task)} className="bg-emerald-500 hover:bg-emerald-600 text-white">
-              <Check className="w-3 h-3 mr-1" />
-              Bitti
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => onStartRevision(task)} className="text-rose-400 border-rose-500/30 hover:bg-rose-500/10">
-              <RefreshCw className="w-3 h-3 mr-1" />
-              Revize
-            </Button>
-          </>
-        )}
-        
-        {task.status === 'completed' && (
-          <Button size="sm" variant="outline" onClick={() => onStartRevision(task)} className="text-rose-400 border-rose-500/30 hover:bg-rose-500/10">
-            <RefreshCw className="w-3 h-3 mr-1" />
-            Revize Başlat
-          </Button>
-        )}
-        
-        <div className="flex-1" />
-        
-        <button onClick={() => onEdit(task)} className="p-2 rounded-lg hover:bg-white/5 text-zinc-400 hover:text-zinc-200 transition-colors">
-          <Edit className="w-4 h-4" />
-        </button>
-        <button onClick={() => onDelete(task)} className="p-2 rounded-lg hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 transition-colors">
-          <Trash2 className="w-4 h-4" />
-        </button>
-      </div>
+      {/* Quick Actions - Hover'da görünür */}
+      {showActions && task.status !== 'completed' && (
+        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/5">
+          {task.status === 'active' && (
+            <>
+              <button 
+                onClick={() => onPause(task)} 
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-medium hover:bg-amber-500/20 transition-colors"
+              >
+                <Pause className="w-3 h-3" />
+                Beklet
+              </button>
+              <button 
+                onClick={() => onComplete(task)} 
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600 transition-colors"
+              >
+                <Check className="w-3 h-3" />
+                Bitti
+              </button>
+            </>
+          )}
+          
+          {task.status === 'paused' && (
+            <>
+              <button 
+                onClick={() => onResume(task)} 
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-medium hover:bg-emerald-500/20 transition-colors"
+              >
+                <Play className="w-3 h-3" />
+                Devam
+              </button>
+              <button 
+                onClick={() => onComplete(task)} 
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600 transition-colors"
+              >
+                <Check className="w-3 h-3" />
+                Bitti
+              </button>
+              <button 
+                onClick={() => onStartRevision(task)} 
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-medium hover:bg-rose-500/20 transition-colors"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Revize
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -913,7 +950,7 @@ export default function GunlukIslerPage() {
       )}
 
       <div className={`grid gap-6 ${isAdmin ? 'grid-cols-3' : 'grid-cols-1'}`}>
-        <div className={`space-y-4 ${isAdmin ? 'col-span-2' : ''}`}>
+        <div className={`space-y-3 ${isAdmin ? 'col-span-2' : ''}`}>
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
