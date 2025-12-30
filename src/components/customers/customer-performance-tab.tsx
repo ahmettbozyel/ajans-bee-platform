@@ -674,31 +674,53 @@ function AyarlarTab({ customer, onUpdate }: { customer: Customer; onUpdate?: () 
     setIsSyncing(true)
     setSaveMessage(null)
 
+    // Debug: Kaydedilecek değerleri göster
+    console.log('=== META SYNC DEBUG ===')
+    console.log('Customer ID:', customer.id)
+    console.log('meta_page_id:', metaPageId)
+    console.log('meta_ig_id:', metaIgId)
+    console.log('meta_ad_account_id:', metaAdAccountId)
+
     try {
       // Meta ID'leri DB'ye kaydet
-      const { error } = await supabase
+      const updateData = {
+        meta_page_id: metaPageId || null,
+        meta_ig_id: metaIgId || null,
+        meta_ad_account_id: metaAdAccountId || null,
+        updated_at: new Date().toISOString()
+      }
+
+      console.log('Update data:', updateData)
+
+      const { data, error } = await supabase
         .from('customers')
-        .update({
-          meta_page_id: metaPageId || null,
-          meta_ig_id: metaIgId || null,
-          meta_ad_account_id: metaAdAccountId || null,
-          meta_last_sync: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', customer.id)
+        .select()
 
-      if (error) throw error
+      console.log('Supabase response - data:', data)
+      console.log('Supabase response - error:', error)
 
-      setSaveMessage({ type: 'success', text: 'Meta hesapları senkronize edildi!' })
+      if (error) {
+        console.error('Supabase error details:', error)
+        throw error
+      }
+
+      setSaveMessage({ type: 'success', text: 'Meta hesapları kaydedildi!' })
 
       // Refresh customer data
-      if (onUpdate) onUpdate()
+      if (onUpdate) {
+        console.log('Calling onUpdate...')
+        onUpdate()
+      }
 
       // 3 saniye sonra mesajı kaldır
       setTimeout(() => setSaveMessage(null), 3000)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error syncing:', err)
-      setSaveMessage({ type: 'error', text: 'Senkronizasyon sırasında bir hata oluştu.' })
+      console.error('Error message:', err?.message)
+      console.error('Error details:', err?.details)
+      setSaveMessage({ type: 'error', text: `Hata: ${err?.message || 'Bilinmeyen hata'}` })
     } finally {
       setIsSyncing(false)
     }
