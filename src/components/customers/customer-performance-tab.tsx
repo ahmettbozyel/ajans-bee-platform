@@ -8,9 +8,10 @@ import {
   Plus, FileText, ChevronDown, ExternalLink, Info, Sparkles,
   Facebook, Instagram, Linkedin, Play, Download, Pencil, RefreshCw,
   CheckCircle, AlertTriangle, Star, Settings, Key, Link, Clock, Bell,
-  History, Shield, Calendar, Zap, AlertOctagon, Timer
+  History, Shield, Calendar, Zap, AlertOctagon, Timer, Loader2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
 import type { Customer } from '@/lib/customer-types'
 
 interface CustomerPerformanceTabProps {
@@ -622,18 +623,21 @@ function WebAnalyticsTab() {
 
 // ==================== AYARLAR TAB ====================
 function AyarlarTab({ customer, onUpdate }: { customer: Customer; onUpdate?: () => void }) {
+  const supabase = createClient()
   const [metaPageId, setMetaPageId] = useState(customer.meta_page_id || '')
   const [metaIgId, setMetaIgId] = useState(customer.meta_ig_id || '')
   const [metaAdAccountId, setMetaAdAccountId] = useState(customer.meta_ad_account_id || '')
-  const [ga4PropertyId, setGa4PropertyId] = useState('')
-  const [googleAdsId, setGoogleAdsId] = useState('')
-  const [autoSyncFrequency, setAutoSyncFrequency] = useState<'disabled' | 'daily' | 'weekly'>('disabled')
+  const [ga4PropertyId, setGa4PropertyId] = useState(customer.google_ga4_id || '')
+  const [googleAdsId, setGoogleAdsId] = useState(customer.google_ads_id || '')
+  const [autoSyncFrequency, setAutoSyncFrequency] = useState<'disabled' | 'daily' | 'weekly'>(customer.auto_sync_frequency || 'disabled')
   const [dataRetention, setDataRetention] = useState('12')
   const [notifySyncErrors, setNotifySyncErrors] = useState(true)
   const [notifyMonthlyReport, setNotifyMonthlyReport] = useState(true)
   const [notifyWeeklySummary, setNotifyWeeklySummary] = useState(false)
   const [isTesting, setIsTesting] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   // Token durumu hesaplama (örnek veri)
   const tokenExpiresAt = customer.meta_token_expires_at ? new Date(customer.meta_token_expires_at) : null
@@ -671,6 +675,43 @@ function AyarlarTab({ customer, onUpdate }: { customer: Customer; onUpdate?: () 
     // Simüle sync
     await new Promise(resolve => setTimeout(resolve, 3000))
     setIsSyncing(false)
+  }
+
+  // Ayarları kaydet
+  const handleSaveSettings = async () => {
+    setIsSaving(true)
+    setSaveMessage(null)
+
+    try {
+      const { error } = await supabase
+        .from('customers')
+        .update({
+          meta_page_id: metaPageId || null,
+          meta_ig_id: metaIgId || null,
+          meta_ad_account_id: metaAdAccountId || null,
+          google_ga4_id: ga4PropertyId || null,
+          google_ads_id: googleAdsId || null,
+          auto_sync_frequency: autoSyncFrequency,
+          auto_sync_enabled: autoSyncFrequency !== 'disabled',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', customer.id)
+
+      if (error) throw error
+
+      setSaveMessage({ type: 'success', text: 'Ayarlar başarıyla kaydedildi!' })
+
+      // Refresh customer data
+      if (onUpdate) onUpdate()
+
+      // 3 saniye sonra mesajı kaldır
+      setTimeout(() => setSaveMessage(null), 3000)
+    } catch (err) {
+      console.error('Error saving settings:', err)
+      setSaveMessage({ type: 'error', text: 'Kaydetme sırasında bir hata oluştu.' })
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -1057,10 +1098,34 @@ function AyarlarTab({ customer, onUpdate }: { customer: Customer; onUpdate?: () 
       </div>
 
       {/* Kaydet Butonu */}
-      <div className="flex justify-end">
-        <button className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-medium shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all">
-          <CheckCircle className="w-4 h-4" />
-          Ayarları Kaydet
+      <div className="flex items-center justify-between">
+        {saveMessage && (
+          <div className={cn(
+            "flex items-center gap-2 px-4 py-2 rounded-xl text-sm",
+            saveMessage.type === 'success'
+              ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
+              : "bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400"
+          )}>
+            {saveMessage.type === 'success' ? <CheckCircle className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+            {saveMessage.text}
+          </div>
+        )}
+        <button
+          onClick={handleSaveSettings}
+          disabled={isSaving}
+          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-medium shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all disabled:opacity-50 ml-auto"
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Kaydediliyor...
+            </>
+          ) : (
+            <>
+              <CheckCircle className="w-4 h-4" />
+              Ayarları Kaydet
+            </>
+          )}
         </button>
       </div>
     </div>
