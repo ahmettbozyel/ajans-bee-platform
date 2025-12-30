@@ -33,6 +33,7 @@ import {
   BarChart3
 } from 'lucide-react'
 import * as XLSX from 'xlsx'
+import { Button } from '@/components/ui/button'
 
 const OFFICE_LOCATION = { lat: 38.450468, lng: 27.186318, radius: 100 }
 const WORK_HOURS = { start: '09:00', end: '18:30', toleranceMinutes: 0 }
@@ -637,14 +638,14 @@ export default function GirisCikisPage() {
             </div>
             {/* Butonlar YAN YANA */}
             <div className="flex gap-2">
-              <button onClick={handleCheckIn} disabled={actionLoading || hasCheckedIn || hasCheckedOut} className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${hasCheckedIn ? 'text-zinc-500 cursor-default bg-zinc-800/50 border border-zinc-700' : 'text-white bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/30'}`}>
+              <Button onClick={handleCheckIn} disabled={actionLoading || hasCheckedIn || hasCheckedOut} variant="default" className="flex-1 py-3 rounded-xl">
                 {actionLoading && !hasCheckedIn ? (<Loader2 className="w-4 h-4 animate-spin" />) : (<LogIn className="w-4 h-4" />)}
                 Geldim
-              </button>
-              <button onClick={handleCheckOut} disabled={actionLoading || !hasCheckedIn || hasCheckedOut} className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${hasCheckedOut ? 'text-zinc-500 cursor-default bg-zinc-800/50 border border-zinc-700' : !hasCheckedIn ? 'text-zinc-600 cursor-not-allowed bg-zinc-800/30 border border-zinc-800' : 'text-white bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/30'}`}>
+              </Button>
+              <Button onClick={handleCheckOut} disabled={actionLoading || !hasCheckedIn || hasCheckedOut} variant="default" className="flex-1 py-3 rounded-xl">
                 {actionLoading && hasCheckedIn && !hasCheckedOut ? (<Loader2 className="w-4 h-4 animate-spin" />) : (<LogOut className="w-4 h-4" />)}
                 Gittim
-              </button>
+              </Button>
             </div>
             {myRecord?.check_in && myRecord?.check_out && (<div className="mt-4 pt-4 border-t border-white/10 text-center"><p className="text-xs text-zinc-500 mb-1">Toplam Çalışma</p><p className="text-2xl font-bold font-mono text-white">{calculateDuration(myRecord.check_in, myRecord.check_out)}</p></div>)}
           </div>
