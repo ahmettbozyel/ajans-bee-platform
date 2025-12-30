@@ -900,7 +900,7 @@ export default function GunlukIslerPage() {
               <select
                 value={selectedBrand}
                 onChange={(e) => setSelectedBrand(e.target.value)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-zinc-300 text-sm hover:bg-white/10 transition-colors focus:outline-none"
+                className="px-3 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-300 text-sm focus:outline-none focus:border-indigo-500 [&>option]:bg-zinc-800 [&>option]:text-zinc-100"
               >
                 <option value="all">Tümü</option>
                 {brands.map(brand => (
@@ -949,6 +949,7 @@ export default function GunlukIslerPage() {
         {isAdmin && <StatsPanel tasks={tasks} users={users} />}
       </div>
 
+      {/* Modal - Dark Mode Uyumlu */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-zinc-900 border border-zinc-800 p-6">
@@ -967,7 +968,7 @@ export default function GunlukIslerPage() {
                 <select
                   value={formData.brand_id}
                   onChange={(e) => setFormData({ ...formData, brand_id: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 focus:outline-none focus:border-indigo-500"
+                  className="w-full px-4 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 focus:outline-none focus:border-indigo-500 [&>option]:bg-zinc-800 [&>option]:text-zinc-100"
                 >
                   <option value="">Genel</option>
                   {brands.map((brand) => (
@@ -1012,16 +1013,20 @@ export default function GunlukIslerPage() {
               </div>
 
               <div className="flex gap-3 pt-2">
-                <Button type="button" variant="outline" onClick={() => setShowModal(false)} className="flex-1">
+                <button 
+                  type="button" 
+                  onClick={() => setShowModal(false)} 
+                  className="flex-1 px-4 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-300 hover:bg-zinc-700 transition-colors font-medium"
+                >
                   İptal
-                </Button>
-                <Button
+                </button>
+                <button
                   type="submit"
                   disabled={saving || !formData.category_id || !formData.description.trim()}
-                  className="flex-1 bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600"
+                  className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                 >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-2" />{editingTask ? 'Güncelle' : 'Başlat'}</>}
-                </Button>
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4" />{editingTask ? 'Güncelle' : 'Başlat'}</>}
+                </button>
               </div>
             </form>
           </div>
