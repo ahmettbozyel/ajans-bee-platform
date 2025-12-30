@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase/client'
-import { DailyTask, TaskCategory, AppUser, TaskStatus, AVATAR_COLORS, CATEGORY_COLORS, STATUS_STYLES } from '@/lib/auth-types'
+import { DailyTask, TaskCategory, AppUser, TaskStatus, AVATAR_COLORS, CATEGORY_COLORS } from '@/lib/auth-types'
 import { 
   Plus, 
   Calendar,
@@ -18,7 +18,6 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
   Pause,
   Play,
   RefreshCw,
@@ -95,7 +94,7 @@ function RevizeDots({ count }: { count: number }) {
 }
 
 // Status Badge
-function StatusBadge({ status, isActive }: { status: TaskStatus; isActive?: boolean }) {
+function StatusBadge({ status }: { status: TaskStatus }) {
   const config: Record<TaskStatus, { label: string; icon: React.ReactNode; classes: string }> = {
     'active': {
       label: 'Devam Ediyor',
@@ -135,7 +134,7 @@ function TaskCard({
   onEdit,
   onDelete 
 }: { 
-  task: DailyTask & { user?: AppUser }
+  task: DailyTask & { user?: { id: string; full_name: string | null } }
   isAdmin: boolean
   onPause: (task: DailyTask) => void
   onResume: (task: DailyTask) => void
@@ -339,7 +338,7 @@ function StatsPanel({ tasks, users }: { tasks: DailyTask[], users: AppUser[] }) 
           <h3 className="font-semibold text-white">Bugün Performans</h3>
         </div>
         <div className="space-y-3">
-          {performanceData.slice(0, 5).map((item, index) => (
+          {performanceData.slice(0, 5).map((item) => (
             <div key={item.user.id} className="flex items-center gap-3">
               <div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${getAvatarColor(item.user.full_name)} flex items-center justify-center flex-shrink-0`}>
                 <span className="text-white text-xs font-bold">
@@ -353,7 +352,7 @@ function StatsPanel({ tasks, users }: { tasks: DailyTask[], users: AppUser[] }) 
                 </div>
                 <div className="h-1.5 rounded-full bg-white/10">
                   <div 
-                    className={`h-full rounded-full bg-gradient-to-r ${getAvatarColor(item.user.full_name).replace('from-', 'from-').replace('to-', 'to-')}`}
+                    className={`h-full rounded-full bg-gradient-to-r ${getAvatarColor(item.user.full_name)}`}
                     style={{ width: `${(item.totalDuration / maxDuration) * 100}%` }}
                   />
                 </div>
@@ -446,7 +445,7 @@ export default function GunlukIslerPage() {
     setLoading(true)
     try {
       // Kategoriler
-      const { data: cats } = await supabase
+      const { data: cats } = await (supabase as any)
         .from('task_categories')
         .select('*')
         .eq('is_active', true)
@@ -469,14 +468,14 @@ export default function GunlukIslerPage() {
           .from('users')
           .select('*')
           .eq('is_active', true)
-          .neq('role', 'admin') // Admin'i hariç tut
+          .neq('role', 'admin')
           .order('full_name')
         
         if (usersData) setUsers(usersData as AppUser[])
       }
 
       // Günlük işler
-      let query = supabase
+      let query = (supabase as any)
         .from('daily_tasks')
         .select(`
           *,
@@ -520,7 +519,7 @@ export default function GunlukIslerPage() {
     setSaving(true)
     try {
       if (editingTask) {
-        await supabase
+        await (supabase as any)
           .from('daily_tasks')
           .update({
             brand_id: formData.brand_id || null,
@@ -529,7 +528,7 @@ export default function GunlukIslerPage() {
           })
           .eq('id', editingTask.id)
       } else {
-        await supabase
+        await (supabase as any)
           .from('daily_tasks')
           .insert({
             user_id: appUser.id,
@@ -561,7 +560,7 @@ export default function GunlukIslerPage() {
     const startTime = new Date(task.start_time).getTime()
     const elapsed = Math.floor((now.getTime() - startTime) / 1000)
     
-    await supabase
+    await (supabase as any)
       .from('daily_tasks')
       .update({
         status: 'paused',
@@ -575,7 +574,7 @@ export default function GunlukIslerPage() {
 
   // Resume
   const handleResume = async (task: DailyTask) => {
-    await supabase
+    await (supabase as any)
       .from('daily_tasks')
       .update({
         status: 'active',
@@ -599,7 +598,7 @@ export default function GunlukIslerPage() {
       totalDuration += elapsed
     }
     
-    await supabase
+    await (supabase as any)
       .from('daily_tasks')
       .update({
         status: 'completed',
@@ -616,7 +615,7 @@ export default function GunlukIslerPage() {
     const now = new Date()
     
     // Task'ın revision_count'unu artır
-    await supabase
+    await (supabase as any)
       .from('daily_tasks')
       .update({
         revision_count: task.revision_count + 1
@@ -624,7 +623,7 @@ export default function GunlukIslerPage() {
       .eq('id', task.id)
     
     // Yeni revision kaydı ekle
-    await supabase
+    await (supabase as any)
       .from('task_revisions')
       .insert({
         task_id: task.id,
@@ -640,7 +639,7 @@ export default function GunlukIslerPage() {
   const handleDelete = async (task: DailyTask) => {
     if (!confirm('Bu işi silmek istediğine emin misin?')) return
     
-    await supabase.from('daily_tasks').delete().eq('id', task.id)
+    await (supabase as any).from('daily_tasks').delete().eq('id', task.id)
     fetchData()
   }
 
@@ -804,7 +803,7 @@ export default function GunlukIslerPage() {
             tasks.map(task => (
               <TaskCard
                 key={task.id}
-                task={task as any}
+                task={task as DailyTask & { user?: { id: string; full_name: string | null } }}
                 isAdmin={isAdmin}
                 onPause={handlePause}
                 onResume={handleResume}
