@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase/client'
-import { DailyTask, TaskCategory, AppUser } from '@/lib/auth-types'
+import { DailyTask, TaskCategory, AppUser, TaskStatus, AVATAR_COLORS, CATEGORY_COLORS, STATUS_STYLES } from '@/lib/auth-types'
 import { 
   Plus, 
   Calendar,
@@ -14,22 +14,421 @@ import {
   X,
   Loader2,
   Users,
-  CheckCircle2,
-  RotateCcw,
-  Copy,
-  Clock
+  CheckCircle,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  Pause,
+  Play,
+  RefreshCw,
+  Trophy,
+  PieChart,
+  AlertTriangle
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-export default function AdminGunlukIslerPage() {
+// Süre formatla (saniye -> Xs Xd)
+function formatDuration(seconds: number): string {
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  
+  if (hours > 0) {
+    return `${hours}s ${minutes}d`
+  }
+  return `${minutes}d`
+}
+
+// Saat formatla
+function formatTime(dateStr: string): string {
+  const date = new Date(dateStr)
+  return date.toLocaleTimeString('tr-TR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Europe/Istanbul'
+  })
+}
+
+// Tarih formatla
+function formatDateLong(dateStr: string): string {
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('tr-TR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    weekday: 'long'
+  })
+}
+
+// Tarih formatla (kısa)
+function formatDateShort(dateStr: string): string {
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('tr-TR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  })
+}
+
+// Avatar rengi al
+function getAvatarColor(name: string | null): string {
+  if (!name) return AVATAR_COLORS['default']
+  const firstChar = name.charAt(0).toUpperCase()
+  return AVATAR_COLORS[firstChar] || AVATAR_COLORS['default']
+}
+
+// Revize noktaları
+function RevizeDots({ count }: { count: number }) {
+  if (count === 0) return null
+  
+  const dots = []
+  const maxDots = Math.min(count, 4)
+  const colors = ['bg-rose-400', 'bg-rose-500', 'bg-rose-600', 'bg-rose-700']
+  
+  for (let i = 0; i < maxDots; i++) {
+    dots.push(
+      <div key={i} className={`revize-dot ${colors[i]}`} title={`${count} Revize`} />
+    )
+  }
+  
+  return <div className="flex items-center gap-1 ml-2">{dots}</div>
+}
+
+// Status Badge
+function StatusBadge({ status, isActive }: { status: TaskStatus; isActive?: boolean }) {
+  const config: Record<TaskStatus, { label: string; icon: React.ReactNode; classes: string }> = {
+    'active': {
+      label: 'Devam Ediyor',
+      icon: <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 timer-active" />,
+      classes: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20'
+    },
+    'paused': {
+      label: 'Beklemede',
+      icon: <Pause className="w-3 h-3" />,
+      classes: 'bg-amber-500/20 text-amber-400 border-amber-500/20'
+    },
+    'completed': {
+      label: 'Tamamlandı',
+      icon: <CheckCircle className="w-3 h-3" />,
+      classes: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+    }
+  }
+  
+  const { label, icon, classes } = config[status]
+  
+  return (
+    <span className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border ${classes}`}>
+      {icon}
+      {label}
+    </span>
+  )
+}
+
+// Task Card Component
+function TaskCard({ 
+  task, 
+  isAdmin, 
+  onPause, 
+  onResume, 
+  onComplete, 
+  onStartRevision,
+  onEdit,
+  onDelete 
+}: { 
+  task: DailyTask & { user?: AppUser }
+  isAdmin: boolean
+  onPause: (task: DailyTask) => void
+  onResume: (task: DailyTask) => void
+  onComplete: (task: DailyTask) => void
+  onStartRevision: (task: DailyTask) => void
+  onEdit: (task: DailyTask) => void
+  onDelete: (task: DailyTask) => void
+}) {
+  // Aktif süre hesapla
+  const [currentDuration, setCurrentDuration] = useState(task.total_duration)
+  
+  useEffect(() => {
+    if (task.status !== 'active') {
+      setCurrentDuration(task.total_duration)
+      return
+    }
+    
+    // Aktif ise timer çalıştır
+    const startTime = new Date(task.start_time).getTime()
+    const pausedDuration = task.total_duration || 0
+    
+    const interval = setInterval(() => {
+      const now = Date.now()
+      const elapsed = Math.floor((now - startTime) / 1000)
+      setCurrentDuration(pausedDuration + elapsed)
+    }, 1000)
+    
+    return () => clearInterval(interval)
+  }, [task.status, task.start_time, task.total_duration])
+  
+  // Glow class
+  const getGlowClass = () => {
+    if (task.status === 'active') return 'glow-emerald border-emerald-500/30'
+    if (task.status === 'paused') return 'border-white/10'
+    return 'border-white/10 opacity-75'
+  }
+  
+  // Kategori renkleri
+  const categorySlug = task.category?.slug || 'genel'
+  const categoryColor = CATEGORY_COLORS[categorySlug] || CATEGORY_COLORS['genel']
+  
+  return (
+    <div className={`glass-card rounded-2xl p-5 cursor-pointer hover:border-white/20 transition-all ${getGlowClass()}`}>
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Personel Avatar (sadece admin için) */}
+          {isAdmin && task.user && (
+            <div className="flex items-center gap-2 mr-2">
+              <div className={`h-7 w-7 rounded-lg bg-gradient-to-br ${getAvatarColor(task.user.full_name)} flex items-center justify-center`}>
+                <span className="text-white text-xs font-bold">
+                  {task.user.full_name?.charAt(0) || '?'}
+                </span>
+              </div>
+              <span className="text-sm font-medium text-zinc-300">
+                {task.user.full_name?.split(' ')[0]}
+              </span>
+            </div>
+          )}
+          
+          {/* Status Badge */}
+          <StatusBadge status={task.status} />
+          
+          {/* Kategori */}
+          <span className={`text-xs px-2.5 py-1 rounded-full ${categoryColor.bg} ${categoryColor.text} border ${categoryColor.border}`}>
+            {task.category?.name || 'Genel'}
+          </span>
+          
+          {/* Marka */}
+          {task.brand && (
+            <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/20">
+              <Building2 className="w-3 h-3 inline mr-1" />
+              {task.brand.brand_name}
+            </span>
+          )}
+          
+          {/* Revize Noktaları */}
+          <RevizeDots count={task.revision_count} />
+        </div>
+      </div>
+      
+      {/* Açıklama */}
+      <h3 className="text-lg font-semibold text-white mb-2">{task.description}</h3>
+      
+      {/* Süre Bilgisi */}
+      <div className="flex items-center gap-4 text-sm">
+        <div className="flex items-center gap-2 text-zinc-400">
+          <Clock className="w-4 h-4" />
+          <span className="font-mono">{formatTime(task.start_time)}</span>
+          <span className="text-zinc-600">→</span>
+          {task.end_time ? (
+            <span className="font-mono">{formatTime(task.end_time)}</span>
+          ) : (
+            <span className="text-zinc-600 font-mono">...</span>
+          )}
+        </div>
+        
+        {/* Duration Badge */}
+        {task.status === 'active' ? (
+          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-400">
+            <span className="font-mono font-semibold timer-active">{formatDuration(currentDuration)}</span>
+          </div>
+        ) : task.status === 'completed' ? (
+          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-400">
+            <Check className="w-3 h-3" />
+            <span className="font-mono">{formatDuration(task.total_duration)}</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 text-zinc-300">
+            <span className="font-mono">{formatDuration(task.total_duration)}</span>
+          </div>
+        )}
+      </div>
+      
+      {/* Action Buttons */}
+      <div className="flex items-center gap-2 mt-4 pt-4 border-t border-white/5">
+        {task.status === 'active' && (
+          <>
+            <Button size="sm" variant="outline" onClick={() => onPause(task)} className="text-amber-400 border-amber-500/30 hover:bg-amber-500/10">
+              <Pause className="w-3 h-3 mr-1" />
+              Beklemede
+            </Button>
+            <Button size="sm" onClick={() => onComplete(task)} className="bg-emerald-600 hover:bg-emerald-700">
+              <Check className="w-3 h-3 mr-1" />
+              Bitti
+            </Button>
+          </>
+        )}
+        
+        {task.status === 'paused' && (
+          <>
+            <Button size="sm" variant="outline" onClick={() => onResume(task)} className="text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10">
+              <Play className="w-3 h-3 mr-1" />
+              Devam Et
+            </Button>
+            <Button size="sm" onClick={() => onComplete(task)} className="bg-emerald-600 hover:bg-emerald-700">
+              <Check className="w-3 h-3 mr-1" />
+              Bitti
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => onStartRevision(task)} className="text-rose-400 border-rose-500/30 hover:bg-rose-500/10">
+              <RefreshCw className="w-3 h-3 mr-1" />
+              Revize
+            </Button>
+          </>
+        )}
+        
+        {task.status === 'completed' && (
+          <Button size="sm" variant="outline" onClick={() => onStartRevision(task)} className="text-rose-400 border-rose-500/30 hover:bg-rose-500/10">
+            <RefreshCw className="w-3 h-3 mr-1" />
+            Revize Başlat
+          </Button>
+        )}
+        
+        <div className="flex-1" />
+        
+        <button onClick={() => onEdit(task)} className="p-2 rounded-lg hover:bg-white/5 text-zinc-400 hover:text-zinc-200 transition-colors">
+          <Edit className="w-4 h-4" />
+        </button>
+        <button onClick={() => onDelete(task)} className="p-2 rounded-lg hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 transition-colors">
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// Stats Panel Component (Admin için sağ panel)
+function StatsPanel({ tasks, users }: { tasks: DailyTask[], users: AppUser[] }) {
+  // Personel performansı hesapla
+  const performanceData = users.map(user => {
+    const userTasks = tasks.filter(t => t.user_id === user.id)
+    const totalDuration = userTasks.reduce((sum, t) => sum + (t.total_duration || 0), 0)
+    return { user, totalDuration, taskCount: userTasks.length }
+  }).sort((a, b) => b.totalDuration - a.totalDuration)
+  
+  // Marka dağılımı
+  const brandStats: Record<string, { name: string; duration: number }> = {}
+  tasks.forEach(task => {
+    const brandName = task.brand?.brand_name || 'Genel'
+    if (!brandStats[brandName]) {
+      brandStats[brandName] = { name: brandName, duration: 0 }
+    }
+    brandStats[brandName].duration += task.total_duration || 0
+  })
+  const brandData = Object.values(brandStats).sort((a, b) => b.duration - a.duration).slice(0, 5)
+  const totalBrandDuration = brandData.reduce((sum, b) => sum + b.duration, 0)
+  
+  // Revize durumu
+  const revisionTasks = tasks.filter(t => t.revision_count > 0)
+  const totalRevisions = tasks.reduce((sum, t) => sum + t.revision_count, 0)
+  const avgRevision = tasks.length > 0 ? (totalRevisions / tasks.length).toFixed(1) : '0'
+  
+  // Max süre (progress bar için)
+  const maxDuration = Math.max(...performanceData.map(p => p.totalDuration), 1)
+  
+  return (
+    <div className="space-y-6">
+      {/* Personel Performansı */}
+      <div className="glass-card rounded-2xl p-5 border border-white/10">
+        <div className="flex items-center gap-2 mb-4">
+          <Trophy className="w-5 h-5 text-amber-400" />
+          <h3 className="font-semibold text-white">Bugün Performans</h3>
+        </div>
+        <div className="space-y-3">
+          {performanceData.slice(0, 5).map((item, index) => (
+            <div key={item.user.id} className="flex items-center gap-3">
+              <div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${getAvatarColor(item.user.full_name)} flex items-center justify-center flex-shrink-0`}>
+                <span className="text-white text-xs font-bold">
+                  {item.user.full_name?.charAt(0) || '?'}
+                </span>
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm text-white">{item.user.full_name?.split(' ')[0]}</span>
+                  <span className="text-xs font-mono text-zinc-400">{formatDuration(item.totalDuration)}</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-white/10">
+                  <div 
+                    className={`h-full rounded-full bg-gradient-to-r ${getAvatarColor(item.user.full_name).replace('from-', 'from-').replace('to-', 'to-')}`}
+                    style={{ width: `${(item.totalDuration / maxDuration) * 100}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      {/* Marka Dağılımı */}
+      <div className="glass-card rounded-2xl p-5 border border-white/10">
+        <div className="flex items-center gap-2 mb-4">
+          <PieChart className="w-5 h-5 text-violet-400" />
+          <h3 className="font-semibold text-white">Marka Dağılımı</h3>
+        </div>
+        <div className="space-y-3">
+          {brandData.map((brand, index) => {
+            const percentage = totalBrandDuration > 0 ? Math.round((brand.duration / totalBrandDuration) * 100) : 0
+            const colors = ['from-amber-500 to-orange-500', 'from-cyan-500 to-blue-500', 'from-violet-500 to-purple-500', 'from-emerald-500 to-teal-500', 'from-rose-500 to-pink-500']
+            return (
+              <div key={brand.name}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm text-zinc-400">{brand.name}</span>
+                  <span className="text-xs font-mono text-zinc-500">{formatDuration(brand.duration)} ({percentage}%)</span>
+                </div>
+                <div className="h-2 rounded-full bg-white/10">
+                  <div 
+                    className={`h-full rounded-full bg-gradient-to-r ${colors[index % colors.length]}`}
+                    style={{ width: `${percentage}%` }}
+                  />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+      
+      {/* Revize Durumu */}
+      <div className="glass-card rounded-2xl p-5 border border-white/10">
+        <div className="flex items-center gap-2 mb-4">
+          <AlertTriangle className="w-5 h-5 text-rose-400" />
+          <h3 className="font-semibold text-white">Revize Durumu</h3>
+        </div>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between p-3 rounded-xl bg-rose-500/10 border border-rose-500/20">
+            <span className="text-sm text-white">Bugün Revize</span>
+            <span className="text-lg font-bold text-rose-400">{totalRevisions}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-zinc-400">Revizeli İş</span>
+            <span className="text-sm font-mono font-semibold text-zinc-300">{revisionTasks.length}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-zinc-400">Ort. Revize / İş</span>
+            <span className="text-sm font-mono font-semibold text-zinc-300">{avgRevision}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Main Page Component
+export default function GunlukIslerPage() {
   const { appUser, isAdmin } = useAuth()
   const [tasks, setTasks] = useState<DailyTask[]>([])
   const [categories, setCategories] = useState<TaskCategory[]>([])
   const [brands, setBrands] = useState<{ id: string; brand_name: string }[]>([])
   const [users, setUsers] = useState<AppUser[]>([])
   const [loading, setLoading] = useState(true)
+  
+  // Date state
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const [selectedUser, setSelectedUser] = useState<string>('all')
+  const [selectedBrand, setSelectedBrand] = useState<string>('all')
   
   // Modal state
   const [showModal, setShowModal] = useState(false)
@@ -37,22 +436,17 @@ export default function AdminGunlukIslerPage() {
   const [formData, setFormData] = useState({
     brand_id: '',
     category_id: '',
-    description: '',
-    date: selectedDate
+    description: ''
   })
   const [saving, setSaving] = useState(false)
 
   const supabase = createClient()
 
-  useEffect(() => {
-    fetchData()
-  }, [selectedDate, selectedUser])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     try {
       // Kategoriler
-      const { data: cats } = await (supabase as any)
+      const { data: cats } = await supabase
         .from('task_categories')
         .select('*')
         .eq('is_active', true)
@@ -75,25 +469,33 @@ export default function AdminGunlukIslerPage() {
           .from('users')
           .select('*')
           .eq('is_active', true)
+          .neq('role', 'admin') // Admin'i hariç tut
           .order('full_name')
         
         if (usersData) setUsers(usersData as AppUser[])
       }
 
       // Günlük işler
-      let query = (supabase as any)
+      let query = supabase
         .from('daily_tasks')
         .select(`
           *,
           category:task_categories(*),
           brand:customers(id, brand_name),
-          user:users(id, full_name, email)
+          user:users(id, full_name, email, role)
         `)
-        .eq('date', selectedDate)
+        .eq('work_date', selectedDate)
         .order('created_at', { ascending: false })
       
-      if (selectedUser !== 'all') {
+      // Filtreler
+      if (!isAdmin && appUser) {
+        query = query.eq('user_id', appUser.id)
+      } else if (selectedUser !== 'all') {
         query = query.eq('user_id', selectedUser)
+      }
+      
+      if (selectedBrand !== 'all') {
+        query = query.eq('brand_id', selectedBrand)
       }
       
       const { data: tasksData } = await query
@@ -104,8 +506,13 @@ export default function AdminGunlukIslerPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [selectedDate, selectedUser, selectedBrand, isAdmin, appUser, supabase])
 
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  // İş Ekle
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!appUser || !formData.category_id || !formData.description.trim()) return
@@ -113,34 +520,33 @@ export default function AdminGunlukIslerPage() {
     setSaving(true)
     try {
       if (editingTask) {
-        // Düzenleme - sadece temel alanları güncelle
-        await (supabase as any)
+        await supabase
           .from('daily_tasks')
           .update({
             brand_id: formData.brand_id || null,
             category_id: formData.category_id,
-            description: formData.description.trim(),
-            date: formData.date
+            description: formData.description.trim()
           })
           .eq('id', editingTask.id)
       } else {
-        // Yeni iş - started_at ve status ekle
-        await (supabase as any)
+        await supabase
           .from('daily_tasks')
           .insert({
             user_id: appUser.id,
             brand_id: formData.brand_id || null,
             category_id: formData.category_id,
             description: formData.description.trim(),
-            date: formData.date,
-            started_at: new Date().toISOString(),
-            status: 'in_progress'
+            status: 'active',
+            start_time: new Date().toISOString(),
+            total_duration: 0,
+            revision_count: 0,
+            work_date: selectedDate
           })
       }
 
       setShowModal(false)
       setEditingTask(null)
-      setFormData({ brand_id: '', category_id: '', description: '', date: selectedDate })
+      setFormData({ brand_id: '', category_id: '', description: '' })
       fetchData()
     } catch (error) {
       console.error('Save error:', error)
@@ -149,340 +555,273 @@ export default function AdminGunlukIslerPage() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Bu işi silmek istediğine emin misin?')) return
+  // Pause
+  const handlePause = async (task: DailyTask) => {
+    const now = new Date()
+    const startTime = new Date(task.start_time).getTime()
+    const elapsed = Math.floor((now.getTime() - startTime) / 1000)
     
-    await (supabase as any).from('daily_tasks').delete().eq('id', id)
+    await supabase
+      .from('daily_tasks')
+      .update({
+        status: 'paused',
+        paused_at: now.toISOString(),
+        total_duration: (task.total_duration || 0) + elapsed
+      })
+      .eq('id', task.id)
+    
     fetchData()
   }
 
-  // Bitti butonu
+  // Resume
+  const handleResume = async (task: DailyTask) => {
+    await supabase
+      .from('daily_tasks')
+      .update({
+        status: 'active',
+        start_time: new Date().toISOString(),
+        paused_at: null
+      })
+      .eq('id', task.id)
+    
+    fetchData()
+  }
+
+  // Complete
   const handleComplete = async (task: DailyTask) => {
     const now = new Date()
-    const startedAt = task.started_at ? new Date(task.started_at) : now
-    const durationMinutes = Math.round((now.getTime() - startedAt.getTime()) / 60000)
+    let totalDuration = task.total_duration || 0
     
-    await (supabase as any).from('daily_tasks').update({
-      completed_at: now.toISOString(),
-      status: 'completed',
-      duration_minutes: durationMinutes
-    }).eq('id', task.id)
-    
-    fetchData()
-  }
-
-  // Geri Al butonu
-  const handleReopen = async (task: DailyTask) => {
-    await (supabase as any).from('daily_tasks').update({
-      completed_at: null,
-      status: 'in_progress',
-      duration_minutes: null
-    }).eq('id', task.id)
-    
-    fetchData()
-  }
-
-  // Revize butonu - bugünün tarihiyle yeni iş açar
-  const handleRevise = async (task: DailyTask) => {
-    const revisionNumber = (task.revision_number || 0) + 1
-    // Orijinal açıklamayı al ([R1] vs varsa kaldır)
-    const baseDescription = task.description.replace(/\s*\[R\d+\]$/, '')
-    
-    // Revize bugünün tarihine açılır
-    const today = new Date().toISOString().split('T')[0]
-    
-    await (supabase as any).from('daily_tasks').insert({
-      user_id: task.user_id,
-      brand_id: task.brand_id,
-      category_id: task.category_id,
-      description: `${baseDescription} [R${revisionNumber}]`,
-      date: today, // Bugünün tarihi
-      started_at: new Date().toISOString(),
-      status: 'in_progress',
-      parent_id: task.parent_id || task.id, // Orijinal parent'ı koru
-      revision_number: revisionNumber
-    })
-    
-    fetchData()
-  }
-
-  // Süre formatla - Türkiye timezone'u ile
-  const formatDuration = (task: DailyTask) => {
-    if (!task.started_at) return null
-    
-    // DB'den gelen değer timezone bilgisi içermiyorsa UTC olarak kabul et
-    const startStr = task.started_at.includes('Z') || task.started_at.includes('+') 
-      ? task.started_at 
-      : task.started_at + 'Z'
-    const start = new Date(startStr)
-    
-    let end: Date
-    if (task.completed_at) {
-      const endStr = task.completed_at.includes('Z') || task.completed_at.includes('+')
-        ? task.completed_at
-        : task.completed_at + 'Z'
-      end = new Date(endStr)
-    } else {
-      end = new Date()
+    // Eğer aktifse, son süreyi ekle
+    if (task.status === 'active') {
+      const startTime = new Date(task.start_time).getTime()
+      const elapsed = Math.floor((now.getTime() - startTime) / 1000)
+      totalDuration += elapsed
     }
     
-    const diffMinutes = Math.round((end.getTime() - start.getTime()) / 60000)
+    await supabase
+      .from('daily_tasks')
+      .update({
+        status: 'completed',
+        end_time: now.toISOString(),
+        total_duration: totalDuration
+      })
+      .eq('id', task.id)
     
-    const hours = Math.floor(diffMinutes / 60)
-    const minutes = diffMinutes % 60
-    
-    const startTime = start.toLocaleTimeString('tr-TR', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      timeZone: 'Europe/Istanbul'
-    })
-    const endTime = task.completed_at 
-      ? end.toLocaleTimeString('tr-TR', { 
-          hour: '2-digit', 
-          minute: '2-digit',
-          timeZone: 'Europe/Istanbul'
-        })
-      : '...'
-    
-    const duration = hours > 0 ? `${hours}s ${minutes}d` : `${minutes}d`
-    
-    return { startTime, endTime, duration }
+    fetchData()
   }
 
-  const openEditModal = (task: DailyTask) => {
+  // Start Revision
+  const handleStartRevision = async (task: DailyTask) => {
+    const now = new Date()
+    
+    // Task'ın revision_count'unu artır
+    await supabase
+      .from('daily_tasks')
+      .update({
+        revision_count: task.revision_count + 1
+      })
+      .eq('id', task.id)
+    
+    // Yeni revision kaydı ekle
+    await supabase
+      .from('task_revisions')
+      .insert({
+        task_id: task.id,
+        revision_number: task.revision_count + 1,
+        start_time: now.toISOString(),
+        duration: 0
+      })
+    
+    fetchData()
+  }
+
+  // Delete
+  const handleDelete = async (task: DailyTask) => {
+    if (!confirm('Bu işi silmek istediğine emin misin?')) return
+    
+    await supabase.from('daily_tasks').delete().eq('id', task.id)
+    fetchData()
+  }
+
+  // Edit
+  const handleEdit = (task: DailyTask) => {
     setEditingTask(task)
     setFormData({
       brand_id: task.brand_id || '',
       category_id: task.category_id,
-      description: task.description,
-      date: task.date
+      description: task.description
     })
     setShowModal(true)
   }
 
-  const openNewModal = () => {
-    setEditingTask(null)
-    setFormData({ brand_id: '', category_id: '', description: '', date: selectedDate })
-    setShowModal(true)
+  // Date navigation
+  const changeDate = (days: number) => {
+    const date = new Date(selectedDate)
+    date.setDate(date.getDate() + days)
+    setSelectedDate(date.toISOString().split('T')[0])
   }
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('tr-TR', { 
-      weekday: 'long', 
-      day: 'numeric', 
-      month: 'long', 
-      year: 'numeric' 
-    })
+  const goToToday = () => {
+    setSelectedDate(new Date().toISOString().split('T')[0])
   }
 
-  // Kullanıcılara göre grupla
-  const groupedTasks = tasks.reduce((acc, task) => {
-    const userId = task.user_id
-    if (!acc[userId]) {
-      acc[userId] = {
-        user: (task as any).user,
-        tasks: []
-      }
-    }
-    acc[userId].tasks.push(task)
-    return acc
-  }, {} as Record<string, { user: any; tasks: DailyTask[] }>)
+  // User task counts
+  const getUserTaskCount = (userId: string) => {
+    return tasks.filter(t => t.user_id === userId).length
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-100">Günlük İşler</h1>
-          <p className="text-sm text-zinc-400 mt-1">Tüm personelin günlük iş kayıtları</p>
-        </div>
-        <Button onClick={openNewModal} className="bg-indigo-600 hover:bg-indigo-700">
-          <Plus className="w-4 h-4 mr-2" />
-          İş Ekle
-        </Button>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-4 p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
-        <div className="flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-indigo-400" />
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="bg-transparent border-none text-zinc-100 font-medium focus:outline-none"
-          />
-        </div>
-        
-        <div className="h-6 w-px bg-zinc-700" />
-        
-        <div className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-violet-400" />
-          <select
-            value={selectedUser}
-            onChange={(e) => setSelectedUser(e.target.value)}
-            className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-zinc-100 focus:outline-none focus:border-indigo-500"
-          >
-            <option value="all">Tüm Personel</option>
-            {users.map((user) => (
-              <option key={user.id} value={user.id}>
-                {user.full_name || user.email}
-              </option>
-            ))}
-          </select>
-        </div>
-        
-        <span className="text-zinc-400 text-sm ml-auto">{formatDate(selectedDate)}</span>
-      </div>
-
-      {/* Tasks List */}
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-        </div>
-      ) : Object.keys(groupedTasks).length === 0 ? (
-        <div className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
-            <Calendar className="w-8 h-8 text-zinc-600" />
+      {/* TARİH SEÇİCİ */}
+      <div className="glass-card rounded-xl p-4 border border-white/10">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => changeDate(-1)}
+              className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 transition-all"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            
+            <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-zinc-100 text-sm font-medium">
+              <Calendar className="w-4 h-4 text-indigo-400" />
+              <span className="font-semibold">{formatDateShort(selectedDate)}</span>
+            </button>
+            
+            <button 
+              onClick={() => changeDate(1)}
+              className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 transition-all"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            
+            <button 
+              onClick={goToToday}
+              className="ml-2 px-2.5 py-1 rounded-lg bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 text-xs font-medium hover:bg-indigo-500/30 transition-all"
+            >
+              Bugün
+            </button>
+            
+            <div className="w-px h-8 bg-white/10 mx-2" />
+            
+            <span className="text-zinc-400">{formatDateLong(selectedDate)}</span>
           </div>
-          <p className="text-zinc-400">Bu tarihte kayıtlı iş yok</p>
+          
+          {/* İş Ekle Butonu */}
+          <Button onClick={() => { setEditingTask(null); setFormData({ brand_id: '', category_id: '', description: '' }); setShowModal(true) }} className="bg-indigo-600 hover:bg-indigo-700">
+            <Plus className="w-4 h-4 mr-2" />
+            İş Ekle
+          </Button>
         </div>
-      ) : (
-        <div className="space-y-6">
-          {Object.entries(groupedTasks).map(([userId, group]) => (
-            <div key={userId} className="rounded-2xl bg-zinc-900/50 border border-zinc-800 overflow-hidden">
-              {/* User Header */}
-              <div className="px-4 py-3 bg-zinc-800/50 border-b border-zinc-700 flex items-center gap-3">
-                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">
-                    {group.user?.full_name?.charAt(0) || '?'}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-zinc-100">
-                    {group.user?.full_name || 'Bilinmeyen Kullanıcı'}
-                  </p>
-                  <p className="text-xs text-zinc-500">{group.tasks.length} iş</p>
-                </div>
+      </div>
+
+      {/* PERSONEL SEÇİCİ (Admin için) */}
+      {isAdmin && (
+        <div className="glass-card rounded-xl p-4 border border-white/10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-zinc-500" />
+                <span className="text-sm text-zinc-400">Personel:</span>
               </div>
               
-              {/* Tasks */}
-              <div className="divide-y divide-zinc-800">
-                {group.tasks.map((task) => {
-                  const timeInfo = formatDuration(task)
-                  const isCompleted = task.status === 'completed'
-                  
-                  return (
-                    <div key={task.id} className={`p-4 hover:bg-zinc-800/30 transition-colors ${isCompleted ? 'opacity-75' : ''}`}>
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            {/* Status Badge */}
-                            {isCompleted ? (
-                              <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-medium flex items-center gap-1">
-                                <CheckCircle2 className="w-3 h-3" />
-                                Tamamlandı
-                              </span>
-                            ) : (
-                              <span className="text-xs px-2 py-1 rounded-full bg-amber-500/20 text-amber-400 font-medium flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                Devam
-                              </span>
-                            )}
-                            
-                            {task.category && (
-                              <span 
-                                className="text-xs px-2 py-1 rounded-full font-medium"
-                                style={{ 
-                                  backgroundColor: `${task.category.color}20`,
-                                  color: task.category.color
-                                }}
-                              >
-                                {task.category.name}
-                              </span>
-                            )}
-                            {task.brand ? (
-                              <span className="text-xs px-2 py-1 rounded-full bg-violet-500/20 text-violet-400 font-medium flex items-center gap-1">
-                                <Building2 className="w-3 h-3" />
-                                {task.brand.brand_name}
-                              </span>
-                            ) : (
-                              <span className="text-xs px-2 py-1 rounded-full bg-zinc-700/50 text-zinc-400 font-medium">
-                                Genel
-                              </span>
-                            )}
-                          </div>
-                          
-                          <p className={`text-zinc-200 ${isCompleted ? 'line-through text-zinc-400' : ''}`}>
-                            {task.description}
-                          </p>
-                          
-                          {/* Süre Bilgisi */}
-                          {timeInfo && (
-                            <p className="text-xs text-zinc-500 mt-2 flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              {timeInfo.startTime} → {timeInfo.endTime}
-                              <span className="text-zinc-400 font-medium ml-1">({timeInfo.duration})</span>
-                            </p>
-                          )}
-                        </div>
-                        
-                        {/* Action Buttons */}
-                        <div className="flex items-center gap-1">
-                          {isCompleted ? (
-                            // Tamamlanmış: Geri Al butonu
-                            <button
-                              onClick={() => handleReopen(task)}
-                              className="p-2 rounded-lg hover:bg-amber-500/20 text-zinc-400 hover:text-amber-400 transition-colors"
-                              title="Geri Al"
-                            >
-                              <RotateCcw className="w-4 h-4" />
-                            </button>
-                          ) : (
-                            // Devam eden: Bitti butonu
-                            <button
-                              onClick={() => handleComplete(task)}
-                              className="p-2 rounded-lg hover:bg-emerald-500/20 text-zinc-400 hover:text-emerald-400 transition-colors"
-                              title="Bitti"
-                            >
-                              <CheckCircle2 className="w-4 h-4" />
-                            </button>
-                          )}
-                          {/* Revize butonu - her zaman görünür */}
-                          <button
-                            onClick={() => handleRevise(task)}
-                            className="p-2 rounded-lg hover:bg-blue-500/20 text-zinc-400 hover:text-blue-400 transition-colors"
-                            title="Revize"
-                          >
-                            <Copy className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => openEditModal(task)}
-                            className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
-                            title="Düzenle"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(task.id)}
-                            className="p-2 rounded-lg hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 transition-colors"
-                            title="Sil"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setSelectedUser('all')}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    selectedUser === 'all' 
+                      ? 'bg-indigo-500/20 border border-indigo-500/30 text-indigo-400' 
+                      : 'bg-white/5 border border-white/10 text-zinc-400 hover:bg-white/10'
+                  }`}
+                >
+                  <Users className="w-4 h-4" />
+                  Tümü
+                </button>
+                
+                {users.map(user => (
+                  <button 
+                    key={user.id}
+                    onClick={() => setSelectedUser(user.id)}
+                    className={`flex items-center gap-2 px-2 py-1 rounded-lg transition-all ${
+                      selectedUser === user.id 
+                        ? 'bg-indigo-500/20 border border-indigo-500/30' 
+                        : 'bg-white/5 border border-white/10 hover:bg-white/10'
+                    }`}
+                  >
+                    <div className={`h-6 w-6 rounded-md bg-gradient-to-br ${getAvatarColor(user.full_name)} flex items-center justify-center`}>
+                      <span className="text-white text-[10px] font-bold">
+                        {user.full_name?.charAt(0) || '?'}
+                      </span>
                     </div>
-                  )
-                })}
+                    <span className="text-xs text-zinc-300">{user.full_name?.split(' ')[0]}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">
+                      {getUserTaskCount(user.id)}
+                    </span>
+                  </button>
+                ))}
               </div>
             </div>
-          ))}
+            
+            {/* Marka Filtresi */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-zinc-500">Marka:</span>
+              <select
+                value={selectedBrand}
+                onChange={(e) => setSelectedBrand(e.target.value)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-zinc-300 text-sm hover:bg-white/10 transition-colors focus:outline-none"
+              >
+                <option value="all">Tümü</option>
+                {brands.map(brand => (
+                  <option key={brand.id} value={brand.id}>{brand.brand_name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Modal */}
+      {/* MAIN CONTENT */}
+      <div className={`grid gap-6 ${isAdmin ? 'grid-cols-3' : 'grid-cols-1'}`}>
+        {/* İŞ LİSTESİ */}
+        <div className={`space-y-4 ${isAdmin ? 'col-span-2' : ''}`}>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+            </div>
+          ) : tasks.length === 0 ? (
+            <div className="text-center py-12 glass-card rounded-2xl border border-white/10">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
+                <Calendar className="w-8 h-8 text-zinc-600" />
+              </div>
+              <p className="text-zinc-400">Bu tarihte kayıtlı iş yok</p>
+              <Button onClick={() => { setEditingTask(null); setFormData({ brand_id: '', category_id: '', description: '' }); setShowModal(true) }} className="mt-4 bg-indigo-600 hover:bg-indigo-700">
+                <Plus className="w-4 h-4 mr-2" />
+                İlk İşi Ekle
+              </Button>
+            </div>
+          ) : (
+            tasks.map(task => (
+              <TaskCard
+                key={task.id}
+                task={task as any}
+                isAdmin={isAdmin}
+                onPause={handlePause}
+                onResume={handleResume}
+                onComplete={handleComplete}
+                onStartRevision={handleStartRevision}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
+            ))
+          )}
+        </div>
+        
+        {/* SAĞ PANEL (Admin için) */}
+        {isAdmin && <StatsPanel tasks={tasks} users={users} />}
+      </div>
+
+      {/* MODAL */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-zinc-900 border border-zinc-800 p-6">
@@ -496,16 +835,6 @@ export default function AdminGunlukIslerPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">Tarih</label>
-                <input
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-zinc-400 mb-2">Marka (Opsiyonel)</label>
                 <select
@@ -523,24 +852,23 @@ export default function AdminGunlukIslerPage() {
               <div>
                 <label className="block text-sm font-medium text-zinc-400 mb-2">Kategori *</label>
                 <div className="grid grid-cols-3 gap-2">
-                  {categories.map((cat) => (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, category_id: cat.id })}
-                      className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                        formData.category_id === cat.id 
-                          ? 'ring-2 ring-indigo-500 ring-offset-2 ring-offset-zinc-900' 
-                          : 'hover:opacity-80'
-                      }`}
-                      style={{ 
-                        backgroundColor: `${cat.color}20`,
-                        color: cat.color
-                      }}
-                    >
-                      {cat.name}
-                    </button>
-                  ))}
+                  {categories.map((cat) => {
+                    const catColor = CATEGORY_COLORS[cat.slug] || CATEGORY_COLORS['genel']
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, category_id: cat.id })}
+                        className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${catColor.bg} ${catColor.text} border ${catColor.border} ${
+                          formData.category_id === cat.id 
+                            ? 'ring-2 ring-indigo-500 ring-offset-2 ring-offset-zinc-900' 
+                            : 'hover:opacity-80'
+                        }`}
+                      >
+                        {cat.name}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
@@ -549,7 +877,7 @@ export default function AdminGunlukIslerPage() {
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Ne yaptın?"
+                  placeholder="Ne yapıyorsun?"
                   rows={3}
                   className="w-full px-4 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500 resize-none"
                   required
@@ -565,7 +893,7 @@ export default function AdminGunlukIslerPage() {
                   disabled={saving || !formData.category_id || !formData.description.trim()}
                   className="flex-1 bg-indigo-600 hover:bg-indigo-700"
                 >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-2" />{editingTask ? 'Güncelle' : 'Kaydet'}</>}
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-2" />{editingTask ? 'Güncelle' : 'Başlat'}</>}
                 </Button>
               </div>
             </form>
