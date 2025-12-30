@@ -167,7 +167,7 @@ export const AVATAR_COLORS: Record<string, string> = {
   'default': 'from-zinc-500 to-zinc-600'
 }
 
-// Kategori renkleri
+// Kategori renkleri - HER BİRİ FARKLI RENK
 export const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   'tasarim': { bg: 'bg-fuchsia-500/20', text: 'text-fuchsia-400', border: 'border-fuchsia-500/20' },
   'video': { bg: 'bg-rose-500/20', text: 'text-rose-400', border: 'border-rose-500/20' },
@@ -176,8 +176,8 @@ export const CATEGORY_COLORS: Record<string, { bg: string; text: string; border:
   'arastirma': { bg: 'bg-cyan-500/20', text: 'text-cyan-400', border: 'border-cyan-500/20' },
   'gelistirme': { bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500/20' },
   'icerik': { bg: 'bg-violet-500/20', text: 'text-violet-400', border: 'border-violet-500/20' },
-  'destek': { bg: 'bg-zinc-500/20', text: 'text-zinc-400', border: 'border-zinc-500/20' },
-  'genel': { bg: 'bg-zinc-500/20', text: 'text-zinc-400', border: 'border-zinc-500/20' }
+  'destek': { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500/20' },
+  'genel': { bg: 'bg-slate-500/20', text: 'text-slate-400', border: 'border-slate-500/20' }
 }
 
 // Status badge stilleri
