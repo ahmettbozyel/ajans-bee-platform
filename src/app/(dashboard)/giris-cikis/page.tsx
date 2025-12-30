@@ -20,12 +20,16 @@ import {
   TrendingUp,
   AlertTriangle,
   Download,
-  FileSpreadsheet,
   Plus,
   Palmtree,
   Stethoscope,
   Home as HomeIcon,
-  CalendarOff
+  CalendarOff,
+  Building2,
+  ChevronLeft,
+  ChevronRight,
+  Trophy,
+  Award
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -74,19 +78,6 @@ function isHybridDay(date: Date = new Date()): boolean {
   return HYBRID_DAYS.includes(date.getDay())
 }
 
-function getRecordTypeBadge(recordType: string | null | undefined) {
-  if (!recordType || recordType === 'normal') return null
-  const badges: Record<string, { icon: React.ReactNode; label: string; className: string }> = {
-    leave: { icon: <Palmtree className="w-3 h-3" />, label: 'İzin', className: 'bg-emerald-500/20 text-emerald-400' },
-    sick: { icon: <Stethoscope className="w-3 h-3" />, label: 'Rapor', className: 'bg-rose-500/20 text-rose-400' },
-    remote: { icon: <HomeIcon className="w-3 h-3" />, label: 'Evden', className: 'bg-blue-500/20 text-blue-400' },
-    holiday: { icon: <CalendarOff className="w-3 h-3" />, label: 'Tatil', className: 'bg-amber-500/20 text-amber-400' },
-  }
-  const badge = badges[recordType]
-  if (!badge) return null
-  return <span className={cn("text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1", badge.className)}>{badge.icon}{badge.label}</span>
-}
-
 export default function GirisCikisPage() {
   const { appUser, isAdmin } = useAuth()
   const [todayRecords, setTodayRecords] = useState<(Attendance & { user?: AppUser })[]>([])
@@ -108,6 +99,7 @@ export default function GirisCikisPage() {
   const [showOvertimeModal, setShowOvertimeModal] = useState(false)
   const [overtimeReason, setOvertimeReason] = useState('')
   const [pendingCheckOut, setPendingCheckOut] = useState<{ now: Date; location: { lat: number; lng: number } | null; overtimeMinutes: number; earlyLeaveMinutes: number } | null>(null)
+  const [monthlyStats, setMonthlyStats] = useState<{ [userId: string]: { overtime: number; late: number; lateDays: number } }>({})
 
   const supabase = createClient()
 
@@ -127,6 +119,22 @@ export default function GirisCikisPage() {
         if (usersData) setUsers(usersData as AppUser[])
         const { data: recordsData } = await supabase.from('attendance').select('*, user:users(*)').eq('date', selectedDate).order('check_in', { ascending: true })
         if (recordsData) setTodayRecords((recordsData as unknown as (Attendance & { user?: AppUser })[]).filter(r => r.user?.role !== 'admin'))
+        
+        // Aylık istatistikler
+        const [year, month] = selectedMonth.split('-').map(Number)
+        const startDate = `${year}-${String(month).padStart(2, '0')}-01`
+        const endDate = new Date(year, month, 0).toISOString().split('T')[0]
+        const { data: monthData } = await supabase.from('attendance').select('user_id, overtime_minutes, late_minutes').gte('date', startDate).lte('date', endDate)
+        if (monthData) {
+          const stats: { [userId: string]: { overtime: number; late: number; lateDays: number } } = {}
+          monthData.forEach((r: { user_id: string; overtime_minutes?: number; late_minutes?: number }) => {
+            if (!stats[r.user_id]) stats[r.user_id] = { overtime: 0, late: 0, lateDays: 0 }
+            stats[r.user_id].overtime += r.overtime_minutes || 0
+            stats[r.user_id].late += r.late_minutes || 0
+            if (r.late_minutes && r.late_minutes > 0) stats[r.user_id].lateDays += 1
+          })
+          setMonthlyStats(stats)
+        }
       } else {
         const { data: todayData } = await supabase.from('attendance').select('*').eq('user_id', appUser.id).eq('date', selectedDate).single()
         setTodayRecords(todayData ? [todayData as Attendance] : [])
@@ -239,7 +247,6 @@ export default function GirisCikisPage() {
       await (supabase as any).from('attendance').insert(checkInData)
     }
     
-    // 🔔 Geç kalma bildirimi gönder
     if (lateMinutes > 0 && appUser) {
       await notifyAdmins(supabase, {
         type: 'late',
@@ -275,7 +282,6 @@ export default function GirisCikisPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from('attendance').update(checkOutData).eq('id', myRecord!.id)
     
-    // 🔔 Mesai bildirimi gönder
     if (overtimeMinutes > 0 && appUser) {
       await notifyAdmins(supabase, {
         type: 'overtime',
@@ -285,7 +291,6 @@ export default function GirisCikisPage() {
       })
     }
     
-    // 🔔 Erken çıkış bildirimi gönder
     if (earlyLeaveMinutes > 15 && appUser) {
       await notifyAdmins(supabase, {
         type: 'early_leave',
@@ -298,8 +303,8 @@ export default function GirisCikisPage() {
     setShowOvertimeModal(false); setOvertimeReason(''); setPendingCheckOut(null); setActionLoading(false); fetchData()
   }
 
-  const formatTime = (isoString: string | null) => !isoString ? '-' : new Date(isoString).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
-  const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  // Helper functions
+  const formatTime = (isoString: string | null) => !isoString ? '--:--' : new Date(isoString).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
   const formatShortDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('tr-TR', { weekday: 'short', day: 'numeric', month: 'short' })
   const calculateDuration = (checkIn: string | null, checkOut: string | null) => {
     if (!checkIn || !checkOut) return '-'
@@ -311,241 +316,765 @@ export default function GirisCikisPage() {
     const h = Math.floor(minutes / 60), m = minutes % 60
     return h > 0 ? (m > 0 ? `${h}s ${m}d` : `${h}s`) : `${m}d`
   }
-  const getLocationBadge = (type: string | null | undefined) => {
-    if (!type || type === 'unknown') return null
-    if (type === 'office') return <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">Ofis</span>
-    if (type === 'home') return <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400">Evden</span>
-    return <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">Dışarı</span>
+  const formatMinutesToHours = (minutes: number) => {
+    const h = Math.floor(minutes / 60), m = minutes % 60
+    return h > 0 ? `+${h}s` : `+${m}d`
   }
-  const getRecordStatus = (record: Attendance): { color: string; icon: React.ReactNode; label: string } => {
-    if (record.record_type && record.record_type !== 'normal') {
-      const types: Record<string, { color: string; icon: React.ReactNode; label: string }> = {
-        leave: { color: 'emerald', icon: <Palmtree className="w-4 h-4" />, label: 'İzin' },
-        sick: { color: 'rose', icon: <Stethoscope className="w-4 h-4" />, label: 'Rapor' },
-        remote: { color: 'blue', icon: <HomeIcon className="w-4 h-4" />, label: 'Evden' },
-        holiday: { color: 'amber', icon: <CalendarOff className="w-4 h-4" />, label: 'Tatil' },
-      }
-      return types[record.record_type] || { color: 'zinc', icon: <AlertCircle className="w-4 h-4" />, label: '-' }
-    }
-    const hasLate = record.late_minutes && record.late_minutes > 0
-    const hasOvertime = record.overtime_minutes && record.overtime_minutes > 0
-    const hasEarlyLeave = record.early_leave_minutes && record.early_leave_minutes > 0
-    if (hasLate && hasOvertime) return { color: 'amber', icon: <AlertTriangle className="w-4 h-4" />, label: 'Geç + Mesai' }
-    if (hasLate) return { color: 'rose', icon: <AlertCircle className="w-4 h-4" />, label: 'Geç Kalma' }
-    if (hasOvertime) return { color: 'amber', icon: <TrendingUp className="w-4 h-4" />, label: 'Mesai' }
-    if (hasEarlyLeave) return { color: 'orange', icon: <AlertTriangle className="w-4 h-4" />, label: 'Erken Çıkış' }
-    return { color: 'emerald', icon: <CheckCircle2 className="w-4 h-4" />, label: 'Zamanında' }
-  }
-  const usersWithoutCheckIn = users.filter(u => !todayRecords.some(r => r.user_id === u.id) && u.role !== 'admin')
 
-  if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-indigo-500" /></div>
+  const usersWithoutCheckIn = users.filter(u => !todayRecords.some(r => r.user_id === u.id) && u.role !== 'admin')
+  const officeCount = todayRecords.filter(r => r.check_in_location_type === 'office' && r.check_in).length
+  const homeCount = todayRecords.filter(r => r.check_in_location_type === 'home' && r.check_in).length
+  const notArrivedCount = usersWithoutCheckIn.length
+
+  // Leaderboard hesaplama
+  const getLeaderboard = () => {
+    const usersWithStats = users.map(u => ({
+      ...u,
+      overtime: monthlyStats[u.id]?.overtime || 0,
+      lateDays: monthlyStats[u.id]?.lateDays || 0
+    }))
+    const topWorkers = [...usersWithStats].sort((a, b) => b.overtime - a.overtime).slice(0, 3)
+    const topLate = [...usersWithStats].sort((a, b) => b.lateDays - a.lateDays).slice(0, 3).filter(u => u.lateDays > 0)
+    return { topWorkers, topLate }
+  }
+  const { topWorkers, topLate } = getLeaderboard()
+
+  // Avatar renkleri
+  const avatarColors = [
+    'from-rose-500 to-pink-600',
+    'from-violet-500 to-purple-600',
+    'from-indigo-500 to-blue-600',
+    'from-cyan-500 to-teal-600',
+    'from-emerald-500 to-green-600',
+    'from-amber-500 to-orange-600',
+  ]
+  const getAvatarColor = (name: string) => {
+    const index = name?.charCodeAt(0) % avatarColors.length || 0
+    return avatarColors[index]
+  }
+
+  // Tarih navigasyonu
+  const goToPrevDay = () => {
+    const d = new Date(selectedDate)
+    d.setDate(d.getDate() - 1)
+    setSelectedDate(d.toISOString().split('T')[0])
+  }
+  const goToNextDay = () => {
+    const d = new Date(selectedDate)
+    d.setDate(d.getDate() + 1)
+    setSelectedDate(d.toISOString().split('T')[0])
+  }
+  const goToToday = () => setSelectedDate(new Date().toISOString().split('T')[0])
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-12">
+      <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+    </div>
+  )
 
   const isToday = selectedDate === new Date().toISOString().split('T')[0]
   const todayIsHybrid = isHybridDay(new Date(selectedDate))
+  const selectedDateObj = new Date(selectedDate)
+  const dayName = selectedDateObj.toLocaleDateString('tr-TR', { weekday: 'long' })
+  const formattedDate = selectedDateObj.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-100">Giriş / Çıkış Takibi</h1>
-          <p className="text-sm text-zinc-400 mt-1">{isAdmin ? 'Personel mesai takibi' : 'Mesai kayıtlarım'}</p>
+  // =====================
+  // ADMIN VIEW
+  // =====================
+  if (isAdmin) {
+    return (
+      <div className="space-y-6">
+        {/* Page Title + Actions */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-white">Giriş / Çıkış Takibi</h2>
+            <p className="text-sm text-zinc-500 mt-1">Personel mesai takibi ve analizler</p>
+          </div>
+          <button 
+            onClick={handleExportExcel}
+            disabled={exportLoading}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm font-medium shadow-lg transition-all"
+            style={{
+              background: 'linear-gradient(90deg, #059669 0%, #0d9488 100%)',
+              boxShadow: '0 10px 25px -5px rgba(16,185,129,0.4)'
+            }}
+          >
+            {exportLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            Excel İndir
+          </button>
         </div>
-        {isAdmin && (
-          <div className="flex items-center gap-3">
-            <Button onClick={() => setShowManualModal(true)} size="sm" variant="outline" className="border-indigo-500/50 text-indigo-400 hover:bg-indigo-500/10"><Plus className="w-4 h-4 mr-2" />Manuel Kayıt</Button>
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-800/50 border border-zinc-700">
-              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-              <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="bg-transparent border-none text-zinc-100 text-sm focus:outline-none w-32" />
-            </div>
-            <Button onClick={handleExportExcel} disabled={exportLoading} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
-              {exportLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}Excel İndir
-            </Button>
-          </div>
-        )}
-      </div>
 
-      {isToday && (
-        <div className={`grid grid-cols-1 ${!isAdmin ? 'md:grid-cols-2' : ''} gap-4`}>
-          <div className={`p-6 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/30 text-center ${isAdmin ? 'md:max-w-md' : ''}`}>
-            <Clock className="w-8 h-8 mx-auto text-indigo-400 mb-2" />
-            <p className="text-4xl font-bold font-mono text-zinc-100">{currentTime.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
-            <p className="text-sm text-zinc-400 mt-2">{currentTime.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
-            {todayIsHybrid && <p className="text-xs text-blue-400 mt-2">🏠 Hibrit Gün (Evden çalışma)</p>}
-          </div>
-          {!isAdmin && (
-            <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800">
-              <h3 className="text-sm font-medium text-zinc-400 mb-3">Benim Durumum</h3>
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="p-3 rounded-xl bg-zinc-800/50 border border-zinc-700">
-                  <div className="flex items-center gap-2 mb-1"><LogIn className="w-4 h-4 text-emerald-400" /><span className="text-xs text-zinc-400">Giriş</span></div>
-                  <p className="text-xl font-bold font-mono text-zinc-100">{formatTime(myRecord?.check_in || null)}</p>
-                  {myRecord?.late_minutes && myRecord.late_minutes > 0 ? <p className="text-xs text-rose-400 mt-1">+{formatMinutes(myRecord.late_minutes)} geç</p> : null}
-                </div>
-                <div className="p-3 rounded-xl bg-zinc-800/50 border border-zinc-700">
-                  <div className="flex items-center gap-2 mb-1"><LogOut className="w-4 h-4 text-rose-400" /><span className="text-xs text-zinc-400">Çıkış</span></div>
-                  <p className="text-xl font-bold font-mono text-zinc-100">{formatTime(myRecord?.check_out || null)}</p>
-                  {myRecord?.overtime_minutes && myRecord.overtime_minutes > 0 ? <p className="text-xs text-amber-400 mt-1">+{formatMinutes(myRecord.overtime_minutes)} mesai</p> : null}
-                </div>
+        {/* Canlı Saat Barı */}
+        <div 
+          className="rounded-2xl p-4"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(139,92,246,0.4)',
+            boxShadow: '0 0 20px -5px rgba(139,92,246,0.4)'
+          }}
+        >
+          <div className="flex items-center justify-between">
+            {/* Sol: Saat + Tarih + Hibrit */}
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-3">
+                <Clock className="w-5 h-5 text-violet-400" />
+                <span className="text-2xl font-mono font-bold text-white">
+                  {currentTime.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
               </div>
-              <div className="flex gap-2">
-                <Button onClick={handleCheckIn} disabled={actionLoading || hasCheckedOut} size="sm" className={`flex-1 ${hasCheckedIn ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-600/30' : 'bg-emerald-600 hover:bg-emerald-700'}`}>
-                  {actionLoading && !hasCheckedIn ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : hasCheckedIn ? <CheckCircle2 className="w-4 h-4 mr-1" /> : <LogIn className="w-4 h-4 mr-1" />}{hasCheckedIn ? 'Giriş OK' : 'Geldim'}
-                </Button>
-                <Button onClick={handleCheckOut} disabled={actionLoading || !hasCheckedIn || hasCheckedOut} size="sm" className={`flex-1 ${hasCheckedOut ? 'bg-rose-600/20 text-rose-400 border border-rose-600/30' : 'bg-rose-600 hover:bg-rose-700'}`}>
-                  {actionLoading && hasCheckedIn && !hasCheckedOut ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : hasCheckedOut ? <CheckCircle2 className="w-4 h-4 mr-1" /> : <LogOut className="w-4 h-4 mr-1" />}{hasCheckedOut ? 'Çıkış OK' : 'Gittim'}
-                </Button>
+              <div className="w-px h-8 bg-white/10" />
+              <div className="flex items-center gap-3">
+                <Calendar className="w-5 h-5 text-indigo-400" />
+                <span className="text-base font-medium text-zinc-300">{formattedDate} {dayName}</span>
               </div>
+              {todayIsHybrid && (
+                <>
+                  <div className="w-px h-8 bg-white/10" />
+                  <span className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium"
+                    style={{ background: 'rgba(139,92,246,0.2)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.3)' }}>
+                    <HomeIcon className="w-4 h-4" />
+                    Hibrit Gün
+                  </span>
+                </>
+              )}
             </div>
-          )}
-        </div>
-      )}
-
-      {isAdmin && (
-        <div className="flex items-center gap-4 p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
-          <Calendar className="w-5 h-5 text-indigo-400" />
-          <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent border-none text-zinc-100 font-medium focus:outline-none" />
-          <span className="text-zinc-400 text-sm">{formatDate(selectedDate)}</span>
-          {isToday && <span className="ml-2 text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400">Bugün</span>}
-          {todayIsHybrid && <span className="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400">Hibrit</span>}
-        </div>
-      )}
-
-      {isAdmin && (
-        <div className="rounded-2xl bg-zinc-900/50 border border-zinc-800 overflow-hidden">
-          <div className="px-4 py-3 bg-zinc-800/50 border-b border-zinc-700 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-zinc-100 flex items-center gap-2"><Users className="w-5 h-5 text-indigo-400" />Personel Durumu</h2>
-            <span className="text-sm text-zinc-400">{todayRecords.length} / {users.length} kişi</span>
+            
+            {/* Sağ: Ay Seçici + Manuel Kayıt */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-zinc-300 text-sm"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <Calendar className="w-4 h-4" />
+                <input 
+                  type="month" 
+                  value={selectedMonth} 
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="bg-transparent border-none text-zinc-100 text-sm focus:outline-none"
+                />
+              </div>
+              <button 
+                onClick={() => setShowManualModal(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-medium shadow-lg transition-all"
+                style={{
+                  background: 'linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%)',
+                  boxShadow: '0 10px 25px -5px rgba(99,102,241,0.4)'
+                }}
+              >
+                <Plus className="w-4 h-4" />
+                Manuel Kayıt
+              </button>
+            </div>
           </div>
-          <div className="divide-y divide-zinc-800">
-            {todayRecords.map((record) => (
-              <div key={record.id} className="flex items-center justify-between p-4 hover:bg-zinc-800/30 transition-colors">
+        </div>
+
+        {/* Stat Cards */}
+        <div className="grid grid-cols-4 gap-5">
+          <div className="rounded-2xl p-5 transition-all hover:-translate-y-0.5"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(99,102,241,0.4)',
+              boxShadow: '0 0 20px -5px rgba(99,102,241,0.4)'
+            }}>
+            <div className="p-3 rounded-xl w-fit mb-4" style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)' }}>
+              <Users className="w-6 h-6 text-indigo-400" />
+            </div>
+            <p className="text-3xl font-bold text-white mb-1">{users.length}</p>
+            <p className="text-sm text-zinc-500">Toplam Personel</p>
+          </div>
+
+          <div className="rounded-2xl p-5 transition-all hover:-translate-y-0.5"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(16,185,129,0.4)',
+              boxShadow: '0 0 20px -5px rgba(16,185,129,0.4)'
+            }}>
+            <div className="p-3 rounded-xl w-fit mb-4" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}>
+              <Building2 className="w-6 h-6 text-emerald-400" />
+            </div>
+            <p className="text-3xl font-bold text-white mb-1">{officeCount}</p>
+            <p className="text-sm text-zinc-500">Ofiste</p>
+          </div>
+
+          <div className="rounded-2xl p-5 transition-all hover:-translate-y-0.5"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(139,92,246,0.4)',
+              boxShadow: '0 0 20px -5px rgba(139,92,246,0.4)'
+            }}>
+            <div className="p-3 rounded-xl w-fit mb-4" style={{ background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)' }}>
+              <HomeIcon className="w-6 h-6 text-violet-400" />
+            </div>
+            <p className="text-3xl font-bold text-white mb-1">{homeCount}</p>
+            <p className="text-sm text-zinc-500">Evden Çalışıyor</p>
+          </div>
+
+          <div className="rounded-2xl p-5 transition-all hover:-translate-y-0.5"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(244,63,94,0.4)',
+              boxShadow: '0 0 20px -5px rgba(244,63,94,0.4)'
+            }}>
+            <div className="p-3 rounded-xl w-fit mb-4" style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.2)' }}>
+              <AlertCircle className="w-6 h-6 text-rose-400" />
+            </div>
+            <p className="text-3xl font-bold text-white mb-1">{notArrivedCount}</p>
+            <p className="text-sm text-zinc-500">Henüz Gelmedi</p>
+          </div>
+        </div>
+
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-3 gap-6">
+          {/* Left Column (2/3) - Today's List */}
+          <div className="col-span-2 space-y-6">
+            <div className="rounded-2xl overflow-hidden"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255,255,255,0.1)'
+              }}>
+              {/* Header with Date Picker */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center"><span className="text-white text-sm font-bold">{record.user?.full_name?.charAt(0) || '?'}</span></div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-zinc-100">{record.user?.full_name || 'Bilinmeyen'}</p>
-                      {getRecordTypeBadge(record.record_type)}
-                      {!record.record_type || record.record_type === 'normal' ? getLocationBadge(record.check_in_location_type) : null}
+                  <Users className="w-5 h-5 text-indigo-400" />
+                  
+                  {/* Tarih Seçici */}
+                  <div className="flex items-center gap-2">
+                    <button onClick={goToPrevDay} className="p-1.5 rounded-lg transition-all hover:bg-white/10"
+                      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      <ChevronLeft className="w-4 h-4 text-zinc-400" />
+                    </button>
+                    
+                    <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all"
+                      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      <Calendar className="w-4 h-4 text-indigo-400" />
+                      <span className="font-semibold text-white">{selectedDateObj.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                      <span className="text-zinc-500">{dayName}</span>
+                    </button>
+                    
+                    <button onClick={goToNextDay} className="p-1.5 rounded-lg transition-all hover:bg-white/10"
+                      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      <ChevronRight className="w-4 h-4 text-zinc-400" />
+                    </button>
+                    
+                    {!isToday && (
+                      <button onClick={goToToday} className="ml-2 px-2.5 py-1 rounded-lg text-xs font-medium transition-all hover:bg-indigo-500/30"
+                        style={{ background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8' }}>
+                        Bugün
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <span className="text-sm text-zinc-500">{todayRecords.length} / {users.length} kişi giriş yaptı</span>
+              </div>
+
+              {/* Records List */}
+              <div className="divide-y divide-white/5">
+                {todayRecords.map((record) => (
+                  <div key={record.id} className="flex items-center gap-4 px-5 py-4 hover:bg-white/5 transition-colors">
+                    <div className={`h-11 w-11 rounded-xl bg-gradient-to-br ${getAvatarColor(record.user?.full_name || '')} flex items-center justify-center`}>
+                      <span className="text-white text-sm font-bold">{record.user?.full_name?.charAt(0) || '?'}</span>
                     </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      {record.check_in ? (
-                        <span className="text-xs text-emerald-400 flex items-center gap-1">
-                          <LogIn className="w-3 h-3" />
-                          {formatTime(record.check_in)}
-                          {record.late_minutes && record.late_minutes > 0 ? <span className="text-rose-400 ml-1">(+{formatMinutes(record.late_minutes)})</span> : null}
+                    <div className="flex-1">
+                      <p className="font-semibold text-white">{record.user?.full_name || 'Bilinmeyen'}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-emerald-400 text-sm font-mono">→ {formatTime(record.check_in)}</span>
+                        <span className="text-zinc-600">···</span>
+                        <span className="text-zinc-500 text-sm font-mono">← {formatTime(record.check_out)}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {record.check_in_location_type === 'office' && (
+                        <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full"
+                          style={{ background: 'rgba(16,185,129,0.2)', color: '#34d399', border: '1px solid rgba(16,185,129,0.3)' }}>
+                          <Building2 className="w-3 h-3" />
+                          Ofiste
+                          <CheckCircle2 className="w-3 h-3" />
+                        </span>
+                      )}
+                      {record.check_in_location_type === 'home' && (
+                        <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full"
+                          style={{ background: 'rgba(59,130,246,0.2)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>
+                          <HomeIcon className="w-3 h-3" />
+                          Evden
+                        </span>
+                      )}
+                      {record.late_minutes && record.late_minutes > 0 && (
+                        <span className="text-xs px-2 py-1 rounded-full font-mono"
+                          style={{ background: 'rgba(244,63,94,0.2)', color: '#fb7185', border: '1px solid rgba(244,63,94,0.3)' }}>
+                          +{record.late_minutes}d geç
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-right min-w-[60px]">
+                      {record.check_out ? (
+                        <span className="text-sm font-mono text-zinc-400">{calculateDuration(record.check_in, record.check_out)}</span>
+                      ) : record.check_in ? (
+                        <span className="text-xs px-2 py-1 rounded-full" style={{ background: 'rgba(16,185,129,0.2)', color: '#34d399' }}>
+                          Çalışıyor
                         </span>
                       ) : null}
-                      {record.check_out ? (
-                        <>
-                          <span className="text-zinc-600">→</span>
-                          <span className="text-xs text-rose-400 flex items-center gap-1">
-                            <LogOut className="w-3 h-3" />
-                            {formatTime(record.check_out)}
-                            {record.overtime_minutes && record.overtime_minutes > 0 ? <span className="text-amber-400 ml-1">(+{formatMinutes(record.overtime_minutes)} mesai)</span> : null}
-                          </span>
-                        </>
-                      ) : null}
-                      {!record.check_in && record.record_type && record.record_type !== 'normal' ? <span className="text-xs text-zinc-500">Tam gün</span> : null}
                     </div>
-                    {(record.late_reason || record.overtime_reason || record.admin_notes) ? <div className="flex items-center gap-1 mt-1"><MessageSquare className="w-3 h-3 text-zinc-500" /><span className="text-xs text-zinc-500 italic">{record.late_reason || record.overtime_reason || record.admin_notes}</span></div> : null}
                   </div>
-                </div>
-                <div className="text-right">{record.check_out ? <span className="text-sm font-mono text-zinc-400">{calculateDuration(record.check_in, record.check_out)}</span> : record.check_in ? <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400">Çalışıyor</span> : null}</div>
+                ))}
+
+                {/* Henüz gelmeyenler */}
+                {usersWithoutCheckIn.map((user) => (
+                  <div key={user.id} className="flex items-center gap-4 px-5 py-4 opacity-50">
+                    <div className="h-11 w-11 rounded-xl bg-zinc-700 flex items-center justify-center">
+                      <span className="text-zinc-400 text-sm font-bold">{user.full_name?.charAt(0) || '?'}</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-zinc-400">{user.full_name}</p>
+                      <p className="text-xs text-zinc-600 mt-1">Henüz giriş yapmadı</p>
+                    </div>
+                    <AlertTriangle className="w-5 h-5 text-amber-500/50" />
+                  </div>
+                ))}
+
+                {todayRecords.length === 0 && usersWithoutCheckIn.length === 0 && (
+                  <div className="p-8 text-center text-zinc-500">Kayıt bulunamadı</div>
+                )}
               </div>
-            ))}
-            {usersWithoutCheckIn.map((user) => (
-              <div key={user.id} className="flex items-center justify-between p-4 opacity-50">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-zinc-700 flex items-center justify-center"><span className="text-zinc-400 text-sm font-bold">{user.full_name?.charAt(0) || '?'}</span></div>
-                  <div><p className="text-sm font-semibold text-zinc-400">{user.full_name}</p><p className="text-xs text-zinc-500">Henüz giriş yapmadı</p></div>
-                </div>
-                <AlertCircle className="w-5 h-5 text-amber-500/50" />
+            </div>
+          </div>
+
+          {/* Right Column (1/3) - Leaderboard */}
+          <div className="space-y-6">
+            {/* Liderlik Tablosu */}
+            <div className="rounded-2xl p-5"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255,255,255,0.1)'
+              }}>
+              <div className="flex items-center gap-2 mb-4">
+                <Trophy className="w-5 h-5 text-amber-400" />
+                <h3 className="font-semibold text-white">Liderlik Tablosu</h3>
               </div>
-            ))}
-            {todayRecords.length === 0 && usersWithoutCheckIn.length === 0 ? <div className="p-8 text-center text-zinc-500">Kayıt bulunamadı</div> : null}
+
+              {/* En Çok Çalışan */}
+              <div className="mb-5">
+                <p className="text-xs text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <span>🏆</span> En Çok Mesai Yapan
+                </p>
+                <div className="space-y-2.5">
+                  {topWorkers.map((user, i) => (
+                    <div key={user.id} className={`flex items-center gap-3 p-2 rounded-lg ${i === 0 ? 'bg-amber-500/10' : 'hover:bg-white/5'} transition-colors`}>
+                      <span className={`text-sm font-bold w-5 ${i === 0 ? 'text-amber-400' : 'text-zinc-500'}`}>{i + 1}.</span>
+                      <div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${getAvatarColor(user.full_name || '')} flex items-center justify-center flex-shrink-0`}>
+                        <span className="text-white text-xs font-bold">{user.full_name?.charAt(0)}</span>
+                      </div>
+                      <span className="text-sm text-white flex-1">{user.full_name}</span>
+                      <span className={`text-sm font-mono ${i === 0 ? 'text-amber-400 font-semibold' : 'text-emerald-400'}`}>
+                        {user.overtime > 0 ? formatMinutesToHours(user.overtime) : '-'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t border-white/10 my-5" />
+
+              {/* En Çok Geç Kalan */}
+              <div>
+                <p className="text-xs text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <span>😅</span> En Çok Geç Kalan
+                </p>
+                <div className="space-y-2.5">
+                  {topLate.length > 0 ? topLate.map((user, i) => (
+                    <div key={user.id} className={`flex items-center gap-3 p-2 rounded-lg ${i === 0 ? 'bg-rose-500/10' : 'hover:bg-white/5'} transition-colors`}>
+                      <span className={`text-sm font-bold w-5 ${i === 0 ? 'text-rose-400' : 'text-zinc-500'}`}>{i + 1}.</span>
+                      <div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${getAvatarColor(user.full_name || '')} flex items-center justify-center flex-shrink-0`}>
+                        <span className="text-white text-xs font-bold">{user.full_name?.charAt(0)}</span>
+                      </div>
+                      <span className="text-sm text-white flex-1">{user.full_name}</span>
+                      <span className={`text-sm font-mono ${i === 0 ? 'text-rose-400 font-semibold' : 'text-rose-400'}`}>
+                        {user.lateDays} gün
+                      </span>
+                    </div>
+                  )) : (
+                    <p className="text-sm text-zinc-500 text-center py-2">Geç kalan yok 🎉</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Haftalık Trend */}
+            <div className="rounded-2xl p-5"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255,255,255,0.1)'
+              }}>
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="w-5 h-5 text-emerald-400" />
+                <h3 className="font-semibold text-white">Bu Ay Özet</h3>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-zinc-400">Toplam Mesai</span>
+                  <span className="text-sm font-mono text-emerald-400">
+                    {formatMinutes(Object.values(monthlyStats).reduce((a, b) => a + b.overtime, 0)) || '0d'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-zinc-400">Toplam Geç Kalma</span>
+                  <span className="text-sm font-mono text-rose-400">
+                    {formatMinutes(Object.values(monthlyStats).reduce((a, b) => a + b.late, 0)) || '0d'}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      )}
 
-      {!isAdmin && (
-        <div className="rounded-2xl bg-zinc-900/50 border border-zinc-800 overflow-hidden">
-          <div className="px-4 py-3 bg-zinc-800/50 border-b border-zinc-700 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-zinc-100 flex items-center gap-2"><History className="w-5 h-5 text-indigo-400" />Geçmiş Kayıtlarım</h2>
-            <span className="text-sm text-zinc-400">Son 30 gün</span>
+        {/* Manual Entry Modal */}
+        <ManualEntryModal 
+          isOpen={showManualModal} 
+          onClose={() => setShowManualModal(false)} 
+          onSuccess={fetchData} 
+          users={users} 
+          selectedDate={selectedDate} 
+        />
+      </div>
+    )
+  }
+
+  // =====================
+  // PERSONEL VIEW
+  // =====================
+  return (
+    <div className="space-y-6">
+      {/* Page Title */}
+      <div>
+        <h2 className="text-2xl font-bold text-white">Giriş / Çıkış Takibi</h2>
+        <p className="text-sm text-zinc-500 mt-1">Mesai kayıtlarım</p>
+      </div>
+
+      {/* Two Column Layout */}
+      <div className="grid grid-cols-3 gap-6">
+        {/* Left Column (2/3) */}
+        <div className="col-span-2 space-y-6">
+          
+          {/* Canlı Saat Kartı - Büyük */}
+          <div className="rounded-2xl p-8 text-center"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(139,92,246,0.4)',
+              boxShadow: '0 0 20px -5px rgba(139,92,246,0.4)'
+            }}>
+            <div className="inline-block mb-4" style={{ animation: 'float 3s ease-in-out infinite' }}>
+              <div className="p-4 rounded-2xl inline-block" style={{ background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)' }}>
+                <Clock className="w-10 h-10 text-violet-400" />
+              </div>
+            </div>
+            <div className="text-6xl font-mono font-bold text-white mb-2">
+              {currentTime.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </div>
+            <p className="text-lg text-zinc-400 mb-4">{formattedDate} {dayName}</p>
+            {todayIsHybrid && (
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium"
+                style={{ background: 'rgba(139,92,246,0.2)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.3)' }}>
+                <HomeIcon className="w-4 h-4" />
+                Hibrit Gün (Evden çalışma)
+              </span>
+            )}
           </div>
-          <div className="divide-y divide-zinc-800">
-            {myHistory.length > 0 ? myHistory.map((record) => {
-              const status = getRecordStatus(record)
-              const colorClasses: Record<string, string> = { emerald: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400', rose: 'bg-rose-500/10 border-rose-500/30 text-rose-400', amber: 'bg-amber-500/10 border-amber-500/30 text-amber-400', orange: 'bg-orange-500/10 border-orange-500/30 text-orange-400', blue: 'bg-blue-500/10 border-blue-500/30 text-blue-400', zinc: 'bg-zinc-500/10 border-zinc-500/30 text-zinc-400' }
-              return (
-                <div key={record.id} className={cn("flex items-center justify-between p-4 transition-colors", record.date === selectedDate ? 'bg-indigo-500/5' : 'hover:bg-zinc-800/30')}>
-                  <div className="flex items-center gap-4">
-                    <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center border", colorClasses[status.color] || colorClasses.zinc)}>{status.icon}</div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-semibold text-zinc-100">{formatShortDate(record.date)}</p>
-                        {record.date === new Date().toISOString().split('T')[0] ? <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400">Bugün</span> : null}
-                        {isHybridDay(new Date(record.date)) ? <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400">Hibrit</span> : null}
-                      </div>
-                      <div className="flex items-center gap-3 mt-0.5">
-                        {record.check_in ? (
-                          <>
-                            <span className="text-xs text-zinc-400"><LogIn className="w-3 h-3 inline mr-1" />{formatTime(record.check_in)}</span>
-                            {record.check_out ? (
-                              <>
-                                <span className="text-zinc-600">→</span>
-                                <span className="text-xs text-zinc-400"><LogOut className="w-3 h-3 inline mr-1" />{formatTime(record.check_out)}</span>
-                              </>
-                            ) : null}
-                          </>
-                        ) : <span className="text-xs text-zinc-500">Tam gün</span>}
-                      </div>
+
+          {/* Geçmiş Kayıtlarım */}
+          <div className="rounded-2xl overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
+              <div className="flex items-center gap-3">
+                <History className="w-5 h-5 text-cyan-400" />
+                <h3 className="font-semibold text-white">Geçmiş Kayıtlarım</h3>
+              </div>
+              <span className="text-sm text-zinc-500">Son 30 gün</span>
+            </div>
+            
+            <div className="divide-y divide-white/5">
+              {myHistory.length > 0 ? myHistory.slice(0, 10).map((record) => {
+                const isLeave = record.record_type === 'leave'
+                const isSick = record.record_type === 'sick'
+                const isRemote = record.record_type === 'remote'
+                
+                return (
+                  <div key={record.id} className="flex items-center gap-4 px-5 py-4 hover:bg-white/5 transition-colors">
+                    <div className={`p-2.5 rounded-xl ${
+                      isLeave ? 'bg-emerald-500/10 border-emerald-500/20' :
+                      isSick ? 'bg-rose-500/10 border-rose-500/20' :
+                      isRemote ? 'bg-blue-500/10 border-blue-500/20' :
+                      'bg-indigo-500/10 border-indigo-500/20'
+                    } border`}>
+                      {isLeave ? <Palmtree className="w-5 h-5 text-emerald-400" /> :
+                       isSick ? <Stethoscope className="w-5 h-5 text-rose-400" /> :
+                       isRemote ? <HomeIcon className="w-5 h-5 text-blue-400" /> :
+                       <Clock className="w-5 h-5 text-indigo-400" />}
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className={cn("text-xs px-2 py-1 rounded-full border mb-1", colorClasses[status.color] || colorClasses.zinc)}>
-                      {status.label}
-                      {record.late_minutes && record.late_minutes > 0 ? <span className="ml-1">({formatMinutes(record.late_minutes)})</span> : null}
-                      {record.overtime_minutes && record.overtime_minutes > 0 ? <span className="ml-1">(+{formatMinutes(record.overtime_minutes)})</span> : null}
+                    <div className="flex-1">
+                      <p className="font-semibold text-white">{formatShortDate(record.date)}</p>
+                      <p className="text-sm text-zinc-500">
+                        {isLeave || isSick ? 'Tam gün' : 
+                         `${formatTime(record.check_in)} → ${formatTime(record.check_out)}`}
+                      </p>
                     </div>
-                    {record.check_out ? <p className="text-xs font-mono text-zinc-500">{calculateDuration(record.check_in, record.check_out)}</p> : null}
+                    <span className={`text-xs px-2.5 py-1 rounded-full ${
+                      isLeave ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/20' :
+                      isSick ? 'bg-rose-500/20 text-rose-400 border-rose-500/20' :
+                      isRemote ? 'bg-blue-500/20 text-blue-400 border-blue-500/20' :
+                      record.late_minutes && record.late_minutes > 0 ? 'bg-rose-500/20 text-rose-400 border-rose-500/20' :
+                      'bg-emerald-500/20 text-emerald-400 border-emerald-500/20'
+                    } border`}>
+                      {isLeave ? 'İzin' :
+                       isSick ? 'Rapor' :
+                       isRemote ? 'Evden' :
+                       record.late_minutes && record.late_minutes > 0 ? `+${record.late_minutes}d geç` :
+                       'Normal'}
+                    </span>
                   </div>
+                )
+              }) : (
+                <div className="p-8 text-center text-zinc-500">
+                  <History className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p>Henüz kayıt bulunmuyor</p>
                 </div>
-              )
-            }) : <div className="p-8 text-center text-zinc-500"><History className="w-8 h-8 mx-auto mb-2 opacity-50" /><p>Henüz kayıt bulunmuyor</p></div>}
+              )}
+            </div>
           </div>
         </div>
-      )}
 
-      <ManualEntryModal isOpen={showManualModal} onClose={() => setShowManualModal(false)} onSuccess={fetchData} users={users} selectedDate={selectedDate} />
+        {/* Right Column (1/3) - Bugünkü Durumum */}
+        <div className="space-y-6">
+          {/* Bugünkü Durumum */}
+          <div className="rounded-2xl p-5"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(16,185,129,0.4)',
+              boxShadow: '0 0 20px -5px rgba(16,185,129,0.4)'
+            }}>
+            <div className="flex items-center gap-2 mb-4">
+              <Award className="w-5 h-5 text-emerald-400" />
+              <h3 className="font-semibold text-white">Bugünkü Durumum</h3>
+            </div>
 
-      {showLateModal && pendingCheckIn ? (
+            {/* Giriş/Çıkış Saatleri */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <LogIn className="w-4 h-4 text-emerald-400" />
+                  <span className="text-xs text-zinc-400">Giriş</span>
+                </div>
+                <p className="text-xl font-bold font-mono text-white">{formatTime(myRecord?.check_in || null)}</p>
+                {myRecord?.late_minutes && myRecord.late_minutes > 0 && (
+                  <p className="text-xs text-rose-400 mt-1">+{myRecord.late_minutes}d geç</p>
+                )}
+              </div>
+              <div className="p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <LogOut className="w-4 h-4 text-rose-400" />
+                  <span className="text-xs text-zinc-400">Çıkış</span>
+                </div>
+                <p className="text-xl font-bold font-mono text-white">{formatTime(myRecord?.check_out || null)}</p>
+                {myRecord?.overtime_minutes && myRecord.overtime_minutes > 0 && (
+                  <p className="text-xs text-amber-400 mt-1">+{myRecord.overtime_minutes}d mesai</p>
+                )}
+              </div>
+            </div>
+
+            {/* Geldim/Gittim Butonları */}
+            <div className="space-y-2">
+              <button
+                onClick={handleCheckIn}
+                disabled={actionLoading || hasCheckedOut}
+                className={`w-full py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+                  hasCheckedIn 
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 cursor-default' 
+                    : 'text-white shadow-lg hover:shadow-emerald-500/40'
+                }`}
+                style={!hasCheckedIn ? {
+                  background: 'linear-gradient(90deg, #059669 0%, #10b981 100%)',
+                  boxShadow: '0 10px 25px -5px rgba(16,185,129,0.4)'
+                } : undefined}
+              >
+                {actionLoading && !hasCheckedIn ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : hasCheckedIn ? (
+                  <CheckCircle2 className="w-4 h-4" />
+                ) : (
+                  <LogIn className="w-4 h-4" />
+                )}
+                {hasCheckedIn ? 'Giriş Yapıldı ✓' : 'Geldim'}
+              </button>
+
+              <button
+                onClick={handleCheckOut}
+                disabled={actionLoading || !hasCheckedIn || hasCheckedOut}
+                className={`w-full py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+                  hasCheckedOut 
+                    ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30 cursor-default' 
+                    : !hasCheckedIn
+                    ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                    : 'text-white shadow-lg hover:shadow-rose-500/40'
+                }`}
+                style={hasCheckedIn && !hasCheckedOut ? {
+                  background: 'linear-gradient(90deg, #e11d48 0%, #f43f5e 100%)',
+                  boxShadow: '0 10px 25px -5px rgba(244,63,94,0.4)'
+                } : undefined}
+              >
+                {actionLoading && hasCheckedIn && !hasCheckedOut ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : hasCheckedOut ? (
+                  <CheckCircle2 className="w-4 h-4" />
+                ) : (
+                  <LogOut className="w-4 h-4" />
+                )}
+                {hasCheckedOut ? 'Çıkış Yapıldı ✓' : 'Gittim'}
+              </button>
+            </div>
+
+            {/* Toplam Süre */}
+            {myRecord?.check_in && myRecord?.check_out && (
+              <div className="mt-4 pt-4 border-t border-white/10 text-center">
+                <p className="text-xs text-zinc-500 mb-1">Toplam Çalışma</p>
+                <p className="text-2xl font-bold font-mono text-white">
+                  {calculateDuration(myRecord.check_in, myRecord.check_out)}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Bu Ay Özetim */}
+          <div className="rounded-2xl p-5"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}>
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="w-5 h-5 text-cyan-400" />
+              <h3 className="font-semibold text-white">Bu Ay Özetim</h3>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-zinc-400">Çalışılan Gün</span>
+                <span className="text-sm font-mono text-white">{myHistory.filter(r => r.check_in).length} gün</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-zinc-400">Toplam Mesai</span>
+                <span className="text-sm font-mono text-emerald-400">
+                  {formatMinutes(myHistory.reduce((a, r) => a + (r.overtime_minutes || 0), 0)) || '0d'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-zinc-400">Geç Kalma</span>
+                <span className="text-sm font-mono text-rose-400">
+                  {myHistory.filter(r => r.late_minutes && r.late_minutes > 0).length} gün
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Geç Kalma Modal */}
+      {showLateModal && pendingCheckIn && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold text-zinc-100 mb-2">Geç Kalma Açıklaması</h3>
+          <div className="rounded-2xl p-6 w-full max-w-md mx-4"
+            style={{
+              background: 'linear-gradient(135deg, rgba(24,24,27,0.98) 0%, rgba(9,9,11,0.99) 100%)',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}>
+            <h3 className="text-lg font-semibold text-white mb-2">Geç Kalma Açıklaması</h3>
             <p className="text-sm text-zinc-400 mb-4">{pendingCheckIn.lateMinutes} dakika geç kaldınız. Lütfen sebebini yazın.</p>
-            <textarea value={lateReason} onChange={(e) => setLateReason(e.target.value)} placeholder="Geç kalma sebebinizi yazın..." className="w-full h-24 bg-zinc-800 border border-zinc-700 rounded-xl p-3 text-zinc-100 text-sm resize-none focus:outline-none focus:border-indigo-500" autoFocus />
+            <textarea
+              value={lateReason}
+              onChange={(e) => setLateReason(e.target.value)}
+              placeholder="Geç kalma sebebinizi yazın..."
+              className="w-full h-24 rounded-xl p-3 text-sm resize-none focus:outline-none text-white placeholder:text-zinc-600"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+              autoFocus
+            />
             <div className="flex gap-2 mt-4">
-              <Button onClick={() => { setShowLateModal(false); setPendingCheckIn(null); setLateReason('') }} variant="outline" size="sm" className="flex-1 border-zinc-700 text-zinc-400">İptal</Button>
-              <Button onClick={() => { if (!lateReason.trim()) return; saveCheckIn(pendingCheckIn.now, pendingCheckIn.location, pendingCheckIn.lateMinutes, lateReason.trim()) }} disabled={!lateReason.trim()} size="sm" className="flex-1 bg-emerald-600 hover:bg-emerald-700">Kaydet</Button>
+              <button
+                onClick={() => { setShowLateModal(false); setPendingCheckIn(null); setLateReason('') }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium text-zinc-400"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+              >
+                İptal
+              </button>
+              <button
+                onClick={() => { if (!lateReason.trim()) return; saveCheckIn(pendingCheckIn.now, pendingCheckIn.location, pendingCheckIn.lateMinutes, lateReason.trim()) }}
+                disabled={!lateReason.trim()}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white disabled:opacity-50"
+                style={{
+                  background: 'linear-gradient(90deg, #059669 0%, #10b981 100%)',
+                }}
+              >
+                Kaydet
+              </button>
             </div>
           </div>
         </div>
-      ) : null}
+      )}
 
-      {showOvertimeModal && pendingCheckOut ? (
+      {/* Mesai Modal */}
+      {showOvertimeModal && pendingCheckOut && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold text-zinc-100 mb-2">Mesai Açıklaması</h3>
+          <div className="rounded-2xl p-6 w-full max-w-md mx-4"
+            style={{
+              background: 'linear-gradient(135deg, rgba(24,24,27,0.98) 0%, rgba(9,9,11,0.99) 100%)',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}>
+            <h3 className="text-lg font-semibold text-white mb-2">Mesai Açıklaması</h3>
             <p className="text-sm text-zinc-400 mb-4">{pendingCheckOut.overtimeMinutes} dakika mesai yaptınız. Lütfen ne için çalıştığınızı yazın.</p>
-            <textarea value={overtimeReason} onChange={(e) => setOvertimeReason(e.target.value)} placeholder="Mesai sebebinizi yazın..." className="w-full h-24 bg-zinc-800 border border-zinc-700 rounded-xl p-3 text-zinc-100 text-sm resize-none focus:outline-none focus:border-indigo-500" autoFocus />
+            <textarea
+              value={overtimeReason}
+              onChange={(e) => setOvertimeReason(e.target.value)}
+              placeholder="Mesai sebebinizi yazın..."
+              className="w-full h-24 rounded-xl p-3 text-sm resize-none focus:outline-none text-white placeholder:text-zinc-600"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+              autoFocus
+            />
             <div className="flex gap-2 mt-4">
-              <Button onClick={() => { setShowOvertimeModal(false); setPendingCheckOut(null); setOvertimeReason('') }} variant="outline" size="sm" className="flex-1 border-zinc-700 text-zinc-400">İptal</Button>
-              <Button onClick={() => { if (!overtimeReason.trim()) return; saveCheckOut(pendingCheckOut.now, pendingCheckOut.location, pendingCheckOut.overtimeMinutes, pendingCheckOut.earlyLeaveMinutes, overtimeReason.trim()) }} disabled={!overtimeReason.trim()} size="sm" className="flex-1 bg-emerald-600 hover:bg-emerald-700">Kaydet</Button>
+              <button
+                onClick={() => { setShowOvertimeModal(false); setPendingCheckOut(null); setOvertimeReason('') }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium text-zinc-400"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+              >
+                İptal
+              </button>
+              <button
+                onClick={() => { if (!overtimeReason.trim()) return; saveCheckOut(pendingCheckOut.now, pendingCheckOut.location, pendingCheckOut.overtimeMinutes, pendingCheckOut.earlyLeaveMinutes, overtimeReason.trim()) }}
+                disabled={!overtimeReason.trim()}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white disabled:opacity-50"
+                style={{
+                  background: 'linear-gradient(90deg, #059669 0%, #10b981 100%)',
+                }}
+              >
+                Kaydet
+              </button>
             </div>
           </div>
         </div>
-      ) : null}
+      )}
+
+      {/* Float Animation */}
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-5px); }
+        }
+      `}</style>
     </div>
   )
 }
