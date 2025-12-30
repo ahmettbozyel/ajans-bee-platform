@@ -642,7 +642,7 @@ export default function GirisCikisPage() {
                 {actionLoading && !hasCheckedIn ? (<Loader2 className="w-4 h-4 animate-spin" />) : (<LogIn className="w-4 h-4" />)}
                 Geldim
               </Button>
-              <Button onClick={handleCheckOut} disabled={actionLoading || !hasCheckedIn || hasCheckedOut} variant="default" className="flex-1 py-3 rounded-xl">
+              <Button onClick={handleCheckOut} disabled={actionLoading || !hasCheckedIn || hasCheckedOut} variant="destructive" className="flex-1 py-3 rounded-xl">
                 {actionLoading && hasCheckedIn && !hasCheckedOut ? (<Loader2 className="w-4 h-4 animate-spin" />) : (<LogOut className="w-4 h-4" />)}
                 Gittim
               </Button>
