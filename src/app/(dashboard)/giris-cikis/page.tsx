@@ -89,7 +89,7 @@ export default function GirisCikisPage() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date()
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })
   const [showManualModal, setShowManualModal] = useState(false)
   const [showLateModal, setShowLateModal] = useState(false)
@@ -121,7 +121,7 @@ export default function GirisCikisPage() {
         if (recordsData) setTodayRecords((recordsData as unknown as (Attendance & { user?: AppUser })[]).filter(r => r.user?.role !== 'admin'))
         
         const [year, month] = selectedMonth.split('-').map(Number)
-        const startDate = \`\${year}-\${String(month).padStart(2, '0')}-01\`
+        const startDate = `${year}-${String(month).padStart(2, '0')}-01`
         const endDate = new Date(year, month, 0).toISOString().split('T')[0]
         const { data: monthData } = await supabase.from('attendance').select('*').gte('date', startDate).lte('date', endDate)
         if (monthData) {
@@ -167,7 +167,7 @@ export default function GirisCikisPage() {
         if (allUsersData) setUsers(allUsersData as AppUser[])
         
         const now = new Date()
-        const startDate = \`\${now.getFullYear()}-\${String(now.getMonth() + 1).padStart(2, '0')}-01\`
+        const startDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
         const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]
         const { data: monthData } = await supabase.from('attendance').select('user_id, overtime_minutes, late_minutes').gte('date', startDate).lte('date', endDate)
         if (monthData) {
