@@ -672,9 +672,36 @@ function AyarlarTab({ customer, onUpdate }: { customer: Customer; onUpdate?: () 
 
   const handleSync = async () => {
     setIsSyncing(true)
-    // Simüle sync
-    await new Promise(resolve => setTimeout(resolve, 3000))
-    setIsSyncing(false)
+    setSaveMessage(null)
+
+    try {
+      // Meta ID'leri DB'ye kaydet
+      const { error } = await supabase
+        .from('customers')
+        .update({
+          meta_page_id: metaPageId || null,
+          meta_ig_id: metaIgId || null,
+          meta_ad_account_id: metaAdAccountId || null,
+          meta_last_sync: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', customer.id)
+
+      if (error) throw error
+
+      setSaveMessage({ type: 'success', text: 'Meta hesapları senkronize edildi!' })
+
+      // Refresh customer data
+      if (onUpdate) onUpdate()
+
+      // 3 saniye sonra mesajı kaldır
+      setTimeout(() => setSaveMessage(null), 3000)
+    } catch (err) {
+      console.error('Error syncing:', err)
+      setSaveMessage({ type: 'error', text: 'Senkronizasyon sırasında bir hata oluştu.' })
+    } finally {
+      setIsSyncing(false)
+    }
   }
 
   // Ayarları kaydet
