@@ -76,31 +76,50 @@ export interface TaskCategory {
   is_active: boolean
 }
 
-// Task status
-export type TaskStatus = 'in_progress' | 'completed'
+// Task status - YENİ SİSTEM
+export type TaskStatus = 'active' | 'paused' | 'completed'
 
-// Günlük iş
+// Günlük iş - YENİ YAPI
 export interface DailyTask {
   id: string
   user_id: string
   brand_id: string | null
   category_id: string
-  date: string
   description: string
-  duration_minutes: number | null
+  
+  // Durum
+  status: TaskStatus
+  
+  // Zaman takibi
+  start_time: string
+  end_time: string | null
+  paused_at: string | null
+  total_duration: number  // saniye cinsinden
+  
+  // Revize sayısı
+  revision_count: number
+  
+  // Hangi güne ait
+  work_date: string
+  
   created_at: string
   updated_at: string
-  // Süre takibi
-  started_at: string | null
-  completed_at: string | null
-  status: TaskStatus
-  // Revizyon
-  parent_id: string | null
-  revision_number: number
+  
   // Relations
   category?: TaskCategory
   brand?: { id: string; brand_name: string } | null
-  user?: { full_name: string }
+  user?: { id: string; full_name: string }
+}
+
+// Task Revisions
+export interface TaskRevision {
+  id: string
+  task_id: string
+  revision_number: number
+  start_time: string
+  end_time: string | null
+  duration: number  // saniye
+  created_at: string
 }
 
 // Attendance status types
@@ -136,4 +155,49 @@ export interface Attendance {
   // Açıklamalar
   late_reason?: string | null
   overtime_reason?: string | null
+}
+
+// Personel avatar renkleri
+export const AVATAR_COLORS: Record<string, string> = {
+  'A': 'from-amber-500 to-orange-600',
+  'B': 'from-violet-500 to-purple-600',
+  'E': 'from-rose-500 to-pink-600',
+  'N': 'from-emerald-500 to-teal-600',
+  'Ö': 'from-cyan-500 to-blue-600',
+  'default': 'from-zinc-500 to-zinc-600'
+}
+
+// Kategori renkleri
+export const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  'tasarim': { bg: 'bg-fuchsia-500/20', text: 'text-fuchsia-400', border: 'border-fuchsia-500/20' },
+  'video': { bg: 'bg-rose-500/20', text: 'text-rose-400', border: 'border-rose-500/20' },
+  'revize': { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/20' },
+  'toplanti': { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/20' },
+  'arastirma': { bg: 'bg-cyan-500/20', text: 'text-cyan-400', border: 'border-cyan-500/20' },
+  'gelistirme': { bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500/20' },
+  'icerik': { bg: 'bg-violet-500/20', text: 'text-violet-400', border: 'border-violet-500/20' },
+  'destek': { bg: 'bg-zinc-500/20', text: 'text-zinc-400', border: 'border-zinc-500/20' },
+  'genel': { bg: 'bg-zinc-500/20', text: 'text-zinc-400', border: 'border-zinc-500/20' }
+}
+
+// Status badge stilleri
+export const STATUS_STYLES: Record<TaskStatus, { bg: string; text: string; border: string; icon: string }> = {
+  'active': { 
+    bg: 'bg-emerald-500/20', 
+    text: 'text-emerald-400', 
+    border: 'border-emerald-500/20',
+    icon: 'pulse'
+  },
+  'paused': { 
+    bg: 'bg-amber-500/20', 
+    text: 'text-amber-400', 
+    border: 'border-amber-500/20',
+    icon: 'pause'
+  },
+  'completed': { 
+    bg: 'bg-emerald-500/10', 
+    text: 'text-emerald-400', 
+    border: 'border-emerald-500/20',
+    icon: 'check-circle'
+  }
 }
