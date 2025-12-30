@@ -25,9 +25,8 @@ import {
   PieChart,
   AlertTriangle,
   Download,
-  ListTodo,
-  Timer,
-  TrendingUp
+  ListChecks,
+  PlayCircle
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -128,30 +127,54 @@ function StatusBadge({ status }: { status: TaskStatus }) {
   )
 }
 
-// Özet Kart Component
-function StatCard({ icon, value, label, color }: { icon: React.ReactNode; value: string | number; label: string; color: string }) {
-  const colorClasses: Record<string, string> = {
-    'indigo': 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
-    'emerald': 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-    'amber': 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-    'rose': 'bg-rose-500/20 text-rose-400 border-rose-500/30',
-    'cyan': 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+// Özet Kart Component - MOCKUP UYUMLU
+function StatCard({ icon, value, label, color, subtitle }: { 
+  icon: React.ReactNode
+  value: string | number
+  label: string
+  color: string
+  subtitle?: string 
+}) {
+  const colorClasses: Record<string, { iconBg: string; glow: string }> = {
+    'indigo': { 
+      iconBg: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400',
+      glow: 'glow-indigo'
+    },
+    'emerald': { 
+      iconBg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
+      glow: 'glow-emerald'
+    },
+    'amber': { 
+      iconBg: 'bg-amber-500/10 border-amber-500/20 text-amber-400',
+      glow: 'glow-amber'
+    },
+    'rose': { 
+      iconBg: 'bg-rose-500/10 border-rose-500/20 text-rose-400',
+      glow: 'glow-rose'
+    },
+    'cyan': { 
+      iconBg: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400',
+      glow: 'glow-cyan'
+    },
   }
   
+  const { iconBg, glow } = colorClasses[color] || colorClasses['indigo']
+  
   return (
-    <div className="glass-card rounded-xl p-4 border border-white/10 flex items-center gap-4">
-      <div className={`p-3 rounded-xl ${colorClasses[color]} border`}>
-        {icon}
+    <div className={`glass-card rounded-2xl p-4 border border-white/10 ${glow} card-hover`}>
+      <div className="flex items-center justify-between mb-3">
+        <div className={`p-2 rounded-lg border ${iconBg}`}>
+          {icon}
+        </div>
+        <span className="text-xs text-zinc-500">{subtitle || 'Bugün'}</span>
       </div>
-      <div>
-        <p className="text-2xl font-bold text-white">{value}</p>
-        <p className="text-xs text-zinc-400">{label}</p>
-      </div>
+      <p className="text-2xl font-bold text-white">{value}</p>
+      <p className="text-xs text-zinc-500">{label}</p>
     </div>
   )
 }
 
-// Task Card Component
+// Task Card Component - MOCKUP UYUMLU
 function TaskCard({ 
   task, 
   isAdmin, 
@@ -171,7 +194,6 @@ function TaskCard({
   onEdit: (task: DailyTask) => void
   onDelete: (task: DailyTask) => void
 }) {
-  // Aktif süre hesapla
   const [currentDuration, setCurrentDuration] = useState(task.total_duration)
   
   useEffect(() => {
@@ -180,7 +202,6 @@ function TaskCard({
       return
     }
     
-    // Aktif ise timer çalıştır
     const startTime = new Date(task.start_time).getTime()
     const pausedDuration = task.total_duration || 0
     
@@ -193,22 +214,23 @@ function TaskCard({
     return () => clearInterval(interval)
   }, [task.status, task.start_time, task.total_duration])
   
-  // Glow class
-  const getGlowClass = () => {
-    if (task.status === 'active') return 'glow-emerald border-emerald-500/30'
-    if (task.status === 'paused') return 'border-white/10'
+  const getCardClasses = () => {
+    if (task.status === 'active') {
+      return 'border-emerald-500/30 glow-emerald'
+    }
+    if (task.status === 'paused') {
+      return 'border-white/10'
+    }
     return 'border-white/10 opacity-75'
   }
   
-  // Kategori renkleri
   const categorySlug = task.category?.slug || 'genel'
   const categoryColor = CATEGORY_COLORS[categorySlug] || CATEGORY_COLORS['genel']
   
   return (
-    <div className={`glass-card rounded-2xl p-5 hover:border-white/20 transition-all ${getGlowClass()}`}>
+    <div className={`glass-card rounded-2xl p-5 cursor-pointer hover:border-white/20 transition-all ${getCardClasses()}`}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Personel Avatar (sadece admin için) */}
           {isAdmin && task.user && (
             <div className="flex items-center gap-2 mr-2">
               <div className={`h-7 w-7 rounded-lg bg-gradient-to-br ${getAvatarColor(task.user.full_name)} flex items-center justify-center`}>
@@ -222,15 +244,12 @@ function TaskCard({
             </div>
           )}
           
-          {/* Status Badge */}
           <StatusBadge status={task.status} />
           
-          {/* Kategori */}
           <span className={`text-xs px-2.5 py-1 rounded-full ${categoryColor.bg} ${categoryColor.text} border ${categoryColor.border}`}>
             {task.category?.name || 'Genel'}
           </span>
           
-          {/* Marka */}
           {task.brand && (
             <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/20">
               <Building2 className="w-3 h-3 inline mr-1" />
@@ -238,15 +257,12 @@ function TaskCard({
             </span>
           )}
           
-          {/* Revize Noktaları */}
           <RevizeDots count={task.revision_count} />
         </div>
       </div>
       
-      {/* Açıklama */}
       <h3 className="text-lg font-semibold text-white mb-2">{task.description}</h3>
       
-      {/* Süre Bilgisi */}
       <div className="flex items-center gap-4 text-sm">
         <div className="flex items-center gap-2 text-zinc-400">
           <Clock className="w-4 h-4" />
@@ -259,7 +275,6 @@ function TaskCard({
           )}
         </div>
         
-        {/* Duration Badge */}
         {task.status === 'active' ? (
           <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-400">
             <span className="font-mono font-semibold timer-active">{formatDuration(currentDuration)}</span>
@@ -276,7 +291,6 @@ function TaskCard({
         )}
       </div>
       
-      {/* Action Buttons */}
       <div className="flex items-center gap-2 mt-4 pt-4 border-t border-white/5">
         {task.status === 'active' && (
           <>
@@ -328,16 +342,14 @@ function TaskCard({
   )
 }
 
-// Stats Panel Component (Admin için sağ panel)
+// Stats Panel Component - MOCKUP UYUMLU
 function StatsPanel({ tasks, users }: { tasks: DailyTask[], users: AppUser[] }) {
-  // Personel performansı hesapla
   const performanceData = users.map(user => {
     const userTasks = tasks.filter(t => t.user_id === user.id)
     const totalDuration = userTasks.reduce((sum, t) => sum + (t.total_duration || 0), 0)
     return { user, totalDuration, taskCount: userTasks.length }
   }).filter(p => p.taskCount > 0).sort((a, b) => b.totalDuration - a.totalDuration)
   
-  // Marka dağılımı
   const brandStats: Record<string, { name: string; duration: number }> = {}
   tasks.forEach(task => {
     const brandName = task.brand?.brand_name || 'Genel'
@@ -349,12 +361,10 @@ function StatsPanel({ tasks, users }: { tasks: DailyTask[], users: AppUser[] }) 
   const brandData = Object.values(brandStats).sort((a, b) => b.duration - a.duration).slice(0, 5)
   const totalBrandDuration = brandData.reduce((sum, b) => sum + b.duration, 0)
   
-  // Revize durumu
-  const revisionTasks = tasks.filter(t => t.revision_count > 0)
   const totalRevisions = tasks.reduce((sum, t) => sum + t.revision_count, 0)
+  const revisionTasks = tasks.filter(t => t.revision_count > 0)
   const avgRevision = tasks.length > 0 ? (totalRevisions / tasks.length).toFixed(1) : '0'
   
-  // En çok revize alan marka
   const brandRevisions: Record<string, { name: string; count: number }> = {}
   tasks.forEach(task => {
     if (task.revision_count > 0) {
@@ -367,12 +377,26 @@ function StatsPanel({ tasks, users }: { tasks: DailyTask[], users: AppUser[] }) 
   })
   const topRevisionBrand = Object.values(brandRevisions).sort((a, b) => b.count - a.count)[0]
   
-  // Max süre (progress bar için)
   const maxDuration = Math.max(...performanceData.map(p => p.totalDuration), 1)
+  
+  const gradientColors = [
+    'from-rose-500 to-pink-500',
+    'from-violet-500 to-purple-500',
+    'from-cyan-500 to-blue-500',
+    'from-amber-500 to-orange-500',
+    'from-emerald-500 to-teal-500'
+  ]
+  
+  const brandGradients = [
+    'from-amber-500 to-orange-500',
+    'from-cyan-500 to-blue-500',
+    'from-violet-500 to-purple-500',
+    'from-emerald-500 to-teal-500',
+    'from-rose-500 to-pink-500'
+  ]
   
   return (
     <div className="space-y-6">
-      {/* Personel Performansı */}
       <div className="glass-card rounded-2xl p-5 border border-white/10">
         <div className="flex items-center gap-2 mb-4">
           <Trophy className="w-5 h-5 text-amber-400" />
@@ -382,7 +406,7 @@ function StatsPanel({ tasks, users }: { tasks: DailyTask[], users: AppUser[] }) 
           {performanceData.length === 0 ? (
             <p className="text-sm text-zinc-500">Henüz veri yok</p>
           ) : (
-            performanceData.slice(0, 5).map((item) => (
+            performanceData.slice(0, 5).map((item, index) => (
               <div key={item.user.id} className="flex items-center gap-3">
                 <div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${getAvatarColor(item.user.full_name)} flex items-center justify-center flex-shrink-0`}>
                   <span className="text-white text-xs font-bold">
@@ -396,7 +420,7 @@ function StatsPanel({ tasks, users }: { tasks: DailyTask[], users: AppUser[] }) 
                   </div>
                   <div className="h-1.5 rounded-full bg-white/10">
                     <div 
-                      className={`h-full rounded-full bg-gradient-to-r ${getAvatarColor(item.user.full_name)}`}
+                      className={`h-full rounded-full bg-gradient-to-r ${gradientColors[index % gradientColors.length]}`}
                       style={{ width: `${(item.totalDuration / maxDuration) * 100}%` }}
                     />
                   </div>
@@ -407,7 +431,6 @@ function StatsPanel({ tasks, users }: { tasks: DailyTask[], users: AppUser[] }) 
         </div>
       </div>
       
-      {/* Marka Dağılımı */}
       <div className="glass-card rounded-2xl p-5 border border-white/10">
         <div className="flex items-center gap-2 mb-4">
           <PieChart className="w-5 h-5 text-violet-400" />
@@ -419,7 +442,6 @@ function StatsPanel({ tasks, users }: { tasks: DailyTask[], users: AppUser[] }) 
           ) : (
             brandData.map((brand, index) => {
               const percentage = totalBrandDuration > 0 ? Math.round((brand.duration / totalBrandDuration) * 100) : 0
-              const colors = ['from-amber-500 to-orange-500', 'from-cyan-500 to-blue-500', 'from-violet-500 to-purple-500', 'from-emerald-500 to-teal-500', 'from-rose-500 to-pink-500']
               return (
                 <div key={brand.name}>
                   <div className="flex items-center justify-between mb-1">
@@ -428,7 +450,7 @@ function StatsPanel({ tasks, users }: { tasks: DailyTask[], users: AppUser[] }) 
                   </div>
                   <div className="h-2 rounded-full bg-white/10">
                     <div 
-                      className={`h-full rounded-full bg-gradient-to-r ${colors[index % colors.length]}`}
+                      className={`h-full rounded-full bg-gradient-to-r ${brandGradients[index % brandGradients.length]}`}
                       style={{ width: `${percentage}%` }}
                     />
                   </div>
@@ -439,7 +461,6 @@ function StatsPanel({ tasks, users }: { tasks: DailyTask[], users: AppUser[] }) 
         </div>
       </div>
       
-      {/* Revize Durumu */}
       <div className="glass-card rounded-2xl p-5 border border-white/10">
         <div className="flex items-center gap-2 mb-4">
           <AlertTriangle className="w-5 h-5 text-rose-400" />
@@ -459,11 +480,11 @@ function StatsPanel({ tasks, users }: { tasks: DailyTask[], users: AppUser[] }) 
             <span className="text-sm font-mono font-semibold text-zinc-300">{avgRevision}</span>
           </div>
           {topRevisionBrand && (
-            <div className="pt-2 border-t border-white/5">
-              <p className="text-xs text-zinc-500 mb-1">En Çok Revize Alan</p>
-              <div className="flex items-center justify-between">
-                <span className="text-sm px-2 py-1 rounded bg-rose-500/20 text-rose-400">{topRevisionBrand.name}</span>
-                <span className="text-sm font-mono text-rose-400">{topRevisionBrand.count} revize</span>
+            <div className="pt-3 border-t border-white/10">
+              <p className="text-xs text-zinc-500 mb-2">En Çok Revize Alan</p>
+              <div className="flex items-center gap-2">
+                <span className="text-xs px-2 py-1 rounded-full bg-cyan-500/20 text-cyan-400">{topRevisionBrand.name}</span>
+                <span className="text-xs text-rose-400">{topRevisionBrand.count} revize</span>
               </div>
             </div>
           )}
@@ -482,12 +503,10 @@ export default function GunlukIslerPage() {
   const [users, setUsers] = useState<AppUser[]>([])
   const [loading, setLoading] = useState(true)
   
-  // Date state
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const [selectedUser, setSelectedUser] = useState<string>('all')
   const [selectedBrand, setSelectedBrand] = useState<string>('all')
   
-  // Modal state
   const [showModal, setShowModal] = useState(false)
   const [editingTask, setEditingTask] = useState<DailyTask | null>(null)
   const [formData, setFormData] = useState({
@@ -502,7 +521,6 @@ export default function GunlukIslerPage() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      // Kategoriler
       const { data: cats } = await (supabase as any)
         .from('task_categories')
         .select('*')
@@ -511,7 +529,6 @@ export default function GunlukIslerPage() {
       
       if (cats) setCategories(cats as TaskCategory[])
 
-      // Markalar
       const { data: brandsData } = await supabase
         .from('customers')
         .select('id, brand_name')
@@ -520,7 +537,6 @@ export default function GunlukIslerPage() {
       
       if (brandsData) setBrands(brandsData)
 
-      // Kullanıcılar (Admin için)
       if (isAdmin) {
         const { data: usersData } = await supabase
           .from('users')
@@ -532,7 +548,6 @@ export default function GunlukIslerPage() {
         if (usersData) setUsers(usersData as AppUser[])
       }
 
-      // Günlük işler
       let query = (supabase as any)
         .from('daily_tasks')
         .select(`
@@ -544,7 +559,6 @@ export default function GunlukIslerPage() {
         .eq('work_date', selectedDate)
         .order('created_at', { ascending: false })
       
-      // Filtreler
       if (!isAdmin && appUser) {
         query = query.eq('user_id', appUser.id)
       } else if (selectedUser !== 'all') {
@@ -569,7 +583,6 @@ export default function GunlukIslerPage() {
     fetchData()
   }, [fetchData])
 
-  // İstatistikler
   const stats = {
     total: tasks.length,
     completed: tasks.filter(t => t.status === 'completed').length,
@@ -578,7 +591,6 @@ export default function GunlukIslerPage() {
     totalDuration: tasks.reduce((sum, t) => sum + (t.total_duration || 0), 0)
   }
 
-  // İş Ekle
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!appUser || !formData.category_id || !formData.description.trim()) return
@@ -621,7 +633,6 @@ export default function GunlukIslerPage() {
     }
   }
 
-  // Pause
   const handlePause = async (task: DailyTask) => {
     const now = new Date()
     const startTime = new Date(task.start_time).getTime()
@@ -639,7 +650,6 @@ export default function GunlukIslerPage() {
     fetchData()
   }
 
-  // Resume
   const handleResume = async (task: DailyTask) => {
     await (supabase as any)
       .from('daily_tasks')
@@ -653,12 +663,10 @@ export default function GunlukIslerPage() {
     fetchData()
   }
 
-  // Complete
   const handleComplete = async (task: DailyTask) => {
     const now = new Date()
     let totalDuration = task.total_duration || 0
     
-    // Eğer aktifse, son süreyi ekle
     if (task.status === 'active') {
       const startTime = new Date(task.start_time).getTime()
       const elapsed = Math.floor((now.getTime() - startTime) / 1000)
@@ -677,11 +685,9 @@ export default function GunlukIslerPage() {
     fetchData()
   }
 
-  // Start Revision
   const handleStartRevision = async (task: DailyTask) => {
     const now = new Date()
     
-    // Task'ın revision_count'unu artır
     await (supabase as any)
       .from('daily_tasks')
       .update({
@@ -689,7 +695,6 @@ export default function GunlukIslerPage() {
       })
       .eq('id', task.id)
     
-    // Yeni revision kaydı ekle
     await (supabase as any)
       .from('task_revisions')
       .insert({
@@ -702,7 +707,6 @@ export default function GunlukIslerPage() {
     fetchData()
   }
 
-  // Delete
   const handleDelete = async (task: DailyTask) => {
     if (!confirm('Bu işi silmek istediğine emin misin?')) return
     
@@ -710,7 +714,6 @@ export default function GunlukIslerPage() {
     fetchData()
   }
 
-  // Edit
   const handleEdit = (task: DailyTask) => {
     setEditingTask(task)
     setFormData({
@@ -721,7 +724,6 @@ export default function GunlukIslerPage() {
     setShowModal(true)
   }
 
-  // Date navigation
   const changeDate = (days: number) => {
     const date = new Date(selectedDate)
     date.setDate(date.getDate() + days)
@@ -732,20 +734,16 @@ export default function GunlukIslerPage() {
     setSelectedDate(new Date().toISOString().split('T')[0])
   }
 
-  // User task counts
   const getUserTaskCount = (userId: string) => {
     return tasks.filter(t => t.user_id === userId).length
   }
 
-  // Excel export
   const handleExcelExport = () => {
-    // TODO: Excel export implementasyonu
     alert('Excel export özelliği yakında eklenecek!')
   }
 
   return (
     <div className="space-y-6">
-      {/* BAŞLIK */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Günlük İşler</h1>
@@ -763,10 +761,9 @@ export default function GunlukIslerPage() {
         </div>
       </div>
 
-      {/* ÖZET KARTLARI */}
       <div className="grid grid-cols-5 gap-4">
         <StatCard 
-          icon={<ListTodo className="w-5 h-5" />} 
+          icon={<ListChecks className="w-5 h-5" />} 
           value={stats.total} 
           label="Toplam İş" 
           color="indigo" 
@@ -778,10 +775,11 @@ export default function GunlukIslerPage() {
           color="emerald" 
         />
         <StatCard 
-          icon={<TrendingUp className="w-5 h-5" />} 
+          icon={<PlayCircle className="w-5 h-5" />} 
           value={stats.active} 
           label="Devam Eden" 
-          color="amber" 
+          color="amber"
+          subtitle="Şu an"
         />
         <StatCard 
           icon={<RefreshCw className="w-5 h-5" />} 
@@ -790,15 +788,14 @@ export default function GunlukIslerPage() {
           color="rose" 
         />
         <StatCard 
-          icon={<Timer className="w-5 h-5" />} 
+          icon={<Clock className="w-5 h-5" />} 
           value={formatDuration(stats.totalDuration)} 
           label="Toplam Süre" 
           color="cyan" 
         />
       </div>
 
-      {/* TARİH SEÇİCİ */}
-      <div className="glass-card rounded-xl p-4 border border-white/10">
+      <div className="glass-card rounded-2xl p-4 border border-white/10 glow-violet">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button 
@@ -808,7 +805,7 @@ export default function GunlukIslerPage() {
               <ChevronLeft className="w-4 h-4" />
             </button>
             
-            <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-zinc-100 text-sm font-medium">
+            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all">
               <Calendar className="w-4 h-4 text-indigo-400" />
               <span className="font-semibold">{formatDateShort(selectedDate)}</span>
             </button>
@@ -827,14 +824,13 @@ export default function GunlukIslerPage() {
               Bugün
             </button>
             
-            <div className="w-px h-8 bg-white/10 mx-2" />
+            <div className="w-px h-8 bg-white/10" />
             
             <span className="text-zinc-400">{formatDateLong(selectedDate)}</span>
           </div>
         </div>
       </div>
 
-      {/* PERSONEL SEÇİCİ (Admin için) */}
       {isAdmin && (
         <div className="glass-card rounded-xl p-4 border border-white/10">
           <div className="flex items-center justify-between">
@@ -881,7 +877,6 @@ export default function GunlukIslerPage() {
               </div>
             </div>
             
-            {/* Marka Filtresi */}
             <div className="flex items-center gap-2">
               <span className="text-sm text-zinc-500">Marka:</span>
               <select
@@ -899,9 +894,7 @@ export default function GunlukIslerPage() {
         </div>
       )}
 
-      {/* MAIN CONTENT */}
       <div className={`grid gap-6 ${isAdmin ? 'grid-cols-3' : 'grid-cols-1'}`}>
-        {/* İŞ LİSTESİ */}
         <div className={`space-y-4 ${isAdmin ? 'col-span-2' : ''}`}>
           {loading ? (
             <div className="flex items-center justify-center py-12">
@@ -935,11 +928,9 @@ export default function GunlukIslerPage() {
           )}
         </div>
         
-        {/* SAĞ PANEL (Admin için) */}
         {isAdmin && <StatsPanel tasks={tasks} users={users} />}
       </div>
 
-      {/* MODAL */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-zinc-900 border border-zinc-800 p-6">
