@@ -663,64 +663,113 @@ function AyarlarTab({ customer, onUpdate }: { customer: Customer; onUpdate?: () 
     { id: 5, date: '2025-12-26 14:28', platform: 'Meta Ads', status: 'success', summary: '3 kampanya, 125 lead senkronize edildi' },
   ]
 
+  // Bağlantıyı test et - n8n webhook'a test isteği atar
   const handleTestConnection = async () => {
     setIsTesting(true)
-    // Simüle test
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    setIsTesting(false)
+    setSaveMessage(null)
+
+    try {
+      console.log('=== META TEST CONNECTION ===')
+      console.log('Testing with:', { metaPageId, metaIgId, metaAdAccountId })
+
+      const response = await fetch('/api/meta/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          meta_page_id: metaPageId,
+          meta_ig_id: metaIgId,
+          meta_ad_account_id: metaAdAccountId
+        })
+      })
+
+      const data = await response.json()
+      console.log('Test response:', data)
+
+      if (data.success) {
+        setSaveMessage({
+          type: 'success',
+          text: `Bağlantı başarılı! (${data.response_time_ms}ms)`
+        })
+      } else {
+        setSaveMessage({
+          type: 'error',
+          text: data.error || 'Bağlantı testi başarısız'
+        })
+      }
+
+      setTimeout(() => setSaveMessage(null), 5000)
+    } catch (err: any) {
+      console.error('Test connection error:', err)
+      setSaveMessage({ type: 'error', text: 'Bağlantı testi başarısız' })
+    } finally {
+      setIsTesting(false)
+    }
   }
 
+  // Şimdi Senkronize Et - Önce DB'ye kaydet, sonra n8n'e sync isteği at
   const handleSync = async () => {
     setIsSyncing(true)
     setSaveMessage(null)
 
-    // Debug: Kaydedilecek değerleri göster
-    console.log('=== META SYNC DEBUG ===')
-    console.log('Customer ID:', customer.id)
-    console.log('meta_page_id:', metaPageId)
-    console.log('meta_ig_id:', metaIgId)
-    console.log('meta_ad_account_id:', metaAdAccountId)
-
     try {
-      // Meta ID'leri DB'ye kaydet
-      const updateData = {
-        meta_page_id: metaPageId || null,
-        meta_ig_id: metaIgId || null,
-        meta_ad_account_id: metaAdAccountId || null,
-        updated_at: new Date().toISOString()
-      }
+      // 1. Önce Meta ID'leri DB'ye kaydet
+      console.log('=== META SYNC ===')
+      console.log('Step 1: Saving Meta IDs to DB...')
 
-      console.log('Update data:', updateData)
-
-      const { data, error } = await supabase
+      const { error: dbError } = await supabase
         .from('customers')
-        .update(updateData)
+        .update({
+          meta_page_id: metaPageId || null,
+          meta_ig_id: metaIgId || null,
+          meta_ad_account_id: metaAdAccountId || null,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', customer.id)
-        .select()
 
-      console.log('Supabase response - data:', data)
-      console.log('Supabase response - error:', error)
-
-      if (error) {
-        console.error('Supabase error details:', error)
-        throw error
+      if (dbError) {
+        console.error('DB save error:', dbError)
+        throw new Error(`DB kayıt hatası: ${dbError.message}`)
       }
 
-      setSaveMessage({ type: 'success', text: 'Meta hesapları kaydedildi!' })
+      console.log('Step 1 complete: Meta IDs saved to DB')
+
+      // 2. n8n webhook'a sync isteği at (eğer ad_account_id varsa)
+      if (metaAdAccountId) {
+        console.log('Step 2: Sending sync request to n8n...')
+
+        const response = await fetch('/api/meta/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customer_id: customer.id,
+            meta_ad_account_id: metaAdAccountId
+          })
+        })
+
+        const data = await response.json()
+        console.log('Sync response:', data)
+
+        if (!data.success && data.error) {
+          console.warn('n8n sync warning:', data.error)
+          // n8n hatası olsa bile DB kaydı başarılı
+          setSaveMessage({
+            type: 'success',
+            text: 'Meta ID\'leri kaydedildi (n8n sync beklemede)'
+          })
+        } else {
+          setSaveMessage({ type: 'success', text: 'Senkronizasyon tamamlandı!' })
+        }
+      } else {
+        setSaveMessage({ type: 'success', text: 'Meta ID\'leri kaydedildi!' })
+      }
 
       // Refresh customer data
-      if (onUpdate) {
-        console.log('Calling onUpdate...')
-        onUpdate()
-      }
+      if (onUpdate) onUpdate()
 
-      // 3 saniye sonra mesajı kaldır
-      setTimeout(() => setSaveMessage(null), 3000)
+      setTimeout(() => setSaveMessage(null), 5000)
     } catch (err: any) {
-      console.error('Error syncing:', err)
-      console.error('Error message:', err?.message)
-      console.error('Error details:', err?.details)
-      setSaveMessage({ type: 'error', text: `Hata: ${err?.message || 'Bilinmeyen hata'}` })
+      console.error('Sync error:', err)
+      setSaveMessage({ type: 'error', text: err?.message || 'Senkronizasyon hatası' })
     } finally {
       setIsSyncing(false)
     }
