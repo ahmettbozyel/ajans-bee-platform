@@ -29,7 +29,8 @@ import {
   ChevronRight,
   Trophy,
   Award,
-  Flame
+  Flame,
+  BarChart3
 } from 'lucide-react'
 import * as XLSX from 'xlsx'
 
@@ -79,6 +80,7 @@ export default function GirisCikisPage() {
   const { appUser, isAdmin } = useAuth()
   const [todayRecords, setTodayRecords] = useState<(Attendance & { user?: AppUser })[]>([])
   const [myHistory, setMyHistory] = useState<Attendance[]>([])
+  const [allMonthlyRecords, setAllMonthlyRecords] = useState<Attendance[]>([])
   const [users, setUsers] = useState<AppUser[]>([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
@@ -87,7 +89,7 @@ export default function GirisCikisPage() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date()
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    return \`\${now.getFullYear()}-\${String(now.getMonth() + 1).padStart(2, '0')}\`
   })
   const [showManualModal, setShowManualModal] = useState(false)
   const [showLateModal, setShowLateModal] = useState(false)
@@ -97,6 +99,7 @@ export default function GirisCikisPage() {
   const [overtimeReason, setOvertimeReason] = useState('')
   const [pendingCheckOut, setPendingCheckOut] = useState<{ now: Date; location: { lat: number; lng: number } | null; overtimeMinutes: number; earlyLeaveMinutes: number } | null>(null)
   const [monthlyStats, setMonthlyStats] = useState<{ [userId: string]: { overtime: number; late: number; lateDays: number } }>({})
+  const [weeklyTrend, setWeeklyTrend] = useState<{ day: string; hours: number }[]>([])
 
   const supabase = createClient()
 
@@ -105,7 +108,7 @@ export default function GirisCikisPage() {
     return () => clearInterval(timer)
   }, [])
 
-  useEffect(() => { fetchData() }, [selectedDate])
+  useEffect(() => { fetchData() }, [selectedDate, selectedMonth])
 
   const fetchData = async () => {
     if (!appUser) return
@@ -118,18 +121,38 @@ export default function GirisCikisPage() {
         if (recordsData) setTodayRecords((recordsData as unknown as (Attendance & { user?: AppUser })[]).filter(r => r.user?.role !== 'admin'))
         
         const [year, month] = selectedMonth.split('-').map(Number)
-        const startDate = `${year}-${String(month).padStart(2, '0')}-01`
+        const startDate = \`\${year}-\${String(month).padStart(2, '0')}-01\`
         const endDate = new Date(year, month, 0).toISOString().split('T')[0]
-        const { data: monthData } = await supabase.from('attendance').select('user_id, overtime_minutes, late_minutes').gte('date', startDate).lte('date', endDate)
+        const { data: monthData } = await supabase.from('attendance').select('*').gte('date', startDate).lte('date', endDate)
         if (monthData) {
+          setAllMonthlyRecords(monthData as Attendance[])
           const stats: { [userId: string]: { overtime: number; late: number; lateDays: number } } = {}
-          monthData.forEach((r: { user_id: string; overtime_minutes?: number; late_minutes?: number }) => {
+          monthData.forEach((r: any) => {
             if (!stats[r.user_id]) stats[r.user_id] = { overtime: 0, late: 0, lateDays: 0 }
             stats[r.user_id].overtime += r.overtime_minutes || 0
             stats[r.user_id].late += r.late_minutes || 0
             if (r.late_minutes && r.late_minutes > 0) stats[r.user_id].lateDays += 1
           })
           setMonthlyStats(stats)
+          
+          const dayTotals: { [key: number]: { total: number; count: number } } = { 1: { total: 0, count: 0 }, 2: { total: 0, count: 0 }, 3: { total: 0, count: 0 }, 4: { total: 0, count: 0 }, 5: { total: 0, count: 0 } }
+          monthData.forEach((r: any) => {
+            if (r.check_in && r.check_out) {
+              const dayOfWeek = new Date(r.date).getDay()
+              if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                const diff = new Date(r.check_out).getTime() - new Date(r.check_in).getTime()
+                const hours = diff / 3600000
+                dayTotals[dayOfWeek].total += hours
+                dayTotals[dayOfWeek].count += 1
+              }
+            }
+          })
+          const dayNames = ['', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma']
+          const trend = [1, 2, 3, 4, 5].map(d => ({
+            day: dayNames[d],
+            hours: dayTotals[d].count > 0 ? Math.round(dayTotals[d].total / dayTotals[d].count) : 0
+          }))
+          setWeeklyTrend(trend)
         }
       } else {
         const { data: todayData } = await supabase.from('attendance').select('*').eq('user_id', appUser.id).eq('date', selectedDate).single()
@@ -138,6 +161,25 @@ export default function GirisCikisPage() {
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
         const { data: historyData } = await supabase.from('attendance').select('*').eq('user_id', appUser.id).gte('date', thirtyDaysAgo.toISOString().split('T')[0]).order('date', { ascending: false })
         if (historyData) setMyHistory(historyData as Attendance[])
+        
+        // Personel için de liderlik tablosu verisi lazım
+        const { data: allUsersData } = await supabase.from('users').select('*').eq('is_active', true).neq('role', 'admin').order('full_name')
+        if (allUsersData) setUsers(allUsersData as AppUser[])
+        
+        const now = new Date()
+        const startDate = \`\${now.getFullYear()}-\${String(now.getMonth() + 1).padStart(2, '0')}-01\`
+        const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]
+        const { data: monthData } = await supabase.from('attendance').select('user_id, overtime_minutes, late_minutes').gte('date', startDate).lte('date', endDate)
+        if (monthData) {
+          const stats: { [userId: string]: { overtime: number; late: number; lateDays: number } } = {}
+          monthData.forEach((r: any) => {
+            if (!stats[r.user_id]) stats[r.user_id] = { overtime: 0, late: 0, lateDays: 0 }
+            stats[r.user_id].overtime += r.overtime_minutes || 0
+            stats[r.user_id].late += r.late_minutes || 0
+            if (r.late_minutes && r.late_minutes > 0) stats[r.user_id].lateDays += 1
+          })
+          setMonthlyStats(stats)
+        }
       }
     } catch (error) { console.error('Fetch error:', error) }
     finally { setLoading(false) }
@@ -296,6 +338,34 @@ export default function GirisCikisPage() {
   const homeCount = todayRecords.filter(r => r.check_in_location_type === 'home' && r.check_in).length
   const notArrivedCount = usersWithoutCheckIn.length
 
+  const adminTotalWorkMinutes = allMonthlyRecords.reduce((total, r) => {
+    if (r.check_in && r.check_out) {
+      const diff = new Date(r.check_out).getTime() - new Date(r.check_in).getTime()
+      return total + diff / 60000
+    }
+    return total
+  }, 0)
+  const adminTotalWorkHours = Math.round(adminTotalWorkMinutes / 60)
+  const adminWorkDays = allMonthlyRecords.filter(r => r.check_in && r.check_out).length
+  const adminAvgMinutes = adminWorkDays > 0 ? Math.round(adminTotalWorkMinutes / adminWorkDays) : 0
+  const adminTotalOvertime = Object.values(monthlyStats).reduce((a, b) => a + b.overtime, 0)
+  const adminTotalLateDays = Object.values(monthlyStats).reduce((a, b) => a + b.lateDays, 0)
+
+  const myWorkRecords = myHistory.filter(r => r.check_in && r.check_out && r.record_type === 'normal')
+  const myTotalWorkMinutes = myWorkRecords.reduce((total, r) => {
+    if (r.check_in && r.check_out) {
+      const diff = new Date(r.check_out).getTime() - new Date(r.check_in).getTime()
+      return total + diff / 60000
+    }
+    return total
+  }, 0)
+  const myTotalWorkHours = Math.round(myTotalWorkMinutes / 60)
+  const myWorkDays = myWorkRecords.length
+  const myAvgMinutes = myWorkDays > 0 ? Math.round(myTotalWorkMinutes / myWorkDays) : 0
+  const myTotalOvertime = myHistory.reduce((a, r) => a + (r.overtime_minutes || 0), 0)
+  const myLateDays = myHistory.filter(r => (r.late_minutes ?? 0) > 0).length
+  const myLeaveDays = myHistory.filter(r => r.record_type === 'leave').length
+
   const getLeaderboard = () => {
     const usersWithStats = users.map(u => ({ ...u, overtime: monthlyStats[u.id]?.overtime || 0, lateDays: monthlyStats[u.id]?.lateDays || 0 }))
     const topWorkers = [...usersWithStats].sort((a, b) => b.overtime - a.overtime).slice(0, 3)
@@ -319,6 +389,7 @@ export default function GirisCikisPage() {
   const dayName = selectedDateObj.toLocaleDateString('tr-TR', { weekday: 'long' })
   const formattedDate = selectedDateObj.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
 
+  // ==================== ADMIN VIEW ====================
   if (isAdmin) {
     return (
       <div className="space-y-6">
@@ -420,16 +491,49 @@ export default function GirisCikisPage() {
               </div>
             </div>
           </div>
+
+          {/* Admin Sağ Sidebar */}
           <div className="space-y-6">
+            {/* Bu Ay Özeti */}
             <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <div className="flex items-center gap-2 mb-4"><Trophy className="w-5 h-5 text-amber-400" /><h3 className="font-semibold text-white">Liderlik Tablosu</h3></div>
-              <div className="mb-5"><p className="text-xs text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2"><span>🏆</span> En Çok Mesai Yapan</p><div className="space-y-2.5">{topWorkers.map((user, i) => (<div key={user.id} className={`flex items-center gap-3 p-2 rounded-lg ${i === 0 ? 'bg-amber-500/10' : 'hover:bg-white/5'} transition-colors`}><span className={`text-sm font-bold w-5 ${i === 0 ? 'text-amber-400' : 'text-zinc-500'}`}>{i + 1}.</span><div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${getAvatarColor(user.full_name || '')} flex items-center justify-center flex-shrink-0`}><span className="text-white text-xs font-bold">{user.full_name?.charAt(0)}</span></div><span className="text-sm text-white flex-1">{user.full_name}</span><span className={`text-sm font-mono ${i === 0 ? 'text-amber-400 font-semibold' : 'text-emerald-400'}`}>{user.overtime > 0 ? formatMinutesToHours(user.overtime) : '-'}</span></div>))}</div></div>
-              <div className="border-t border-white/10 my-5" />
-              <div><p className="text-xs text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2"><span>😅</span> En Çok Geç Kalan</p><div className="space-y-2.5">{topLate.length > 0 ? topLate.map((user, i) => (<div key={user.id} className={`flex items-center gap-3 p-2 rounded-lg ${i === 0 ? 'bg-rose-500/10' : 'hover:bg-white/5'} transition-colors`}><span className={`text-sm font-bold w-5 ${i === 0 ? 'text-rose-400' : 'text-zinc-500'}`}>{i + 1}.</span><div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${getAvatarColor(user.full_name || '')} flex items-center justify-center flex-shrink-0`}><span className="text-white text-xs font-bold">{user.full_name?.charAt(0)}</span></div><span className="text-sm text-white flex-1">{user.full_name}</span><span className={`text-sm font-mono ${i === 0 ? 'text-rose-400 font-semibold' : 'text-rose-400'}`}>{user.lateDays} gün</span></div>)) : (<p className="text-sm text-zinc-500 text-center py-2">Geç kalan yok 🎉</p>)}</div></div>
+              <div className="flex items-center gap-2 mb-4"><BarChart3 className="w-5 h-5 text-indigo-400" /><h3 className="font-semibold text-white">Bu Ay Özeti</h3></div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between"><span className="text-sm text-zinc-400">Toplam Çalışma</span><span className="text-sm font-mono text-white font-semibold">{adminTotalWorkHours} saat</span></div>
+                <div className="flex items-center justify-between"><span className="text-sm text-zinc-400">Ortalama / Gün</span><span className="text-sm font-mono text-white">{Math.floor(adminAvgMinutes / 60)}s {adminAvgMinutes % 60}d</span></div>
+                <div className="flex items-center justify-between"><span className="text-sm text-zinc-400">Toplam Mesai</span><span className="text-sm font-mono text-emerald-400">+{Math.floor(adminTotalOvertime / 60)} saat</span></div>
+                <div className="flex items-center justify-between"><span className="text-sm text-zinc-400">Geç Kalma</span><span className="text-sm font-mono text-rose-400">{adminTotalLateDays} gün</span></div>
+              </div>
             </div>
+
+            {/* Liderlik Tablosu */}
             <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <div className="flex items-center gap-2 mb-4"><TrendingUp className="w-5 h-5 text-emerald-400" /><h3 className="font-semibold text-white">Bu Ay Özet</h3></div>
-              <div className="space-y-3"><div className="flex items-center justify-between"><span className="text-sm text-zinc-400">Toplam Mesai</span><span className="text-sm font-mono text-emerald-400">{formatMinutes(Object.values(monthlyStats).reduce((a, b) => a + b.overtime, 0)) || '0d'}</span></div><div className="flex items-center justify-between"><span className="text-sm text-zinc-400">Toplam Geç Kalma</span><span className="text-sm font-mono text-rose-400">{formatMinutes(Object.values(monthlyStats).reduce((a, b) => a + b.late, 0)) || '0d'}</span></div></div>
+              <div className="flex items-center gap-2 mb-4"><Trophy className="w-5 h-5 text-amber-400" /><h3 className="font-semibold text-white">Bu Ay Liderlik</h3></div>
+              <div className="mb-5"><p className="text-xs text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2"><span>💪</span> EN ÇOK MESAİ</p><div className="space-y-2.5">{topWorkers.map((user, i) => (<div key={user.id} className={`flex items-center gap-3 p-2 rounded-lg ${i === 0 ? 'bg-amber-500/10' : 'hover:bg-white/5'} transition-colors`}><span className={`text-sm font-bold w-5 ${i === 0 ? 'text-amber-400' : 'text-zinc-500'}`}>{i + 1}.</span><div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${getAvatarColor(user.full_name || '')} flex items-center justify-center flex-shrink-0`}><span className="text-white text-xs font-bold">{user.full_name?.charAt(0)}</span></div><span className="text-sm text-white flex-1">{user.full_name}</span><span className={`text-sm font-mono ${i === 0 ? 'text-amber-400 font-semibold' : 'text-emerald-400'}`}>{user.overtime > 0 ? formatMinutesToHours(user.overtime) : '-'}</span></div>))}</div></div>
+              <div className="border-t border-white/10 my-5" />
+              <div><p className="text-xs text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2"><span>😅</span> EN ÇOK GEÇ KALAN</p><div className="space-y-2.5">{topLate.length > 0 ? topLate.map((user, i) => (<div key={user.id} className={`flex items-center gap-3 p-2 rounded-lg ${i === 0 ? 'bg-rose-500/10' : 'hover:bg-white/5'} transition-colors`}><span className={`text-sm font-bold w-5 ${i === 0 ? 'text-rose-400' : 'text-zinc-500'}`}>{i + 1}.</span><div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${getAvatarColor(user.full_name || '')} flex items-center justify-center flex-shrink-0`}><span className="text-white text-xs font-bold">{user.full_name?.charAt(0)}</span></div><span className="text-sm text-white flex-1">{user.full_name}</span><span className={`text-sm font-mono ${i === 0 ? 'text-rose-400 font-semibold' : 'text-rose-400'}`}>{user.lateDays} gün</span></div>)) : (<p className="text-sm text-zinc-500 text-center py-2">Geç kalan yok 🎉</p>)}</div></div>
+            </div>
+
+            {/* Haftalık Trend */}
+            <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div className="flex items-center gap-2 mb-4"><TrendingUp className="w-5 h-5 text-emerald-400" /><h3 className="font-semibold text-white">Haftalık Trend</h3></div>
+              <div className="space-y-3">
+                {weeklyTrend.map((item, i) => {
+                  const maxHours = Math.max(...weeklyTrend.map(t => t.hours), 1)
+                  const percentage = (item.hours / maxHours) * 100
+                  const colors = ['#10b981', '#14b8a6', '#06b6d4', '#3b82f6', '#f59e0b']
+                  return (
+                    <div key={item.day}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs text-zinc-400">{item.day}</span>
+                        <span className="text-xs font-mono text-zinc-300">{item.hours}s</span>
+                      </div>
+                      <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
+                        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${percentage}%`, background: `linear-gradient(90deg, ${colors[i]} 0%, ${colors[(i + 1) % colors.length]} 100%)` }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -438,6 +542,7 @@ export default function GirisCikisPage() {
     )
   }
 
+  // ==================== PERSONEL VIEW ====================
   return (
     <div className="space-y-6">
       <div><h2 className="text-2xl font-bold text-white">Giriş / Çıkış Takibi</h2><p className="text-sm text-zinc-500 mt-1">Mesai kayıtlarım</p></div>
@@ -449,6 +554,7 @@ export default function GirisCikisPage() {
             <p className="text-lg text-zinc-400 mb-4">{formattedDate} {dayName}</p>
             {todayIsHybrid && (<span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium" style={{ background: 'rgba(139,92,246,0.2)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.3)' }}><HomeIcon className="w-4 h-4" />Hibrit Gün (Evden çalışabilirsiniz)</span>)}
           </div>
+
           <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)' }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/5"><div className="flex items-center gap-3"><History className="w-5 h-5 text-cyan-400" /><h3 className="font-semibold text-white">Geçmiş Kayıtlarım</h3></div><span className="text-sm text-zinc-500">Son 30 gün</span></div>
             <div className="divide-y divide-white/5">
@@ -456,36 +562,144 @@ export default function GirisCikisPage() {
                 const isLeave = record.record_type === 'leave'
                 const isSick = record.record_type === 'sick'
                 const isRemote = record.record_type === 'remote'
+                const isHoliday = record.record_type === 'holiday'
+                const isSpecialRecord = isLeave || isSick || isRemote || isHoliday
+                const hasLate = !isSpecialRecord && (record.late_minutes ?? 0) > 0
+                const hasOvertime = !isSpecialRecord && (record.overtime_minutes ?? 0) > 0
+                const recordIsHybrid = isHybridDay(new Date(record.date))
+                const duration = record.check_in && record.check_out ? calculateDuration(record.check_in, record.check_out) : null
+
+                let badgeStyle = { bg: 'rgba(16,185,129,0.2)', color: '#34d399', border: '1px solid rgba(16,185,129,0.3)' }
+                let badgeText = 'Zamanında'
+                let badgeIcon = <CheckCircle2 className="w-3 h-3" />
+
+                if (isLeave) {
+                  badgeStyle = { bg: 'rgba(34,211,238,0.2)', color: '#22d3ee', border: '1px solid rgba(34,211,238,0.3)' }
+                  badgeText = 'İzin'
+                  badgeIcon = <Palmtree className="w-3 h-3" />
+                } else if (isSick) {
+                  badgeStyle = { bg: 'rgba(244,63,94,0.2)', color: '#fb7185', border: '1px solid rgba(244,63,94,0.3)' }
+                  badgeText = 'Rapor'
+                  badgeIcon = <Stethoscope className="w-3 h-3" />
+                } else if (isRemote) {
+                  badgeStyle = { bg: 'rgba(59,130,246,0.2)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }
+                  badgeText = 'Evden'
+                  badgeIcon = <HomeIcon className="w-3 h-3" />
+                } else if (hasLate && hasOvertime) {
+                  badgeStyle = { bg: 'rgba(139,92,246,0.2)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.3)' }
+                  badgeText = `Geç + Mesai (${record.late_minutes}d) (+${formatMinutes(record.overtime_minutes)})`
+                  badgeIcon = <Flame className="w-3 h-3" />
+                } else if (hasLate) {
+                  badgeStyle = { bg: 'rgba(244,63,94,0.2)', color: '#fb7185', border: '1px solid rgba(244,63,94,0.3)' }
+                  badgeText = `Geç Kalma (${record.late_minutes}d)`
+                  badgeIcon = <AlertTriangle className="w-3 h-3" />
+                } else if (hasOvertime) {
+                  badgeStyle = { bg: 'rgba(245,158,11,0.2)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.3)' }
+                  badgeText = `Mesai (+${formatMinutes(record.overtime_minutes)})`
+                  badgeIcon = <Flame className="w-3 h-3" />
+                }
+
                 return (
                   <div key={record.id} className="flex items-center gap-4 px-5 py-4 hover:bg-white/5 transition-colors">
-                    <div className={`p-2.5 rounded-xl ${isLeave ? 'bg-emerald-500/10 border-emerald-500/20' : isSick ? 'bg-rose-500/10 border-rose-500/20' : isRemote ? 'bg-blue-500/10 border-blue-500/20' : 'bg-indigo-500/10 border-indigo-500/20'} border`}>{isLeave ? <Palmtree className="w-5 h-5 text-emerald-400" /> : isSick ? <Stethoscope className="w-5 h-5 text-rose-400" /> : isRemote ? <HomeIcon className="w-5 h-5 text-blue-400" /> : <Clock className="w-5 h-5 text-indigo-400" />}</div>
-                    <div className="flex-1"><p className="font-semibold text-white">{formatShortDate(record.date)}</p><p className="text-sm text-zinc-500">{isLeave || isSick ? 'Tam gün' : `${formatTime(record.check_in)} → ${formatTime(record.check_out)}`}</p></div>
-                    <span className={`text-xs px-2.5 py-1 rounded-full ${isLeave ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/20' : isSick ? 'bg-rose-500/20 text-rose-400 border-rose-500/20' : isRemote ? 'bg-blue-500/20 text-blue-400 border-blue-500/20' : (record.late_minutes ?? 0) > 0 ? 'bg-rose-500/20 text-rose-400 border-rose-500/20' : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20'} border`}>{isLeave ? 'İzin' : isSick ? 'Rapor' : isRemote ? 'Evden' : (record.late_minutes ?? 0) > 0 ? `+${record.late_minutes}d geç` : 'Normal'}</span>
+                    <div className={`p-2.5 rounded-xl ${isLeave ? 'bg-cyan-500/10 border-cyan-500/20' : isSick ? 'bg-rose-500/10 border-rose-500/20' : isRemote ? 'bg-blue-500/10 border-blue-500/20' : hasLate ? 'bg-rose-500/10 border-rose-500/20' : hasOvertime ? 'bg-amber-500/10 border-amber-500/20' : 'bg-emerald-500/10 border-emerald-500/20'} border`}>
+                      {isLeave ? <Palmtree className="w-5 h-5 text-cyan-400" /> : isSick ? <Stethoscope className="w-5 h-5 text-rose-400" /> : isRemote ? <HomeIcon className="w-5 h-5 text-blue-400" /> : hasLate ? <AlertTriangle className="w-5 h-5 text-rose-400" /> : hasOvertime ? <Flame className="w-5 h-5 text-amber-400" /> : <CheckCircle2 className="w-5 h-5 text-emerald-400" />}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-white">{formatShortDate(record.date)}</p>
+                        {recordIsHybrid && !isSpecialRecord && (<span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(139,92,246,0.2)', color: '#a78bfa' }}>Hibrit</span>)}
+                      </div>
+                      <p className="text-sm text-zinc-500">{isSpecialRecord ? 'Tam gün' : `${formatTime(record.check_in)} → ${formatTime(record.check_out)}`}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full" style={{ background: badgeStyle.bg, color: badgeStyle.color, border: badgeStyle.border }}>
+                        {badgeIcon}{badgeText}
+                      </span>
+                    </div>
+                    <div className="text-right min-w-[60px]">
+                      <span className="text-sm font-mono text-zinc-400">{duration || '--'}</span>
+                    </div>
                   </div>
                 )
               }) : (<div className="p-8 text-center text-zinc-500"><History className="w-8 h-8 mx-auto mb-2 opacity-50" /><p>Henüz kayıt bulunmuyor</p></div>)}
             </div>
           </div>
         </div>
+
+        {/* Personel Sağ Sidebar */}
         <div className="space-y-6">
+          {/* Benim Durumum */}
           <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)', backdropFilter: 'blur(20px)', border: '1px solid rgba(16,185,129,0.4)', boxShadow: '0 0 20px -5px rgba(16,185,129,0.4)' }}>
-            <div className="flex items-center gap-2 mb-4"><Award className="w-5 h-5 text-emerald-400" /><h3 className="font-semibold text-white">Bugünkü Durumum</h3></div>
+            <div className="flex items-center gap-2 mb-4"><Award className="w-5 h-5 text-emerald-400" /><h3 className="font-semibold text-white">Benim Durumum</h3></div>
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}><div className="flex items-center gap-2 mb-1"><LogIn className="w-4 h-4 text-emerald-400" /><span className="text-xs text-zinc-400">Giriş</span></div><p className="text-xl font-bold font-mono text-white">{formatTime(myRecord?.check_in || null)}</p>{(myRecord?.late_minutes ?? 0) > 0 && (<p className="text-xs text-rose-400 mt-1">+{myRecord?.late_minutes}d geç</p>)}</div>
               <div className="p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}><div className="flex items-center gap-2 mb-1"><LogOut className="w-4 h-4 text-rose-400" /><span className="text-xs text-zinc-400">Çıkış</span></div><p className="text-xl font-bold font-mono text-white">{formatTime(myRecord?.check_out || null)}</p>{(myRecord?.overtime_minutes ?? 0) > 0 && (<p className="text-xs text-amber-400 mt-1">+{myRecord?.overtime_minutes}d mesai</p>)}</div>
             </div>
-            <div className="space-y-2">
-              <button onClick={handleCheckIn} disabled={actionLoading || hasCheckedOut} className={`w-full py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${hasCheckedIn ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 cursor-default' : 'text-white shadow-lg hover:shadow-emerald-500/40'}`} style={!hasCheckedIn ? { background: 'linear-gradient(90deg, #059669 0%, #10b981 100%)', boxShadow: '0 10px 25px -5px rgba(16,185,129,0.4)' } : undefined}>{actionLoading && !hasCheckedIn ? (<Loader2 className="w-4 h-4 animate-spin" />) : hasCheckedIn ? (<CheckCircle2 className="w-4 h-4" />) : (<LogIn className="w-4 h-4" />)}{hasCheckedIn ? 'Giriş Yapıldı ✓' : 'Geldim'}</button>
-              <button onClick={handleCheckOut} disabled={actionLoading || !hasCheckedIn || hasCheckedOut} className={`w-full py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${hasCheckedOut ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30 cursor-default' : !hasCheckedIn ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' : 'text-white shadow-lg hover:shadow-rose-500/40'}`} style={hasCheckedIn && !hasCheckedOut ? { background: 'linear-gradient(90deg, #e11d48 0%, #f43f5e 100%)', boxShadow: '0 10px 25px -5px rgba(244,63,94,0.4)' } : undefined}>{actionLoading && hasCheckedIn && !hasCheckedOut ? (<Loader2 className="w-4 h-4 animate-spin" />) : hasCheckedOut ? (<CheckCircle2 className="w-4 h-4" />) : (<LogOut className="w-4 h-4" />)}{hasCheckedOut ? 'Çıkış Yapıldı ✓' : 'Gittim'}</button>
+            {/* Butonlar YAN YANA */}
+            <div className="flex gap-2">
+              <button onClick={handleCheckIn} disabled={actionLoading || hasCheckedIn || hasCheckedOut} className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${hasCheckedIn ? 'text-zinc-500 cursor-default' : 'text-white shadow-lg hover:shadow-emerald-500/40'}`} style={hasCheckedIn ? { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' } : { background: 'linear-gradient(90deg, #059669 0%, #10b981 100%)', boxShadow: '0 10px 25px -5px rgba(16,185,129,0.4)' }}>
+                {actionLoading && !hasCheckedIn ? (<Loader2 className="w-4 h-4 animate-spin" />) : (<LogIn className="w-4 h-4" />)}
+                Geldim
+              </button>
+              <button onClick={handleCheckOut} disabled={actionLoading || !hasCheckedIn || hasCheckedOut} className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${hasCheckedOut ? 'text-zinc-500 cursor-default' : !hasCheckedIn ? 'text-zinc-600 cursor-not-allowed' : 'text-white shadow-lg hover:shadow-rose-500/40'}`} style={hasCheckedOut ? { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' } : !hasCheckedIn ? { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' } : { background: 'linear-gradient(90deg, #e11d48 0%, #f43f5e 100%)', boxShadow: '0 10px 25px -5px rgba(244,63,94,0.4)' }}>
+                {actionLoading && hasCheckedIn && !hasCheckedOut ? (<Loader2 className="w-4 h-4 animate-spin" />) : (<LogOut className="w-4 h-4" />)}
+                Gittim
+              </button>
             </div>
             {myRecord?.check_in && myRecord?.check_out && (<div className="mt-4 pt-4 border-t border-white/10 text-center"><p className="text-xs text-zinc-500 mb-1">Toplam Çalışma</p><p className="text-2xl font-bold font-mono text-white">{calculateDuration(myRecord.check_in, myRecord.check_out)}</p></div>)}
           </div>
+
+          {/* Bu Ay Özetim */}
           <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)' }}>
-            <div className="flex items-center gap-2 mb-4"><TrendingUp className="w-5 h-5 text-cyan-400" /><h3 className="font-semibold text-white">Bu Ay Özetim</h3></div>
-            <div className="space-y-3"><div className="flex items-center justify-between"><span className="text-sm text-zinc-400">Çalışılan Gün</span><span className="text-sm font-mono text-white">{myHistory.filter(r => r.check_in).length} gün</span></div><div className="flex items-center justify-between"><span className="text-sm text-zinc-400">Toplam Mesai</span><span className="text-sm font-mono text-emerald-400">{formatMinutes(myHistory.reduce((a, r) => a + (r.overtime_minutes || 0), 0)) || '0d'}</span></div><div className="flex items-center justify-between"><span className="text-sm text-zinc-400">Geç Kalma</span><span className="text-sm font-mono text-rose-400">{myHistory.filter(r => (r.late_minutes ?? 0) > 0).length} gün</span></div></div>
+            <div className="flex items-center gap-2 mb-4"><BarChart3 className="w-5 h-5 text-indigo-400" /><h3 className="font-semibold text-white">Bu Ay Özetim</h3></div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between"><span className="text-sm text-zinc-400">Çalışma Günü</span><span className="text-sm font-mono text-white">{myWorkDays} gün</span></div>
+              <div className="flex items-center justify-between"><span className="text-sm text-zinc-400">Toplam Çalışma</span><span className="text-sm font-mono text-white font-semibold">{myTotalWorkHours} saat</span></div>
+              <div className="flex items-center justify-between"><span className="text-sm text-zinc-400">Ortalama / Gün</span><span className="text-sm font-mono text-white">{Math.floor(myAvgMinutes / 60)}s {myAvgMinutes % 60}d</span></div>
+              <div className="flex items-center justify-between"><span className="text-sm text-zinc-400">Mesai</span><span className="text-sm font-mono text-emerald-400">+{formatMinutes(myTotalOvertime) || '0d'}</span></div>
+              <div className="flex items-center justify-between"><span className="text-sm text-zinc-400">Geç Kalma</span><span className="text-sm font-mono text-rose-400">{myLateDays} gün</span></div>
+              <div className="flex items-center justify-between"><span className="text-sm text-zinc-400">İzin</span><span className="text-sm font-mono text-cyan-400">{myLeaveDays} gün</span></div>
+            </div>
+          </div>
+
+          {/* Bu Ay Liderlik */}
+          <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2"><Trophy className="w-5 h-5 text-amber-400" /><h3 className="font-semibold text-white">Bu Ay Liderlik</h3></div>
+              <span className="text-xs px-2 py-1 rounded-full" style={{ background: 'rgba(245,158,11,0.2)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.3)' }}>🏆 Ödül</span>
+            </div>
+            <div className="mb-4">
+              <p className="text-xs text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2"><span>💪</span> EN ÇOK MESAİ</p>
+              <div className="space-y-2">
+                {topWorkers.slice(0, 3).map((user, i) => (
+                  <div key={user.id} className={`flex items-center gap-3 p-2 rounded-lg ${i === 0 ? 'bg-amber-500/10' : ''} transition-colors`}>
+                    <span className={`text-sm font-bold w-5 ${i === 0 ? 'text-amber-400' : 'text-zinc-500'}`}>{i + 1}.</span>
+                    <div className={`h-7 w-7 rounded-lg bg-gradient-to-br ${getAvatarColor(user.full_name || '')} flex items-center justify-center flex-shrink-0`}><span className="text-white text-xs font-bold">{user.full_name?.charAt(0)}</span></div>
+                    <span className="text-sm text-white flex-1 truncate">{user.full_name}</span>
+                    <span className={`text-sm font-mono ${i === 0 ? 'text-amber-400 font-semibold' : 'text-emerald-400'}`}>{user.overtime > 0 ? formatMinutesToHours(user.overtime) : '-'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="border-t border-white/10 my-4" />
+            <div>
+              <p className="text-xs text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2"><span>😅</span> EN ÇOK GEÇ KALAN</p>
+              <div className="space-y-2">
+                {topLate.length > 0 ? topLate.slice(0, 3).map((user, i) => (
+                  <div key={user.id} className={`flex items-center gap-3 p-2 rounded-lg ${i === 0 ? 'bg-rose-500/10' : ''} transition-colors`}>
+                    <span className={`text-sm font-bold w-5 ${i === 0 ? 'text-rose-400' : 'text-zinc-500'}`}>{i + 1}.</span>
+                    <div className={`h-7 w-7 rounded-lg bg-gradient-to-br ${getAvatarColor(user.full_name || '')} flex items-center justify-center flex-shrink-0`}><span className="text-white text-xs font-bold">{user.full_name?.charAt(0)}</span></div>
+                    <span className="text-sm text-white flex-1 truncate">{user.full_name}</span>
+                    <span className="text-sm font-mono text-rose-400">{user.lateDays} gün</span>
+                  </div>
+                )) : (<p className="text-sm text-zinc-500 text-center py-2">Geç kalan yok 🎉</p>)}
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Modals */}
       {showLateModal && pendingCheckIn && (<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><div className="rounded-2xl p-6 w-full max-w-md mx-4" style={{ background: 'linear-gradient(135deg, rgba(24,24,27,0.98) 0%, rgba(9,9,11,0.99) 100%)', border: '1px solid rgba(255,255,255,0.1)' }}><h3 className="text-lg font-semibold text-white mb-2">Geç Kalma Açıklaması</h3><p className="text-sm text-zinc-400 mb-4">{pendingCheckIn.lateMinutes} dakika geç kaldınız. Lütfen sebebini yazın.</p><textarea value={lateReason} onChange={(e) => setLateReason(e.target.value)} placeholder="Geç kalma sebebinizi yazın..." className="w-full h-24 rounded-xl p-3 text-sm resize-none focus:outline-none text-white placeholder:text-zinc-600" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} autoFocus /><div className="flex gap-2 mt-4"><button onClick={() => { setShowLateModal(false); setPendingCheckIn(null); setLateReason('') }} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-zinc-400" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>İptal</button><button onClick={() => { if (!lateReason.trim()) return; saveCheckIn(pendingCheckIn.now, pendingCheckIn.location, pendingCheckIn.lateMinutes, lateReason.trim()) }} disabled={!lateReason.trim()} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white disabled:opacity-50" style={{ background: 'linear-gradient(90deg, #059669 0%, #10b981 100%)' }}>Kaydet</button></div></div></div>)}
       {showOvertimeModal && pendingCheckOut && (<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><div className="rounded-2xl p-6 w-full max-w-md mx-4" style={{ background: 'linear-gradient(135deg, rgba(24,24,27,0.98) 0%, rgba(9,9,11,0.99) 100%)', border: '1px solid rgba(255,255,255,0.1)' }}><h3 className="text-lg font-semibold text-white mb-2">Mesai Açıklaması</h3><p className="text-sm text-zinc-400 mb-4">{pendingCheckOut.overtimeMinutes} dakika mesai yaptınız. Lütfen ne için çalıştığınızı yazın.</p><textarea value={overtimeReason} onChange={(e) => setOvertimeReason(e.target.value)} placeholder="Mesai sebebinizi yazın..." className="w-full h-24 rounded-xl p-3 text-sm resize-none focus:outline-none text-white placeholder:text-zinc-600" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} autoFocus /><div className="flex gap-2 mt-4"><button onClick={() => { setShowOvertimeModal(false); setPendingCheckOut(null); setOvertimeReason('') }} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-zinc-400" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>İptal</button><button onClick={() => { if (!overtimeReason.trim()) return; saveCheckOut(pendingCheckOut.now, pendingCheckOut.location, pendingCheckOut.overtimeMinutes, pendingCheckOut.earlyLeaveMinutes, overtimeReason.trim()) }} disabled={!overtimeReason.trim()} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white disabled:opacity-50" style={{ background: 'linear-gradient(90deg, #059669 0%, #10b981 100%)' }}>Kaydet</button></div></div></div>)}
     </div>
