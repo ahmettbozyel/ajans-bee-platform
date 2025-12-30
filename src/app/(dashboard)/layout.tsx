@@ -517,7 +517,7 @@ export default function DashboardLayout({
               )}
             </nav>
 
-            {/* User Section */}
+            {/* User Section - Güzel Tasarım */}
             <div 
               className="p-3 transition-colors duration-300"
               style={{ borderTop: `1px solid ${styles.sidebarBorder}` }}
@@ -547,10 +547,14 @@ export default function DashboardLayout({
                 </div>
                 <button
                   onClick={handleSignOut}
-                  className="w-full mt-3 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-rose-400 hover:bg-rose-500/10 transition-colors"
+                  className="group w-full mt-3 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
+                  style={{
+                    background: isDark ? 'rgba(244, 63, 94, 0.1)' : 'rgba(244, 63, 94, 0.08)',
+                    border: `1px solid ${isDark ? 'rgba(244, 63, 94, 0.2)' : 'rgba(244, 63, 94, 0.15)'}`
+                  }}
                 >
-                  <LogOut className="w-4 h-4" />
-                  Çıkış Yap
+                  <LogOut className="w-4 h-4 text-rose-400 transition-transform group-hover:-translate-x-0.5" />
+                  <span className="text-rose-400">Çıkış Yap</span>
                 </button>
               </div>
             </div>
