@@ -26,7 +26,8 @@ import {
   AlertTriangle,
   Download,
   ListChecks,
-  PlayCircle
+  PlayCircle,
+  ChevronDown
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -69,6 +70,15 @@ function formatDateShort(dateStr: string): string {
   return date.toLocaleDateString('tr-TR', {
     day: '2-digit',
     month: '2-digit',
+    year: 'numeric'
+  })
+}
+
+// Ay formatla
+function formatMonth(dateStr: string): string {
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('tr-TR', {
+    month: 'long',
     year: 'numeric'
   })
 }
@@ -127,7 +137,7 @@ function StatusBadge({ status }: { status: TaskStatus }) {
   )
 }
 
-// Özet Kart Component - MOCKUP UYUMLU
+// Özet Kart Component
 function StatCard({ icon, value, label, color, subtitle }: { 
   icon: React.ReactNode
   value: string | number
@@ -174,7 +184,7 @@ function StatCard({ icon, value, label, color, subtitle }: {
   )
 }
 
-// Task Card Component - MOCKUP UYUMLU
+// Task Card Component
 function TaskCard({ 
   task, 
   isAdmin, 
@@ -233,7 +243,7 @@ function TaskCard({
         <div className="flex items-center gap-2 flex-wrap">
           {isAdmin && task.user && (
             <div className="flex items-center gap-2 mr-2">
-              <div className={`h-7 w-7 rounded-lg bg-gradient-to-br ${getAvatarColor(task.user.full_name)} flex items-center justify-center`}>
+              <div className={`h-7 w-7 rounded-full bg-gradient-to-br ${getAvatarColor(task.user.full_name)} flex items-center justify-center`}>
                 <span className="text-white text-xs font-bold">
                   {task.user.full_name?.charAt(0) || '?'}
                 </span>
@@ -291,6 +301,7 @@ function TaskCard({
         )}
       </div>
       
+      {/* Action Buttons - Revize sol alt, düzenle/sil sağ alt */}
       <div className="flex items-center gap-2 mt-4 pt-4 border-t border-white/5">
         {task.status === 'active' && (
           <>
@@ -298,7 +309,7 @@ function TaskCard({
               <Pause className="w-3 h-3 mr-1" />
               Beklemede
             </Button>
-            <Button size="sm" onClick={() => onComplete(task)} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button size="sm" onClick={() => onComplete(task)} className="bg-emerald-500 hover:bg-emerald-600 text-white">
               <Check className="w-3 h-3 mr-1" />
               Bitti
             </Button>
@@ -311,7 +322,7 @@ function TaskCard({
               <Play className="w-3 h-3 mr-1" />
               Devam Et
             </Button>
-            <Button size="sm" onClick={() => onComplete(task)} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button size="sm" onClick={() => onComplete(task)} className="bg-emerald-500 hover:bg-emerald-600 text-white">
               <Check className="w-3 h-3 mr-1" />
               Bitti
             </Button>
@@ -342,7 +353,7 @@ function TaskCard({
   )
 }
 
-// Stats Panel Component - MOCKUP UYUMLU
+// Stats Panel Component
 function StatsPanel({ tasks, users }: { tasks: DailyTask[], users: AppUser[] }) {
   const performanceData = users.map(user => {
     const userTasks = tasks.filter(t => t.user_id === user.id)
@@ -408,7 +419,7 @@ function StatsPanel({ tasks, users }: { tasks: DailyTask[], users: AppUser[] }) 
           ) : (
             performanceData.slice(0, 5).map((item, index) => (
               <div key={item.user.id} className="flex items-center gap-3">
-                <div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${getAvatarColor(item.user.full_name)} flex items-center justify-center flex-shrink-0`}>
+                <div className={`h-8 w-8 rounded-full bg-gradient-to-br ${getAvatarColor(item.user.full_name)} flex items-center justify-center flex-shrink-0`}>
                   <span className="text-white text-xs font-bold">
                     {item.user.full_name?.charAt(0) || '?'}
                   </span>
@@ -418,7 +429,7 @@ function StatsPanel({ tasks, users }: { tasks: DailyTask[], users: AppUser[] }) 
                     <span className="text-sm text-white">{item.user.full_name?.split(' ')[0]}</span>
                     <span className="text-xs font-mono text-zinc-400">{formatDuration(item.totalDuration)}</span>
                   </div>
-                  <div className="h-1.5 rounded-full bg-white/10">
+                  <div className="h-2 rounded-full bg-white/10">
                     <div 
                       className={`h-full rounded-full bg-gradient-to-r ${gradientColors[index % gradientColors.length]}`}
                       style={{ width: `${(item.totalDuration / maxDuration) * 100}%` }}
@@ -467,9 +478,9 @@ function StatsPanel({ tasks, users }: { tasks: DailyTask[], users: AppUser[] }) 
           <h3 className="font-semibold text-white">Revize Durumu</h3>
         </div>
         <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 rounded-xl bg-rose-500/10 border border-rose-500/20">
-            <span className="text-sm text-white">Bugün Revize</span>
-            <span className="text-lg font-bold text-rose-400">{totalRevisions}</span>
+          <div className="flex items-center justify-between p-3 rounded-full bg-rose-500/10 border border-rose-500/20">
+            <span className="text-sm text-white ml-2">Bugün Revize</span>
+            <span className="text-lg font-bold text-rose-400 mr-2">{totalRevisions}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-zinc-400">Revizeli İş</span>
@@ -750,11 +761,11 @@ export default function GunlukIslerPage() {
           <p className="text-sm text-zinc-400">Tüm personelin günlük iş kayıtları</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={handleExcelExport} className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10">
+          <Button onClick={handleExcelExport} className="bg-emerald-500 hover:bg-emerald-600 text-white">
             <Download className="w-4 h-4 mr-2" />
             Excel İndir
           </Button>
-          <Button onClick={() => { setEditingTask(null); setFormData({ brand_id: '', category_id: '', description: '' }); setShowModal(true) }} className="bg-indigo-600 hover:bg-indigo-700">
+          <Button onClick={() => { setEditingTask(null); setFormData({ brand_id: '', category_id: '', description: '' }); setShowModal(true) }} className="bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white">
             <Plus className="w-4 h-4 mr-2" />
             İş Ekle
           </Button>
@@ -828,6 +839,13 @@ export default function GunlukIslerPage() {
             
             <span className="text-zinc-400">{formatDateLong(selectedDate)}</span>
           </div>
+          
+          {/* Ay Dropdown */}
+          <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-zinc-300 hover:bg-white/10 transition-all">
+            <Calendar className="w-4 h-4 text-zinc-500" />
+            <span className="text-sm">{formatMonth(selectedDate)}</span>
+            <ChevronDown className="w-4 h-4 text-zinc-500" />
+          </button>
         </div>
       </div>
 
@@ -863,7 +881,7 @@ export default function GunlukIslerPage() {
                         : 'bg-white/5 border border-white/10 hover:bg-white/10'
                     }`}
                   >
-                    <div className={`h-6 w-6 rounded-md bg-gradient-to-br ${getAvatarColor(user.full_name)} flex items-center justify-center`}>
+                    <div className={`h-6 w-6 rounded-full bg-gradient-to-br ${getAvatarColor(user.full_name)} flex items-center justify-center`}>
                       <span className="text-white text-[10px] font-bold">
                         {user.full_name?.charAt(0) || '?'}
                       </span>
@@ -906,7 +924,7 @@ export default function GunlukIslerPage() {
                 <Calendar className="w-8 h-8 text-zinc-600" />
               </div>
               <p className="text-zinc-400">Bu tarihte kayıtlı iş yok</p>
-              <Button onClick={() => { setEditingTask(null); setFormData({ brand_id: '', category_id: '', description: '' }); setShowModal(true) }} className="mt-4 bg-indigo-600 hover:bg-indigo-700">
+              <Button onClick={() => { setEditingTask(null); setFormData({ brand_id: '', category_id: '', description: '' }); setShowModal(true) }} className="mt-4 bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600">
                 <Plus className="w-4 h-4 mr-2" />
                 İlk İşi Ekle
               </Button>
@@ -1000,7 +1018,7 @@ export default function GunlukIslerPage() {
                 <Button
                   type="submit"
                   disabled={saving || !formData.category_id || !formData.description.trim()}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-700"
+                  className="flex-1 bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-2" />{editingTask ? 'Güncelle' : 'Başlat'}</>}
                 </Button>
