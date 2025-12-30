@@ -968,7 +968,12 @@ function AyarlarTab({ customer, onUpdate }: { customer: Customer; onUpdate?: () 
           {/* Action Buttons */}
           <div className="flex items-center gap-3 pt-3 border-t border-zinc-200 dark:border-white/5">
             <button
-              onClick={handleTestConnection}
+              type="button"
+              onClick={() => {
+                console.log('🔴 TEST BUTTON CLICKED!')
+                alert('Test butonu tıklandı!')
+                handleTestConnection()
+              }}
               disabled={isTesting}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-300 text-sm font-medium hover:bg-zinc-200 dark:hover:bg-white/10 transition-colors disabled:opacity-50"
             >
