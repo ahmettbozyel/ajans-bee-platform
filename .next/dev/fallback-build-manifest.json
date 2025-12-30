@@ -1,0 +1,37 @@
+{
+  "pages": {
+    "/_app": [
+      "static/chunks/194ee_next_dist_compiled_450753f9._.js",
+      "static/chunks/194ee_next_dist_shared_lib_3f7388dd._.js",
+      "static/chunks/194ee_next_dist_client_5a9a47b5._.js",
+      "static/chunks/194ee_next_dist_908f5cf9._.js",
+      "static/chunks/194ee_next_app_64f295db.js",
+      "static/chunks/[next]_entry_page-loader_ts_672d48a6._.js",
+      "static/chunks/194ee_react-dom_6f4d8b17._.js",
+      "static/chunks/194ee_9445821f._.js",
+      "static/chunks/[root-of-the-server]__c21a918d._.js",
+      "static/chunks/Desktop_Ajans-Bee-Panel-Projesi_ajans-bee-platform_pages__app_2da965e7._.js",
+      "static/chunks/turbopack-Desktop_Ajans-Bee-Panel-Projesi_ajans-bee-platform_pages__app_0f11540a._.js"
+    ],
+    "/_error": [
+      "static/chunks/194ee_next_dist_compiled_450753f9._.js",
+      "static/chunks/194ee_next_dist_shared_lib_6360dd9d._.js",
+      "static/chunks/194ee_next_dist_client_5a9a47b5._.js",
+      "static/chunks/194ee_next_dist_9fbf3126._.js",
+      "static/chunks/194ee_next_error_0fe2622b.js",
+      "static/chunks/[next]_entry_page-loader_ts_b3703ca1._.js",
+      "static/chunks/194ee_react-dom_6f4d8b17._.js",
+      "static/chunks/194ee_9445821f._.js",
+      "static/chunks/[root-of-the-server]__8e816d3f._.js",
+      "static/chunks/Desktop_Ajans-Bee-Panel-Projesi_ajans-bee-platform_pages__error_2da965e7._.js",
+      "static/chunks/88e7d_Ajans-Bee-Panel-Projesi_ajans-bee-platform_pages__error_29d18a0e._.js"
+    ]
+  },
+  "devFiles": [],
+  "polyfillFiles": [],
+  "lowPriorityFiles": [
+    "static/development/_ssgManifest.js",
+    "static/development/_buildManifest.js"
+  ],
+  "rootMainFiles": []
+}

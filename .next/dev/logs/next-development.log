@@ -1,0 +1,387 @@
+[00:00:01.064] Server  WARN    ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+[00:00:01.152] Server  LOG     ✓ Ready in 883ms
+[00:00:05.998] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:06.118] Browser LOG     [Auth] Init start
+[00:00:06.118] Browser LOG     [Auth] Event: INITIAL_SESSION
+[00:00:06.118] Browser LOG     [Auth] No user
+[00:00:30.404] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:30.575] Browser LOG     [Auth] Init start
+[00:00:30.575] Browser LOG     [Auth] Event: INITIAL_SESSION
+[00:00:30.576] Browser LOG     [Auth] No user
+[00:00:35.137] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:35.272] Browser LOG     [Auth] Init start
+[00:00:35.272] Browser LOG     [Auth] Event: INITIAL_SESSION
+[00:00:35.272] Browser LOG     [Auth] No user
+[00:00:37.677] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:37.809] Browser LOG     [Auth] Init start
+[00:00:37.809] Browser LOG     [Auth] Event: INITIAL_SESSION
+[00:00:37.809] Browser LOG     [Auth] No user
+[00:03:36.354] Server  LOG       Reload env: .env.local
+[00:03:36.933] Server  LOG     ✓ Compiled in 492ms
+[00:03:36.935] Server  WARN    ⚠ Fast Refresh had to perform a full reload when ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/lib/auth-context.tsx changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+[00:03:37.438] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:03:37.775] Browser LOG     [Auth] Init start
+[00:03:37.775] Browser LOG     [Auth] Event: INITIAL_SESSION
+[00:03:37.775] Browser LOG     [Auth] No user
+[00:03:54.921] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:03:55.087] Browser LOG     [Auth] Init start
+[00:03:55.087] Browser LOG     [Auth] Event: INITIAL_SESSION
+[00:03:55.087] Browser LOG     [Auth] No user
+[00:03:56.859] Browser LOG     [Auth] Event: SIGNED_IN
+[00:04:01.186] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:04:01.318] Browser LOG     [Auth] Init start
+[00:04:01.318] Browser LOG     [Auth] Event: SIGNED_IN
+[00:04:01.318] Browser LOG     [Auth] Event: INITIAL_SESSION
+[00:04:01.495] Browser LOG     [Auth] User: ahmettbozyel@gmail.com
+[00:04:01.495] Browser LOG     [Auth] Fetching app user...
+[00:04:01.709] Browser LOG     [Auth] Got user: ahmettbozyel@gmail.com
+[00:04:01.709] Browser LOG     [Auth] Done
+[00:04:01.841] Browser LOG     [NotificationBell] Auth user: 4ea82bfb-6d99-4f8f-82ef-a19764a771dc ahmettbozyel@gmail.com
+[00:04:01.841] Browser LOG     [NotificationBell] Fetching notifications for: 4ea82bfb-6d99-4f8f-82ef-a19764a771dc
+[00:04:01.942] Browser LOG     [NotificationBell] Auth user: 4ea82bfb-6d99-4f8f-82ef-a19764a771dc ahmettbozyel@gmail.com
+[00:04:02.260] Browser LOG     [NotificationBell] Result: {"data":[{"created_at":"2025-12-30T14:07:35.2637+00:00","id":"be534968-aec8-4b7d-99a2-0bc6e2c46ad4","is_read":false,"message":"82 dakika erken çıkış.","related_attendance_id":null,"related_user_id":"04ef299f-a949-470e-b60a-4906ae17a30a","title":"Anıl Şahin erken çıktı","type":"early_leave","user_id":"4ea82bfb-6d99-4f8f-82ef-a19764a771dc"},{"created_at":"2025-12-30T11:28:33.820597+00:00","id":"6e6f76fc-9abc-4633-a628-e96da7e58d2f","is_read":false,"message":"241 dakika erken çıkış.","related_attendance_id":null,"related_user_id":"a6b48446-4d7d-4769-a9cc-cd3c0f32198a","title":"Elif Bozyel erken çıktı","type":"early_leave","user_id":"4ea82bfb-6d99-4f8f-82ef-a19764a771dc"}],"error":null}
+[00:04:02.649] Browser ERROR   %s a style property during rerender (%s) when a conflicting property is set (%s) can lead to styling bugs. To avoid this, don't mix shorthand and non-shorthand properties for the same value; instead, replace the shorthand with separate values. Removing borderColor border
+[00:04:03.113] Browser ERROR   %s a style property during rerender (%s) when a conflicting property is set (%s) can lead to styling bugs. To avoid this, don't mix shorthand and non-shorthand properties for the same value; instead, replace the shorthand with separate values. Removing borderColor border
+[00:04:20.013] Browser ERROR   %s a style property during rerender (%s) when a conflicting property is set (%s) can lead to styling bugs. To avoid this, don't mix shorthand and non-shorthand properties for the same value; instead, replace the shorthand with separate values. Removing borderColor border
+[00:04:20.013] Browser ERROR   %s a style property during rerender (%s) when a conflicting property is set (%s) can lead to styling bugs. To avoid this, don't mix shorthand and non-shorthand properties for the same value; instead, replace the shorthand with separate values. Removing borderColor border
+[00:04:21.688] Server  ERROR   ⨯ ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx:4:1
+Module not found: Can't resolve '@radix-ui/react-switch'
+  2 |
+  3 | import * as React from "react"
+> 4 | import * as SwitchPrimitives from "@radix-ui/react-switch"
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | import { cn } from "@/lib/utils"
+  7 |
+
+
+
+Import traces:
+  Client Component Browser:
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx [Client Component Browser]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Client Component Browser]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx [Client Component SSR]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Client Component SSR]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:04:21.813] Browser ERROR   %s a style property during rerender (%s) when a conflicting property is set (%s) can lead to styling bugs. To avoid this, don't mix shorthand and non-shorthand properties for the same value; instead, replace the shorthand with separate values. Removing borderColor border
+[00:04:21.813] Browser ERROR   %s a style property during rerender (%s) when a conflicting property is set (%s) can lead to styling bugs. To avoid this, don't mix shorthand and non-shorthand properties for the same value; instead, replace the shorthand with separate values. Removing borderColor border
+[00:04:21.813] Browser ERROR   ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx:4:1
+Module not found: Can't resolve '@radix-ui/react-switch'
+  2 |
+  3 | import * as React from "react"
+> 4 | import * as SwitchPrimitives from "@radix-ui/react-switch"
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | import { cn } from "@/lib/utils"
+  7 |
+
+Import traces:
+  Client Component Browser:
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx [Client Component Browser]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Client Component Browser]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx [Client Component SSR]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Client Component SSR]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+[00:04:22.360] Browser ERROR   ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx:4:1
+Module not found: Can't resolve '@radix-ui/react-switch'
+  2 |
+  3 | import * as React from "react"
+> 4 | import * as SwitchPrimitives from "@radix-ui/react-switch"
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | import { cn } from "@/lib/utils"
+  7 |
+
+Import traces:
+  Client Component Browser:
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx [Client Component Browser]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Client Component Browser]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx [Client Component SSR]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Client Component SSR]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+[00:04:22.360] Browser ERROR   ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx:4:1
+Module not found: Can't resolve '@radix-ui/react-switch'
+  2 |
+  3 | import * as React from "react"
+> 4 | import * as SwitchPrimitives from "@radix-ui/react-switch"
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | import { cn } from "@/lib/utils"
+  7 |
+
+Import traces:
+  Client Component Browser:
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx [Client Component Browser]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Client Component Browser]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx [Client Component SSR]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Client Component SSR]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+[00:04:22.619] Browser ERROR   ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx:4:1
+Module not found: Can't resolve '@radix-ui/react-switch'
+  2 |
+  3 | import * as React from "react"
+> 4 | import * as SwitchPrimitives from "@radix-ui/react-switch"
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | import { cn } from "@/lib/utils"
+  7 |
+
+Import traces:
+  Client Component Browser:
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx [Client Component Browser]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Client Component Browser]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx [Client Component SSR]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Client Component SSR]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+[00:04:22.760] Server  ERROR   ⨯ ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx:4:1
+Module not found: Can't resolve '@radix-ui/react-switch'
+  2 |
+  3 | import * as React from "react"
+> 4 | import * as SwitchPrimitives from "@radix-ui/react-switch"
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | import { cn } from "@/lib/utils"
+  7 |
+
+
+
+Import traces:
+  Client Component Browser:
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx [Client Component Browser]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Client Component Browser]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx [Client Component SSR]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Client Component SSR]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:04:23.043] Browser ERROR   uncaughtError: Error: ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx:4:1
+Module not found: Can't resolve '@radix-ui/react-switch'
+  2 |
+  3 | import * as React from "react"
+> 4 | import * as SwitchPrimitives from "@radix-ui/react-switch"
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | import { cn } from "@/lib/utils"
+  7 |
+
+
+
+Import traces:
+  Client Component Browser:
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx [Client Component Browser]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Client Component Browser]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx [Client Component SSR]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Client Component SSR]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:04:23.244] Browser ERROR   ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx:4:1
+Module not found: Can't resolve '@radix-ui/react-switch'
+  2 |
+  3 | import * as React from "react"
+> 4 | import * as SwitchPrimitives from "@radix-ui/react-switch"
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | import { cn } from "@/lib/utils"
+  7 |
+
+Import traces:
+  Client Component Browser:
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx [Client Component Browser]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Client Component Browser]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx [Client Component SSR]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Client Component SSR]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+[00:04:23.244] Browser ERROR   ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx:4:1
+Module not found: Can't resolve '@radix-ui/react-switch'
+  2 |
+  3 | import * as React from "react"
+> 4 | import * as SwitchPrimitives from "@radix-ui/react-switch"
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | import { cn } from "@/lib/utils"
+  7 |
+
+Import traces:
+  Client Component Browser:
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx [Client Component Browser]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Client Component Browser]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx [Client Component SSR]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Client Component SSR]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+[00:05:01.624] Browser ERROR   ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx:4:1
+Module not found: Can't resolve '@radix-ui/react-switch'
+  2 |
+  3 | import * as React from "react"
+> 4 | import * as SwitchPrimitives from "@radix-ui/react-switch"
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | import { cn } from "@/lib/utils"
+  7 |
+
+Import traces:
+  Client Component Browser:
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx [Client Component Browser]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Client Component Browser]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx [Client Component SSR]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Client Component SSR]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+[00:05:11.374] Browser ERROR   ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx:4:1
+Module not found: Can't resolve '@radix-ui/react-switch'
+  2 |
+  3 | import * as React from "react"
+> 4 | import * as SwitchPrimitives from "@radix-ui/react-switch"
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | import { cn } from "@/lib/utils"
+  7 |
+
+Import traces:
+  Client Component Browser:
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx [Client Component Browser]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Client Component Browser]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/components/ui/switch.tsx [Client Component SSR]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Client Component SSR]
+    ./Desktop/Ajans-Bee-Panel-Projesi/ajans-bee-platform/src/app/(dashboard)/musteriler/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+[00:05:11.752] Server  LOG     ✓ Compiled in 55ms
+[00:05:12.784] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:05:12.934] Browser LOG     [Auth] Init start
+[00:05:12.935] Browser LOG     [Auth] Event: SIGNED_IN
+[00:05:12.935] Browser LOG     [Auth] Event: INITIAL_SESSION
+[00:05:13.222] Browser LOG     [Auth] User: ahmettbozyel@gmail.com
+[00:05:13.222] Browser LOG     [Auth] Fetching app user...
+[00:05:13.364] Browser LOG     [Auth] Got user: ahmettbozyel@gmail.com
+[00:05:13.364] Browser LOG     [Auth] Done
+[00:05:13.510] Browser LOG     [NotificationBell] Auth user: 4ea82bfb-6d99-4f8f-82ef-a19764a771dc ahmettbozyel@gmail.com
+[00:05:13.510] Browser LOG     [NotificationBell] Fetching notifications for: 4ea82bfb-6d99-4f8f-82ef-a19764a771dc
+[00:05:13.626] Browser LOG     [NotificationBell] Auth user: 4ea82bfb-6d99-4f8f-82ef-a19764a771dc ahmettbozyel@gmail.com
+[00:05:13.951] Browser LOG     [NotificationBell] Result: {"data":[{"created_at":"2025-12-30T14:07:35.2637+00:00","id":"be534968-aec8-4b7d-99a2-0bc6e2c46ad4","is_read":false,"message":"82 dakika erken çıkış.","related_attendance_id":null,"related_user_id":"04ef299f-a949-470e-b60a-4906ae17a30a","title":"Anıl Şahin erken çıktı","type":"early_leave","user_id":"4ea82bfb-6d99-4f8f-82ef-a19764a771dc"},{"created_at":"2025-12-30T11:28:33.820597+00:00","id":"6e6f76fc-9abc-4633-a628-e96da7e58d2f","is_read":false,"message":"241 dakika erken çıkış.","related_attendance_id":null,"related_user_id":"a6b48446-4d7d-4769-a9cc-cd3c0f32198a","title":"Elif Bozyel erken çıktı","type":"early_leave","user_id":"4ea82bfb-6d99-4f8f-82ef-a19764a771dc"}],"error":null}
+[00:06:00.794] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:06:00.934] Browser LOG     [Auth] Init start
+[00:06:00.934] Browser LOG     [Auth] Event: SIGNED_IN
+[00:06:00.934] Browser LOG     [Auth] Event: INITIAL_SESSION
+[00:06:01.060] Browser LOG     [Auth] User: ahmettbozyel@gmail.com
+[00:06:01.060] Browser LOG     [Auth] Fetching app user...
+[00:06:01.164] Browser LOG     [Auth] Got user: ahmettbozyel@gmail.com
+[00:06:01.164] Browser LOG     [Auth] Done
+[00:07:22.640] Server  LOG     ✓ Compiled in 179ms
+[00:07:27.529] Server  LOG     ✓ Compiled in 84ms
+[00:07:32.778] Server  LOG     ✓ Compiled in 107ms
+[00:10:26.338] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:10:26.464] Browser LOG     [Auth] Init start
+[00:10:26.464] Browser LOG     [Auth] Event: SIGNED_IN
+[00:10:26.464] Browser LOG     [Auth] Event: INITIAL_SESSION
+[00:10:26.635] Browser LOG     [Auth] User: ahmettbozyel@gmail.com
+[00:10:26.635] Browser LOG     [Auth] Fetching app user...
+[00:10:26.797] Browser LOG     [Auth] Got user: ahmettbozyel@gmail.com
+[00:10:26.797] Browser LOG     [Auth] Done
+[00:10:31.661] Server  LOG     ✓ Compiled in 175ms
+[00:10:41.682] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:10:41.682] Browser LOG     [Auth] Init start
+[00:10:41.815] Browser LOG     [Auth] Event: SIGNED_IN
+[00:10:41.815] Browser LOG     [Auth] Event: INITIAL_SESSION
+[00:10:41.936] Browser LOG     [Auth] User: ahmettbozyel@gmail.com
+[00:10:41.936] Browser LOG     [Auth] Fetching app user...
+[00:10:42.053] Browser LOG     [Auth] Got user: ahmettbozyel@gmail.com
+[00:10:42.053] Browser LOG     [Auth] Done
+[00:11:05.478] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:11:05.606] Browser LOG     [Auth] Init start
+[00:11:05.606] Browser LOG     [Auth] Event: SIGNED_IN
+[00:11:05.606] Browser LOG     [Auth] Event: INITIAL_SESSION
+[00:11:05.747] Browser LOG     [Auth] User: ahmettbozyel@gmail.com
+[00:11:05.747] Browser LOG     [Auth] Fetching app user...
+[00:11:05.867] Browser LOG     [Auth] Got user: ahmettbozyel@gmail.com
+[00:11:05.867] Browser LOG     [Auth] Done
+[00:13:37.037] Browser LOG     [Auth] Event: SIGNED_IN
+[00:16:26.078] Server  LOG     ✓ Compiled in 120ms
+[00:16:42.063] Server  LOG     ✓ Compiled in 90ms
+[00:16:47.776] Server  LOG     ✓ Compiled in 91ms
+[00:17:19.597] Server  LOG     ✓ Compiled in 106ms
+[00:17:25.193] Browser ERROR   uncaughtError: ReferenceError: BosDurumTab is not defined
+[00:17:31.970] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:17:32.120] Browser LOG     [Auth] Init start
+[00:17:32.120] Browser LOG     [Auth] Event: SIGNED_IN
+[00:17:32.121] Browser LOG     [Auth] Event: INITIAL_SESSION
+[00:17:32.330] Browser LOG     [Auth] User: ahmettbozyel@gmail.com
+[00:17:32.330] Browser LOG     [Auth] Fetching app user...
+[00:17:32.647] Browser LOG     [Auth] Got user: ahmettbozyel@gmail.com
+[00:17:32.647] Browser LOG     [Auth] Done
+[00:17:32.776] Browser LOG     [NotificationBell] Auth user: 4ea82bfb-6d99-4f8f-82ef-a19764a771dc ahmettbozyel@gmail.com
+[00:17:32.777] Browser LOG     [NotificationBell] Fetching notifications for: 4ea82bfb-6d99-4f8f-82ef-a19764a771dc
+[00:17:32.883] Browser LOG     [NotificationBell] Auth user: 4ea82bfb-6d99-4f8f-82ef-a19764a771dc ahmettbozyel@gmail.com
+[00:17:33.123] Browser LOG     [NotificationBell] Result: {"data":[{"created_at":"2025-12-30T14:07:35.2637+00:00","id":"be534968-aec8-4b7d-99a2-0bc6e2c46ad4","is_read":false,"message":"82 dakika erken çıkış.","related_attendance_id":null,"related_user_id":"04ef299f-a949-470e-b60a-4906ae17a30a","title":"Anıl Şahin erken çıktı","type":"early_leave","user_id":"4ea82bfb-6d99-4f8f-82ef-a19764a771dc"},{"created_at":"2025-12-30T11:28:33.820597+00:00","id":"6e6f76fc-9abc-4633-a628-e96da7e58d2f","is_read":false,"message":"241 dakika erken çıkış.","related_attendance_id":null,"related_user_id":"a6b48446-4d7d-4769-a9cc-cd3c0f32198a","title":"Elif Bozyel erken çıktı","type":"early_leave","user_id":"4ea82bfb-6d99-4f8f-82ef-a19764a771dc"}],"error":null}
+[00:17:37.004] Server  LOG     ✓ Compiled in 93ms
+[00:17:57.246] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:17:57.383] Browser LOG     [Auth] Init start
+[00:17:57.383] Browser LOG     [Auth] Event: SIGNED_IN
+[00:17:57.383] Browser LOG     [Auth] Event: INITIAL_SESSION
+[00:17:57.500] Browser LOG     [Auth] User: ahmettbozyel@gmail.com
+[00:17:57.500] Browser LOG     [Auth] Fetching app user...
+[00:17:57.620] Browser LOG     [Auth] Got user: ahmettbozyel@gmail.com
+[00:17:57.620] Browser LOG     [Auth] Done
+[00:19:14.943] Server  LOG     ✓ Compiled in 280ms
+[00:19:27.323] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:19:27.323] Browser LOG     [Auth] Init start
+[00:19:27.427] Browser LOG     [Auth] Event: SIGNED_IN
+[00:19:27.427] Browser LOG     [Auth] Event: INITIAL_SESSION
+[00:19:27.607] Browser LOG     [Auth] User: ahmettbozyel@gmail.com
+[00:19:27.607] Browser LOG     [Auth] Fetching app user...
+[00:19:28.076] Browser LOG     [Auth] Got user: ahmettbozyel@gmail.com
+[00:19:28.076] Browser LOG     [Auth] Done

@@ -6,7 +6,8 @@ import {
   TrendingUp, TrendingDown, MousePointer, Eye, Users, DollarSign,
   Target, Megaphone, Share2, Globe, BarChart3, PieChart,
   Plus, FileText, ChevronDown, ExternalLink, Info, Sparkles,
-  Facebook, Instagram, Linkedin, Play
+  Facebook, Instagram, Linkedin, Play, Download, Pencil, RefreshCw,
+  CheckCircle, AlertTriangle, Star
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Customer } from '@/lib/customer-types'
@@ -16,8 +17,7 @@ interface CustomerPerformanceTabProps {
   onUpdate?: () => void
 }
 
-// Tab türleri
-type PerformanceTab = 'reklamlar' | 'sosyal-medya' | 'web-analytics'
+type PerformanceTab = 'reklamlar' | 'sosyal-medya' | 'web-analytics' | 'bos-durum'
 
 export function CustomerPerformanceTab({ customer, onUpdate }: CustomerPerformanceTabProps) {
   const [activeTab, setActiveTab] = useState<PerformanceTab>('reklamlar')
@@ -35,39 +35,167 @@ export function CustomerPerformanceTab({ customer, onUpdate }: CustomerPerforman
         </div>
         <div className="flex items-center gap-3">
           {/* Dönem Seçici */}
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10">
-            <span className="text-sm text-zinc-400">Dönem:</span>
-            <button className="flex items-center gap-1 text-sm font-medium text-white">
-              Kasım 2025
-              <ChevronDown className="w-4 h-4" />
+          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-white text-sm font-medium hover:bg-zinc-200 dark:hover:bg-white/10 transition-colors">
+            <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            Kasım 2025
+            <ChevronDown className="w-4 h-4" />
+          </button>
+          {/* Karşılaştır */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-zinc-500">Karşılaştır:</span>
+            <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-300 text-sm hover:bg-zinc-200 dark:hover:bg-white/10 transition-colors">
+              <RefreshCw className="w-3.5 h-3.5" />
+              vs Ekim
             </button>
           </div>
+          {/* Rapor Oluştur */}
+          <button 
+            onClick={() => setShowReportModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 text-white text-sm font-medium shadow-lg shadow-rose-500/25 hover:shadow-rose-500/40 transition-all"
+          >
+            <FileText className="w-4 h-4" />
+            Rapor Oluştur
+          </button>
+          {/* Veri Ekle */}
           <button 
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-zinc-300 hover:text-white hover:bg-white/10 transition-colors text-sm"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-white text-sm font-medium shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all"
           >
             <Plus className="w-4 h-4" />
             Veri Ekle
           </button>
-          <button 
-            onClick={() => setShowReportModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-medium shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all"
-          >
-            <FileText className="w-4 h-4" />
-            Rapor Oluştur
+        </div>
+      </div>
+
+      {/* Özet Kartları - En üstte */}
+      <div className="grid grid-cols-4 gap-4">
+        <div className="glass-card rounded-2xl p-5 glow-indigo card-hover relative">
+          <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-medium">
+            🔗 API
+          </span>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
+              <Eye className="w-5 h-5 text-indigo-400" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-zinc-900 dark:text-white font-mono">705K</p>
+          <p className="text-xs text-zinc-500 mt-1">Toplam Erişim</p>
+          <div className="flex items-center gap-1 mt-2">
+            <TrendingUp className="w-3 h-3 text-emerald-400" />
+            <span className="text-xs text-emerald-400 font-medium">+12%</span>
+            <span className="text-xs text-zinc-500">vs Ekim</span>
+          </div>
+        </div>
+
+        <div className="glass-card rounded-2xl p-5 glow-amber card-hover relative">
+          <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-medium">
+            🔗 API
+          </span>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
+              <DollarSign className="w-5 h-5 text-amber-400" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-zinc-900 dark:text-white font-mono">€642</p>
+          <p className="text-xs text-zinc-500 mt-1">Toplam Harcama</p>
+          <div className="flex items-center gap-1 mt-2">
+            <TrendingUp className="w-3 h-3 text-emerald-400" />
+            <span className="text-xs text-emerald-400 font-medium">+8%</span>
+            <span className="text-xs text-zinc-500">vs Ekim</span>
+          </div>
+        </div>
+
+        <div className="glass-card rounded-2xl p-5 glow-emerald card-hover relative">
+          <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 font-medium">
+            ✏️ Manuel
+          </span>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+              <Target className="w-5 h-5 text-emerald-400" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-zinc-900 dark:text-white font-mono">103</p>
+          <p className="text-xs text-zinc-500 mt-1">Toplam Lead</p>
+          <div className="flex items-center gap-1 mt-2">
+            <TrendingUp className="w-3 h-3 text-emerald-400" />
+            <span className="text-xs text-emerald-400 font-medium">+23%</span>
+            <span className="text-xs text-zinc-500">vs Ekim</span>
+          </div>
+        </div>
+
+        <div className="glass-card rounded-2xl p-5 glow-cyan card-hover relative">
+          <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-medium">
+            🔗 API
+          </span>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
+              <MousePointer className="w-5 h-5 text-cyan-400" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-zinc-900 dark:text-white font-mono">€6.24</p>
+          <p className="text-xs text-zinc-500 mt-1">CPL</p>
+          <div className="flex items-center gap-1 mt-2">
+            <TrendingDown className="w-3 h-3 text-emerald-400" />
+            <span className="text-xs text-emerald-400 font-medium">-11%</span>
+            <span className="text-xs text-zinc-500">vs Ekim</span>
+          </div>
+        </div>
+      </div>
+
+      {/* AI Performans Analizi Kartı */}
+      <div className="glass-card rounded-2xl p-5 border border-violet-500/20 glow-violet bg-gradient-to-r from-violet-500/5 to-indigo-500/5">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-4">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-violet-500/20 to-indigo-500/20 border border-violet-500/30">
+              <Sparkles className="w-6 h-6 text-violet-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-zinc-900 dark:text-white mb-1">AI Performans Analizi</h3>
+              <p className="text-xs text-zinc-500 mb-3">Son analiz: 11 Aralık 2025, 14:32</p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                    <strong className="text-zinc-900 dark:text-white">Meta Ads "Paket 2"</strong> en düşük CPC (€0.18) ile en verimli reklam.
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                    <strong className="text-zinc-900 dark:text-white">Google Ads CTR (%6.88)</strong> sektör ortalamasının üzerinde.
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                    <strong className="text-zinc-900 dark:text-white">Organik arama</strong> %10.46 dönüşüm oranı ile en kaliteli trafik.
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-400" />
+                  <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                    <strong className="text-zinc-900 dark:text-white">Doğrudan trafik</strong> %70 hemen çıkma - bot trafiği olabilir.
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/20 transition-colors text-sm">
+            <RefreshCw className="w-4 h-4" />
+            Yeniden Analiz
           </button>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 p-1 rounded-xl bg-white/5 border border-white/10 w-fit">
+      <div className="flex items-center gap-1 p-1 rounded-xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 w-fit">
         <button
           onClick={() => setActiveTab('reklamlar')}
           className={cn(
             "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
             activeTab === 'reklamlar'
-              ? "bg-gradient-to-r from-indigo-500/20 to-violet-500/20 text-white border-b-2 border-indigo-500"
-              : "text-zinc-400 hover:text-white hover:bg-white/5"
+              ? "bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 shadow-sm"
+              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/5"
           )}
         >
           <Megaphone className="w-4 h-4" />
@@ -78,8 +206,8 @@ export function CustomerPerformanceTab({ customer, onUpdate }: CustomerPerforman
           className={cn(
             "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
             activeTab === 'sosyal-medya'
-              ? "bg-gradient-to-r from-indigo-500/20 to-violet-500/20 text-white border-b-2 border-indigo-500"
-              : "text-zinc-400 hover:text-white hover:bg-white/5"
+              ? "bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 shadow-sm"
+              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/5"
           )}
         >
           <Share2 className="w-4 h-4" />
@@ -90,12 +218,24 @@ export function CustomerPerformanceTab({ customer, onUpdate }: CustomerPerforman
           className={cn(
             "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
             activeTab === 'web-analytics'
-              ? "bg-gradient-to-r from-indigo-500/20 to-violet-500/20 text-white border-b-2 border-indigo-500"
-              : "text-zinc-400 hover:text-white hover:bg-white/5"
+              ? "bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 shadow-sm"
+              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/5"
           )}
         >
           <Globe className="w-4 h-4" />
           Web Analytics
+        </button>
+        <button
+          onClick={() => setActiveTab('bos-durum')}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+            activeTab === 'bos-durum'
+              ? "bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 shadow-sm"
+              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/5"
+          )}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
+          Boş Durum
         </button>
       </div>
 
@@ -103,16 +243,11 @@ export function CustomerPerformanceTab({ customer, onUpdate }: CustomerPerforman
       {activeTab === 'reklamlar' && <ReklamlarTab />}
       {activeTab === 'sosyal-medya' && <SosyalMedyaTab />}
       {activeTab === 'web-analytics' && <WebAnalyticsTab />}
+      {activeTab === 'bos-durum' && <BosDurumTab />}
 
-      {/* Add Data Modal */}
-      {showAddModal && (
-        <AddDataModal onClose={() => setShowAddModal(false)} />
-      )}
-
-      {/* Report Modal */}
-      {showReportModal && (
-        <ReportModal onClose={() => setShowReportModal(false)} />
-      )}
+      {/* Modals */}
+      {showAddModal && <AddDataModal onClose={() => setShowAddModal(false)} />}
+      {showReportModal && <ReportModal onClose={() => setShowReportModal(false)} />}
     </div>
   )
 }
@@ -121,156 +256,110 @@ export function CustomerPerformanceTab({ customer, onUpdate }: CustomerPerforman
 function ReklamlarTab() {
   return (
     <div className="space-y-6">
-      {/* Özet Kartları */}
-      <div className="grid grid-cols-4 gap-4">
-        <SummaryCard
-          icon={<DollarSign className="w-5 h-5" />}
-          iconBg="bg-emerald-500/10 border-emerald-500/20"
-          iconColor="text-emerald-400"
-          value="₺45,230"
-          label="Toplam Harcama"
-          trend={{ value: 12, direction: 'up' }}
-          glowColor="glow-emerald"
-        />
-        <SummaryCard
-          icon={<Eye className="w-5 h-5" />}
-          iconBg="bg-indigo-500/10 border-indigo-500/20"
-          iconColor="text-indigo-400"
-          value="1.2M"
-          label="Gösterim"
-          trend={{ value: 8, direction: 'up' }}
-          glowColor="glow-indigo"
-        />
-        <SummaryCard
-          icon={<MousePointer className="w-5 h-5" />}
-          iconBg="bg-violet-500/10 border-violet-500/20"
-          iconColor="text-violet-400"
-          value="24,892"
-          label="Tıklama"
-          subValue="CTR: %2.07"
-          glowColor="glow-violet"
-        />
-        <SummaryCard
-          icon={<Target className="w-5 h-5" />}
-          iconBg="bg-cyan-500/10 border-cyan-500/20"
-          iconColor="text-cyan-400"
-          value="342"
-          label="Dönüşüm"
-          subValue="CPA: ₺132"
-          glowColor="glow-cyan"
-        />
-      </div>
-
       {/* Platform Kartları */}
       <div className="grid grid-cols-3 gap-4">
         <PlatformCard
           platform="Meta Ads"
+          subtitle="Facebook & Instagram"
           icon={<Facebook className="w-5 h-5" />}
+          iconLetter="M"
           gradient="from-blue-500 to-indigo-600"
-          spend="₺28,450"
-          impressions="856K"
-          clicks="18,234"
-          ctr="2.13%"
-          conversions={245}
-          roas="3.2x"
+          spend="€186"
+          spendTrend={8}
+          reach="43.2K"
+          reachTrend={15}
+          clicks="912"
+          cpc="€0.20"
           dataSource="api"
+          lastUpdate="2 saat önce"
         />
         <PlatformCard
           platform="Google Ads"
-          icon={<svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>}
+          subtitle="Search & Display"
+          icon={<span className="text-lg font-bold">G</span>}
+          iconLetter="G"
           gradient="from-red-500 to-yellow-500"
-          spend="₺12,780"
-          impressions="324K"
-          clicks="5,892"
-          ctr="1.82%"
-          conversions={89}
-          roas="2.8x"
-          dataSource="manual"
+          spend="€456"
+          spendTrend={5}
+          reach="13.1K"
+          clicks="905"
+          ctr="%6.88"
+          ctrTrend={0.5}
+          dataSource="api"
+          lastUpdate="2 saat önce"
         />
         <PlatformCard
           platform="LinkedIn Ads"
+          subtitle="B2B Reklamlar"
           icon={<Linkedin className="w-5 h-5" />}
+          iconLetter="in"
           gradient="from-blue-600 to-blue-800"
-          spend="₺4,000"
-          impressions="45K"
-          clicks="766"
-          ctr="1.70%"
-          conversions={8}
-          roas="1.2x"
+          spend="€120"
+          reach="8.5K"
+          clicks="156"
+          leads="12"
           dataSource="manual"
+          lastUpdate="3 gün önce"
         />
       </div>
 
       {/* Kampanya Detay Tablosu */}
-      <div className="glass-card rounded-2xl border border-white/10 overflow-hidden">
-        <div className="flex items-center justify-between p-4 border-b border-white/5">
-          <h3 className="font-semibold text-white flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-indigo-400" />
-            Kampanya Detayları
-          </h3>
-          <button className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-            Tümünü Gör
-            <ExternalLink className="w-3 h-3" />
+      <div className="glass-card rounded-2xl border border-zinc-200 dark:border-white/10 overflow-hidden">
+        <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-white/5">
+          <div className="flex items-center gap-3">
+            <h3 className="font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-indigo-400" />
+              Kampanya Detayları
+            </h3>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">
+              Meta Ads
+            </span>
+          </div>
+          <button className="flex items-center gap-2 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-white px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 transition-colors">
+            <Download className="w-3 h-3" />
+            Excel
           </button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-white/5">
-                <th className="text-left p-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Kampanya</th>
-                <th className="text-left p-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Platform</th>
-                <th className="text-right p-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Harcama</th>
-                <th className="text-right p-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Gösterim</th>
+              <tr className="border-b border-zinc-200 dark:border-white/5">
+                <th className="text-left p-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Reklam</th>
+                <th className="text-right p-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Erişim</th>
                 <th className="text-right p-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Tıklama</th>
-                <th className="text-right p-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">CTR</th>
-                <th className="text-right p-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Dönüşüm</th>
-                <th className="text-center p-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Durum</th>
+                <th className="text-right p-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Harcama</th>
+                <th className="text-right p-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">CPC</th>
+                <th className="text-right p-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">vs Ekim</th>
+                <th className="text-center p-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Performans</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-zinc-100 dark:divide-white/5">
               <CampaignRow
-                name="Black Friday - Awareness"
-                platform="Meta"
-                platformColor="text-blue-400"
-                spend="₺12,450"
-                impressions="425K"
-                clicks="8,234"
-                ctr="1.94%"
-                conversions={89}
-                status="active"
+                name="Paket 2"
+                reach="16,260"
+                clicks="503"
+                spend="€90.02"
+                cpc="€0.18"
+                change={12}
+                performance="best"
               />
               <CampaignRow
-                name="Yılsonu Kampanyası"
-                platform="Meta"
-                platformColor="text-blue-400"
-                spend="₺8,200"
-                impressions="256K"
-                clicks="5,892"
-                ctr="2.30%"
-                conversions={124}
-                status="active"
+                name="Video Paketli"
+                reach="6,636"
+                clicks="176"
+                spend="€48.79"
+                cpc="€0.28"
+                change={5}
+                performance="good"
               />
               <CampaignRow
-                name="Search - Brand"
-                platform="Google"
-                platformColor="text-red-400"
-                spend="₺6,780"
-                impressions="89K"
-                clicks="3,456"
-                ctr="3.88%"
-                conversions={67}
-                status="active"
-              />
-              <CampaignRow
-                name="Retargeting"
-                platform="Meta"
-                platformColor="text-blue-400"
-                spend="₺4,200"
-                impressions="124K"
-                clicks="2,108"
-                ctr="1.70%"
-                conversions={32}
-                status="paused"
+                name="Paket 3"
+                reach="5,625"
+                clicks="68"
+                spend="€12.59"
+                cpc="€0.19"
+                change={3}
+                performance="good"
               />
             </tbody>
           </table>
@@ -284,50 +373,152 @@ function ReklamlarTab() {
 function SosyalMedyaTab() {
   return (
     <div className="space-y-6">
-      {/* Info Banner */}
-      <div className="flex items-center gap-3 p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
-        <Info className="w-4 h-4 text-indigo-400" />
-        <p className="text-sm text-indigo-300">Sosyal medya metrikleri organik içeriklerin performansını gösterir.</p>
+      {/* Platform Kartları - Yeni tasarım */}
+      <div className="grid grid-cols-4 gap-4">
+        {/* Facebook */}
+        <div className="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10 card-hover relative">
+          <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 font-medium">
+            ✏️ Manuel
+          </span>
+          <div className="flex items-center gap-3 mb-5">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white">
+              <Facebook className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-semibold text-zinc-900 dark:text-white">Facebook</p>
+              <p className="text-xs text-zinc-500">Organik</p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div className="p-3 rounded-xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/5">
+              <p className="text-2xl font-bold text-zinc-900 dark:text-white font-mono">674K</p>
+              <p className="text-xs text-zinc-500">Görüntülenme</p>
+              <span className="text-xs text-emerald-400 font-medium">+18%</span>
+            </div>
+            <div className="p-3 rounded-xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/5">
+              <p className="text-xl font-bold text-zinc-900 dark:text-white font-mono">363</p>
+              <p className="text-xs text-zinc-500">Etkileşim</p>
+            </div>
+          </div>
+          <div className="flex items-center justify-between pt-4 mt-4 border-t border-zinc-100 dark:border-white/5">
+            <span className="text-xs text-zinc-400 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-zinc-400"></span>
+              1 gün önce
+            </span>
+            <button className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-white px-2 py-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors">
+              <Pencil className="w-3 h-3" />
+              Düzenle
+            </button>
+          </div>
+        </div>
+
+        {/* Instagram */}
+        <div className="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10 card-hover relative">
+          <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 font-medium">
+            ✏️ Manuel
+          </span>
+          <div className="flex items-center gap-3 mb-5">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-pink-500 via-purple-500 to-orange-500 flex items-center justify-center text-white">
+              <Instagram className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-semibold text-zinc-900 dark:text-white">Instagram</p>
+              <p className="text-xs text-zinc-500">Organik</p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div className="p-3 rounded-xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/5">
+              <p className="text-2xl font-bold text-zinc-900 dark:text-white font-mono">31K</p>
+              <p className="text-xs text-zinc-500">Görüntülenme</p>
+              <span className="text-xs text-emerald-400 font-medium">+8%</span>
+            </div>
+            <div className="p-3 rounded-xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/5">
+              <p className="text-xl font-bold text-zinc-900 dark:text-white font-mono">284</p>
+              <p className="text-xs text-zinc-500">Etkileşim</p>
+            </div>
+          </div>
+          <div className="flex items-center justify-between pt-4 mt-4 border-t border-zinc-100 dark:border-white/5">
+            <span className="text-xs text-zinc-400 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-zinc-400"></span>
+              1 gün önce
+            </span>
+            <button className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-white px-2 py-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors">
+              <Pencil className="w-3 h-3" />
+              Düzenle
+            </button>
+          </div>
+        </div>
+
+        {/* LinkedIn */}
+        <div className="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10 card-hover relative">
+          <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 font-medium">
+            ✏️ Manuel
+          </span>
+          <div className="flex items-center gap-3 mb-5">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center text-white">
+              <Linkedin className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-semibold text-zinc-900 dark:text-white">LinkedIn</p>
+              <p className="text-xs text-zinc-500">Organik</p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div className="p-3 rounded-xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/5">
+              <p className="text-2xl font-bold text-zinc-900 dark:text-white font-mono">756</p>
+              <p className="text-xs text-zinc-500">Görüntülenme</p>
+            </div>
+            <div className="p-3 rounded-xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/5">
+              <p className="text-xl font-bold text-zinc-900 dark:text-white font-mono">17</p>
+              <p className="text-xs text-zinc-500">Reaksiyon</p>
+            </div>
+          </div>
+          <div className="flex items-center justify-between pt-4 mt-4 border-t border-zinc-100 dark:border-white/5">
+            <span className="text-xs text-zinc-400 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-zinc-400"></span>
+              2 gün önce
+            </span>
+            <button className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-white px-2 py-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors">
+              <Pencil className="w-3 h-3" />
+              Düzenle
+            </button>
+          </div>
+        </div>
+
+        {/* TikTok - Empty State */}
+        <div className="glass-card rounded-2xl p-5 border border-dashed border-zinc-300 dark:border-white/10 relative">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="h-10 w-10 rounded-xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 flex items-center justify-center">
+              <span className="text-lg font-bold text-zinc-400">T</span>
+            </div>
+            <div>
+              <p className="font-semibold text-zinc-500 dark:text-zinc-400">TikTok</p>
+              <p className="text-xs text-zinc-400">Organik</p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div className="p-3 rounded-xl bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/5">
+              <p className="text-2xl font-bold text-zinc-300 dark:text-zinc-600 font-mono">-</p>
+              <p className="text-xs text-zinc-400">Görüntülenme</p>
+            </div>
+            <div className="p-3 rounded-xl bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/5">
+              <p className="text-xl font-bold text-zinc-300 dark:text-zinc-600 font-mono">-</p>
+              <p className="text-xs text-zinc-400">Etkileşim</p>
+            </div>
+          </div>
+          <div className="flex items-center justify-end pt-4 mt-4 border-t border-zinc-100 dark:border-white/5">
+            <button className="flex items-center gap-1.5 text-xs text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 px-3 py-1.5 rounded-lg border border-indigo-500/30 hover:bg-indigo-500/10 transition-colors font-medium">
+              <Plus className="w-3 h-3" />
+              Veri Ekle
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Platform Kartları */}
-      <div className="grid grid-cols-4 gap-4">
-        <SocialPlatformCard
-          platform="Facebook"
-          icon={<Facebook className="w-5 h-5" />}
-          gradient="from-blue-500 to-blue-700"
-          followers="12.4K"
-          views="45.2K"
-          engagement="3.2K"
-          shares={234}
-        />
-        <SocialPlatformCard
-          platform="Instagram"
-          icon={<Instagram className="w-5 h-5" />}
-          gradient="from-pink-500 via-purple-500 to-orange-500"
-          followers="8.9K"
-          views="89.1K"
-          engagement="5.8K"
-          shares={567}
-        />
-        <SocialPlatformCard
-          platform="LinkedIn"
-          icon={<Linkedin className="w-5 h-5" />}
-          gradient="from-blue-600 to-blue-800"
-          followers="2.1K"
-          views="12.3K"
-          engagement="892"
-          shares={45}
-        />
-        {/* TikTok - Empty State */}
-        <div className="glass-card rounded-2xl p-5 border border-white/10 border-dashed flex flex-col items-center justify-center text-center">
-          <div className="h-12 w-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-3">
-            <Play className="w-5 h-5 text-zinc-500" />
-          </div>
-          <p className="text-sm font-medium text-zinc-400 mb-1">TikTok</p>
-          <p className="text-xs text-zinc-500 mb-3">Henüz bağlanmadı</p>
-          <button className="text-xs text-indigo-400 hover:text-indigo-300">+ Bağla</button>
-        </div>
+      {/* Info Banner - Altta */}
+      <div className="flex items-center gap-3 p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20">
+        <Info className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+        <p className="text-sm text-indigo-600 dark:text-indigo-300">Sosyal medya metrikleri <strong>organik</strong> içeriklerin performansını gösterir.</p>
       </div>
     </div>
   )
@@ -389,9 +580,9 @@ function WebAnalyticsTab() {
       </div>
 
       {/* Trafik Kaynakları */}
-      <div className="glass-card rounded-2xl border border-white/10 overflow-hidden">
-        <div className="flex items-center justify-between p-4 border-b border-white/5">
-          <h3 className="font-semibold text-white flex items-center gap-2">
+      <div className="glass-card rounded-2xl border border-zinc-200 dark:border-white/10 overflow-hidden">
+        <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-white/5">
+          <h3 className="font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
             <PieChart className="w-4 h-4 text-violet-400" />
             Trafik Kaynakları
           </h3>
@@ -399,7 +590,7 @@ function WebAnalyticsTab() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-white/5">
+              <tr className="border-b border-zinc-200 dark:border-white/5">
                 <th className="text-left p-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Kaynak</th>
                 <th className="text-right p-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Oturum</th>
                 <th className="text-right p-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Pay</th>
@@ -407,7 +598,7 @@ function WebAnalyticsTab() {
                 <th className="text-center p-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Kalite</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-zinc-100 dark:divide-white/5">
               <TrafficRow source="Google CPC" sessions={792} share={42} bounceRate={38} quality="medium" />
               <TrafficRow source="Doğrudan" sessions={675} share={36} bounceRate={70} quality="low" />
               <TrafficRow source="Organik" sessions={342} share={18} bounceRate={14} quality="high" />
@@ -428,30 +619,60 @@ function WebAnalyticsTab() {
   )
 }
 
+// ==================== BOŞ DURUM TAB ====================
+function BosDurumTab() {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="h-20 w-20 rounded-2xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 flex items-center justify-center mb-6">
+        <svg className="w-10 h-10 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      </div>
+      <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">Henüz veri yok</h3>
+      <p className="text-sm text-zinc-500 mb-6 max-w-md">
+        Bu müşteri için henüz performans verisi eklenmemiş. 
+        Manuel veri ekleyerek veya API bağlantısı kurarak başlayabilirsiniz.
+      </p>
+      <div className="flex items-center gap-3">
+        <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-white text-sm font-medium shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all">
+          <Plus className="w-4 h-4" />
+          Veri Ekle
+        </button>
+        <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-300 text-sm font-medium hover:bg-zinc-200 dark:hover:bg-white/10 transition-colors">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          </svg>
+          API Bağla
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ==================== MODALS ====================
 function AddDataModal({ onClose }: { onClose: () => void }) {
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center" onClick={onClose}>
       <div 
-        className="bg-gradient-to-b from-zinc-800/95 to-zinc-900/95 border border-white/10 rounded-2xl w-full max-w-lg mx-4 overflow-hidden"
+        className="bg-white dark:bg-gradient-to-b dark:from-zinc-800/95 dark:to-zinc-900/95 border border-zinc-200 dark:border-white/10 rounded-2xl w-full max-w-lg mx-4 overflow-hidden shadow-xl"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-5 border-b border-white/10">
+        <div className="flex items-center justify-between p-5 border-b border-zinc-200 dark:border-white/10">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-indigo-500/20 border border-indigo-500/30">
-              <Plus className="w-5 h-5 text-indigo-400" />
+            <div className="p-2 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 border border-indigo-200 dark:border-indigo-500/30">
+              <Plus className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             </div>
-            <h2 className="text-lg font-semibold text-white">Manuel Veri Ekle</h2>
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Manuel Veri Ekle</h2>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors">
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
         
         <div className="p-5 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-zinc-400 mb-2">Platform *</label>
-            <select className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500/50">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-400 mb-2">Platform *</label>
+            <select className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500/50">
               <option value="">Seçin...</option>
               <optgroup label="Reklamlar">
                 <option value="meta">Meta Ads</option>
@@ -469,74 +690,54 @@ function AddDataModal({ onClose }: { onClose: () => void }) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">Periyot *</label>
-              <select className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500/50">
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-400 mb-2">Periyot *</label>
+              <select className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500/50">
                 <option value="monthly">Aylık</option>
                 <option value="weekly">Haftalık</option>
                 <option value="daily">Günlük</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">Tarih *</label>
-              <input type="month" className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500/50" defaultValue="2025-11" />
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-400 mb-2">Tarih *</label>
+              <input type="month" className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500/50" defaultValue="2025-11" />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">Harcama</label>
-              <input type="number" placeholder="0.00" className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500/50" />
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-400 mb-2">Harcama</label>
+              <input type="number" placeholder="0.00" className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500/50" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">Para Birimi</label>
-              <select className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500/50">
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-400 mb-2">Para Birimi</label>
+              <select className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500/50">
+                <option value="EUR">€ EUR</option>
                 <option value="TRY">₺ TRY</option>
                 <option value="USD">$ USD</option>
-                <option value="EUR">€ EUR</option>
               </select>
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">Gösterim</label>
-              <input type="number" placeholder="0" className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500/50" />
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-400 mb-2">Erişim</label>
+              <input type="number" placeholder="0" className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500/50" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">Erişim</label>
-              <input type="number" placeholder="0" className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500/50" />
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-400 mb-2">Tıklama</label>
+              <input type="number" placeholder="0" className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500/50" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">Tıklama</label>
-              <input type="number" placeholder="0" className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500/50" />
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-400 mb-2">Lead</label>
+              <input type="number" placeholder="0" className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500/50" />
             </div>
           </div>
 
-          <p className="text-xs text-zinc-500">💡 CTR ve CPC otomatik hesaplanır</p>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">Dönüşüm</label>
-              <input type="number" placeholder="0" className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500/50" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">Lead</label>
-              <input type="number" placeholder="0" className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500/50" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">ROAS</label>
-              <input type="number" step="0.1" placeholder="0.0" className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500/50" />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-zinc-400 mb-2">Not (opsiyonel)</label>
-            <textarea rows={2} placeholder="Kampanya veya dönem hakkında not..." className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500/50 resize-none" />
-          </div>
+          <p className="text-xs text-zinc-500">💡 CPC ve CTR otomatik hesaplanır</p>
         </div>
 
-        <div className="flex items-center justify-end gap-3 p-5 border-t border-white/10 bg-black/20">
-          <button onClick={onClose} className="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-zinc-400 text-sm font-medium hover:text-white transition-colors">
+        <div className="flex items-center justify-end gap-3 p-5 border-t border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-black/20">
+          <button onClick={onClose} className="px-5 py-2.5 rounded-xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-400 text-sm font-medium hover:text-zinc-900 dark:hover:text-white transition-colors">
             İptal
           </button>
           <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-medium shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all">
@@ -551,80 +752,64 @@ function AddDataModal({ onClose }: { onClose: () => void }) {
 
 function ReportModal({ onClose }: { onClose: () => void }) {
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center" onClick={onClose}>
       <div 
-        className="bg-gradient-to-b from-zinc-800/95 to-zinc-900/95 border border-white/10 rounded-2xl w-full max-w-lg mx-4 overflow-hidden"
+        className="bg-white dark:bg-gradient-to-b dark:from-zinc-800/95 dark:to-zinc-900/95 border border-zinc-200 dark:border-white/10 rounded-2xl w-full max-w-lg mx-4 overflow-hidden shadow-xl"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-5 border-b border-white/10">
+        <div className="flex items-center justify-between p-5 border-b border-zinc-200 dark:border-white/10">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-violet-500/20 border border-violet-500/30">
-              <FileText className="w-5 h-5 text-violet-400" />
+            <div className="p-2 rounded-xl bg-violet-100 dark:bg-violet-500/20 border border-violet-200 dark:border-violet-500/30">
+              <FileText className="w-5 h-5 text-violet-600 dark:text-violet-400" />
             </div>
-            <h2 className="text-lg font-semibold text-white">Rapor Oluştur</h2>
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Rapor Oluştur</h2>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors">
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
         
         <div className="p-5 space-y-5">
           <div>
-            <label className="block text-sm font-medium text-zinc-400 mb-3">Rapor Dönemi</label>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-400 mb-3">Rapor Dönemi</label>
             <div className="grid grid-cols-2 gap-2">
               {['Kasım 2025', 'Ekim 2025', 'Q4 2025', '2025 Yılı'].map((period, i) => (
-                <label key={period} className="flex items-center gap-2 p-3 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors">
+                <label key={period} className="flex items-center gap-2 p-3 rounded-xl bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 cursor-pointer hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors">
                   <input type="radio" name="period" value={period} defaultChecked={i === 0} className="w-4 h-4 text-indigo-500" />
-                  <span className="text-sm text-zinc-300">{period}</span>
+                  <span className="text-sm text-zinc-700 dark:text-zinc-300">{period}</span>
                 </label>
               ))}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-400 mb-3">Dahil Edilecek Bölümler</label>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-400 mb-3">Dahil Edilecek Bölümler</label>
             <div className="space-y-2">
               {[
                 { id: 'summary', label: 'Yönetici Özeti', checked: true },
                 { id: 'ads', label: 'Reklam Performansı', checked: true },
                 { id: 'social', label: 'Sosyal Medya', checked: true },
                 { id: 'web', label: 'Web Analytics', checked: true },
-                { id: 'ai', label: 'AI Analizi', checked: true },
+                { id: 'ai', label: 'AI Analizi', checked: true, ai: true },
                 { id: 'actions', label: 'Aksiyon Planı', checked: false },
               ].map((item) => (
-                <label key={item.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors">
-                  <input type="checkbox" defaultChecked={item.checked} className="w-4 h-4 rounded border-white/20 bg-white/10 text-indigo-500" />
-                  <span className="text-sm text-zinc-300">{item.label}</span>
-                  {item.id === 'ai' && <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-violet-500/20 text-violet-400 border border-violet-500/20">AI</span>}
+                <label key={item.id} className="flex items-center gap-3 p-3 rounded-xl bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 cursor-pointer hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors">
+                  <input type="checkbox" defaultChecked={item.checked} className="w-4 h-4 rounded border-zinc-300 dark:border-white/20 bg-white dark:bg-white/10 text-indigo-500" />
+                  <span className="text-sm text-zinc-700 dark:text-zinc-300">{item.label}</span>
+                  {item.ai && <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400 border border-violet-200 dark:border-violet-500/20">AI</span>}
                 </label>
               ))}
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-zinc-400 mb-3">Çıktı Formatı</label>
-            <div className="flex gap-3">
-              <label className="flex-1 flex items-center justify-center gap-2 p-3 rounded-xl bg-indigo-500/20 border border-indigo-500/30 cursor-pointer">
-                <input type="radio" name="format" value="html" defaultChecked className="sr-only" />
-                <Globe className="w-4 h-4 text-indigo-400" />
-                <span className="text-sm font-medium text-indigo-300">HTML</span>
-              </label>
-              <label className="flex-1 flex items-center justify-center gap-2 p-3 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors">
-                <input type="radio" name="format" value="pdf" className="sr-only" />
-                <FileText className="w-4 h-4 text-zinc-400" />
-                <span className="text-sm text-zinc-400">PDF</span>
-              </label>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-violet-500/10 border border-violet-500/20">
-            <Sparkles className="w-4 h-4 text-violet-400" />
-            <p className="text-xs text-violet-300">AI otomatik yorum ekleyecek</p>
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20">
+            <Sparkles className="w-4 h-4 text-violet-500 dark:text-violet-400" />
+            <p className="text-xs text-violet-600 dark:text-violet-300">AI otomatik yorum ve öneri ekleyecek</p>
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 p-5 border-t border-white/10 bg-black/20">
-          <button onClick={onClose} className="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-zinc-400 text-sm font-medium hover:text-white transition-colors">
+        <div className="flex items-center justify-end gap-3 p-5 border-t border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-black/20">
+          <button onClick={onClose} className="px-5 py-2.5 rounded-xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-400 text-sm font-medium hover:text-zinc-900 dark:hover:text-white transition-colors">
             İptal
           </button>
           <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-medium shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all">
@@ -661,79 +846,99 @@ function SummaryCard({
         {trend && (
           <span className={cn(
             "text-xs font-medium flex items-center gap-1",
-            trend.direction === 'up' ? "text-emerald-400" : "text-rose-400"
+            trend.direction === 'up' ? "text-emerald-500 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"
           )}>
             {trend.direction === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
             {trend.value}%
           </span>
         )}
       </div>
-      <p className={cn("font-bold text-white font-mono", small ? "text-xl" : "text-2xl")}>{value}</p>
+      <p className={cn("font-bold text-zinc-900 dark:text-white font-mono", small ? "text-xl" : "text-2xl")}>{value}</p>
       <p className="text-xs text-zinc-500 mt-1">{label}</p>
-      {subValue && <p className="text-[10px] text-zinc-600 mt-0.5">{subValue}</p>}
+      {subValue && <p className="text-[10px] text-zinc-400 mt-0.5">{subValue}</p>}
     </div>
   )
 }
 
 function PlatformCard({
-  platform, icon, gradient, spend, impressions, clicks, ctr, conversions, roas, dataSource
+  platform, subtitle, icon, iconLetter, gradient, spend, spendTrend, reach, reachTrend, clicks, cpc, ctr, ctrTrend, leads, dataSource, lastUpdate
 }: {
   platform: string
+  subtitle: string
   icon: React.ReactNode
+  iconLetter: string
   gradient: string
   spend: string
-  impressions: string
+  spendTrend?: number
+  reach: string
+  reachTrend?: number
   clicks: string
-  ctr: string
-  conversions: number
-  roas: string
+  cpc?: string
+  ctr?: string
+  ctrTrend?: number
+  leads?: string
   dataSource: 'api' | 'manual'
+  lastUpdate: string
 }) {
   return (
-    <div className="glass-card rounded-2xl p-5 border border-white/10 card-hover">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className={cn("h-10 w-10 rounded-xl bg-gradient-to-br flex items-center justify-center text-white", gradient)}>
-            {icon}
-          </div>
-          <div>
-            <p className="font-semibold text-white">{platform}</p>
-            <span className={cn(
-              "text-[10px] px-1.5 py-0.5 rounded",
-              dataSource === 'api' 
-                ? "bg-emerald-500/20 text-emerald-400" 
-                : "bg-amber-500/20 text-amber-400"
-            )}>
-              {dataSource === 'api' ? '🔗 API' : '✏️ Manuel'}
-            </span>
-          </div>
+    <div className="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10 card-hover relative">
+      {/* Data Source Badge */}
+      <span className={cn(
+        "absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full font-medium",
+        dataSource === 'api' 
+          ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30" 
+          : "bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30"
+      )}>
+        {dataSource === 'api' ? '🔗 API' : '✏️ Manuel'}
+      </span>
+
+      <div className="flex items-center gap-3 mb-4">
+        <div className={cn("h-10 w-10 rounded-xl bg-gradient-to-br flex items-center justify-center text-white font-bold", gradient)}>
+          {icon}
+        </div>
+        <div>
+          <p className="font-semibold text-zinc-900 dark:text-white">{platform}</p>
+          <p className="text-xs text-zinc-500">{subtitle}</p>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+
+      <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
           <p className="text-xs text-zinc-500">Harcama</p>
-          <p className="text-lg font-bold text-white font-mono">{spend}</p>
+          <p className="text-lg font-bold text-zinc-900 dark:text-white font-mono">{spend}</p>
+          {spendTrend && (
+            <span className="text-xs text-emerald-500 dark:text-emerald-400">+{spendTrend}%</span>
+          )}
         </div>
         <div>
-          <p className="text-xs text-zinc-500">ROAS</p>
-          <p className="text-lg font-bold text-emerald-400 font-mono">{roas}</p>
-        </div>
-        <div>
-          <p className="text-xs text-zinc-500">Gösterim</p>
-          <p className="text-sm font-semibold text-zinc-300 font-mono">{impressions}</p>
+          <p className="text-xs text-zinc-500">Erişim</p>
+          <p className="text-lg font-bold text-zinc-900 dark:text-white font-mono">{reach}</p>
+          {reachTrend && (
+            <span className="text-xs text-emerald-500 dark:text-emerald-400">+{reachTrend}%</span>
+          )}
         </div>
         <div>
           <p className="text-xs text-zinc-500">Tıklama</p>
-          <p className="text-sm font-semibold text-zinc-300 font-mono">{clicks}</p>
+          <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 font-mono">{clicks}</p>
         </div>
         <div>
-          <p className="text-xs text-zinc-500">CTR</p>
-          <p className="text-sm font-semibold text-zinc-300 font-mono">{ctr}</p>
+          <p className="text-xs text-zinc-500">{cpc ? 'CPC' : ctr ? 'CTR' : 'Lead'}</p>
+          <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 font-mono">{cpc || ctr || leads}</p>
+          {ctrTrend && (
+            <span className="text-xs text-emerald-500 dark:text-emerald-400">+{ctrTrend}%</span>
+          )}
         </div>
-        <div>
-          <p className="text-xs text-zinc-500">Dönüşüm</p>
-          <p className="text-sm font-semibold text-zinc-300 font-mono">{conversions}</p>
-        </div>
+      </div>
+
+      <div className="flex items-center justify-between pt-3 border-t border-zinc-100 dark:border-white/5">
+        <span className="text-xs text-zinc-400 flex items-center gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-zinc-400"></span>
+          {lastUpdate}
+        </span>
+        <button className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-white px-2 py-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors">
+          <Pencil className="w-3 h-3" />
+          Düzenle
+        </button>
       </div>
     </div>
   )
@@ -751,28 +956,28 @@ function SocialPlatformCard({
   shares: number
 }) {
   return (
-    <div className="glass-card rounded-2xl p-5 border border-white/10 card-hover">
+    <div className="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10 card-hover">
       <div className="flex items-center gap-3 mb-4">
         <div className={cn("h-10 w-10 rounded-xl bg-gradient-to-br flex items-center justify-center text-white", gradient)}>
           {icon}
         </div>
         <div>
-          <p className="font-semibold text-white">{platform}</p>
+          <p className="font-semibold text-zinc-900 dark:text-white">{platform}</p>
           <p className="text-xs text-zinc-500">{followers} takipçi</p>
         </div>
       </div>
       <div className="grid grid-cols-3 gap-2">
         <div>
           <p className="text-xs text-zinc-500">Görüntülenme</p>
-          <p className="text-sm font-bold text-white font-mono">{views}</p>
+          <p className="text-sm font-bold text-zinc-900 dark:text-white font-mono">{views}</p>
         </div>
         <div>
           <p className="text-xs text-zinc-500">Etkileşim</p>
-          <p className="text-sm font-bold text-white font-mono">{engagement}</p>
+          <p className="text-sm font-bold text-zinc-900 dark:text-white font-mono">{engagement}</p>
         </div>
         <div>
           <p className="text-xs text-zinc-500">Paylaşım</p>
-          <p className="text-sm font-bold text-white font-mono">{shares}</p>
+          <p className="text-sm font-bold text-zinc-900 dark:text-white font-mono">{shares}</p>
         </div>
       </div>
     </div>
@@ -780,52 +985,60 @@ function SocialPlatformCard({
 }
 
 function CampaignRow({
-  name, platform, platformColor, spend, impressions, clicks, ctr, conversions, status
+  name, reach, clicks, spend, cpc, change, performance
 }: {
   name: string
-  platform: string
-  platformColor: string
-  spend: string
-  impressions: string
+  reach: string
   clicks: string
-  ctr: string
-  conversions: number
-  status: 'active' | 'paused' | 'ended'
+  spend: string
+  cpc: string
+  change: number
+  performance: 'best' | 'good' | 'average' | 'low'
 }) {
   return (
-    <tr className="hover:bg-white/5 transition-colors">
+    <tr className="hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors">
       <td className="p-4">
-        <p className="text-sm font-medium text-white">{name}</p>
-      </td>
-      <td className="p-4">
-        <span className={cn("text-xs font-medium", platformColor)}>{platform}</span>
+        <p className="text-sm font-medium text-zinc-900 dark:text-white">{name}</p>
       </td>
       <td className="p-4 text-right">
-        <span className="text-sm font-mono text-white">{spend}</span>
+        <span className="text-sm font-mono text-zinc-600 dark:text-zinc-400">{reach}</span>
       </td>
       <td className="p-4 text-right">
-        <span className="text-sm font-mono text-zinc-400">{impressions}</span>
+        <span className="text-sm font-mono text-zinc-600 dark:text-zinc-400">{clicks}</span>
       </td>
       <td className="p-4 text-right">
-        <span className="text-sm font-mono text-zinc-400">{clicks}</span>
+        <span className="text-sm font-mono text-zinc-900 dark:text-white">{spend}</span>
       </td>
       <td className="p-4 text-right">
-        <span className="text-sm font-mono text-zinc-400">{ctr}</span>
+        <span className="text-sm font-mono text-zinc-900 dark:text-white font-semibold">{cpc}</span>
       </td>
       <td className="p-4 text-right">
-        <span className="text-sm font-mono text-emerald-400">{conversions}</span>
+        <span className={cn(
+          "text-sm font-medium",
+          change >= 0 ? "text-emerald-500 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"
+        )}>
+          {change >= 0 ? '+' : ''}{change}%
+        </span>
       </td>
       <td className="p-4 text-center">
-        <span className={cn(
-          "text-[10px] px-2 py-1 rounded-full font-medium",
-          status === 'active' && "bg-emerald-500/20 text-emerald-400",
-          status === 'paused' && "bg-amber-500/20 text-amber-400",
-          status === 'ended' && "bg-zinc-500/20 text-zinc-400"
-        )}>
-          {status === 'active' && 'Aktif'}
-          {status === 'paused' && 'Durduruldu'}
-          {status === 'ended' && 'Bitti'}
-        </span>
+        {performance === 'best' ? (
+          <span className="inline-flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-400 text-white font-medium shadow-sm">
+            <Star className="w-3 h-3" fill="currentColor" />
+            En İyi
+          </span>
+        ) : performance === 'good' ? (
+          <span className="text-[10px] px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-medium">
+            İyi
+          </span>
+        ) : performance === 'average' ? (
+          <span className="text-[10px] px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-medium">
+            Orta
+          </span>
+        ) : (
+          <span className="text-[10px] px-2.5 py-1 rounded-full bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-medium">
+            Düşük
+          </span>
+        )}
       </td>
     </tr>
   )
@@ -841,30 +1054,30 @@ function TrafficRow({
   quality: 'high' | 'medium' | 'low'
 }) {
   return (
-    <tr className="hover:bg-white/5 transition-colors">
+    <tr className="hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors">
       <td className="p-4">
-        <span className="text-sm font-medium text-white">{source}</span>
+        <span className="text-sm font-medium text-zinc-900 dark:text-white">{source}</span>
       </td>
       <td className="p-4 text-right">
-        <span className="text-sm font-mono text-zinc-300">{sessions.toLocaleString()}</span>
+        <span className="text-sm font-mono text-zinc-600 dark:text-zinc-300">{sessions.toLocaleString()}</span>
       </td>
       <td className="p-4 text-right">
-        <span className="text-sm font-mono text-zinc-400">%{share}</span>
+        <span className="text-sm font-mono text-zinc-500 dark:text-zinc-400">%{share}</span>
       </td>
       <td className="p-4 text-right">
         <span className={cn(
-          "text-sm font-mono",
-          bounceRate > 60 ? "text-rose-400" : bounceRate > 40 ? "text-amber-400" : "text-emerald-400"
+          "text-sm font-mono font-medium",
+          bounceRate > 60 ? "text-rose-500 dark:text-rose-400" : bounceRate > 40 ? "text-amber-500 dark:text-amber-400" : "text-emerald-500 dark:text-emerald-400"
         )}>
           %{bounceRate}
         </span>
       </td>
       <td className="p-4 text-center">
         <span className={cn(
-          "text-[10px] px-2 py-1 rounded-full font-medium",
-          quality === 'high' && "bg-emerald-500/20 text-emerald-400",
-          quality === 'medium' && "bg-amber-500/20 text-amber-400",
-          quality === 'low' && "bg-rose-500/20 text-rose-400"
+          "text-[10px] px-2.5 py-1 rounded-full font-medium",
+          quality === 'high' && "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400",
+          quality === 'medium' && "bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400",
+          quality === 'low' && "bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400"
         )}>
           {quality === 'high' && 'Çok İyi'}
           {quality === 'medium' && 'Orta'}
@@ -877,13 +1090,13 @@ function TrafficRow({
 
 function ConversionCard({ label, value, change }: { label: string; value: number; change: number }) {
   return (
-    <div className="glass-card rounded-xl p-4 border border-white/10 card-hover">
+    <div className="glass-card rounded-xl p-4 border border-zinc-200 dark:border-white/10 card-hover">
       <p className="text-xs text-zinc-500 mb-1">{label}</p>
       <div className="flex items-end justify-between">
-        <p className="text-2xl font-bold text-white font-mono">{value}</p>
+        <p className="text-2xl font-bold text-zinc-900 dark:text-white font-mono">{value}</p>
         <span className={cn(
           "text-xs font-medium flex items-center gap-1",
-          change >= 0 ? "text-emerald-400" : "text-rose-400"
+          change >= 0 ? "text-emerald-500 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"
         )}>
           {change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
           {change >= 0 ? '+' : ''}{change}%
