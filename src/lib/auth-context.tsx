@@ -11,8 +11,10 @@ interface AuthContextType {
   loading: boolean
   role: UserRole | null
   isAdmin: boolean
+  isYonetici: boolean
   isOperasyon: boolean
   isPersonel: boolean
+  isStajer: boolean
   canAccess: (module: ModuleSlug) => boolean
   canEdit: (module: ModuleSlug) => boolean
   getDefaultRoute: () => string
@@ -129,8 +131,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     role,
     isAdmin: role === 'admin',
+    isYonetici: role === 'yonetici',
     isOperasyon: role === 'operasyon',
     isPersonel: role === 'personel',
+    isStajer: role === 'stajer',
     canAccess: (module: ModuleSlug) => role ? canAccess(role, module) : false,
     canEdit: (module: ModuleSlug) => role ? canEdit(role, module) : false,
     getDefaultRoute: () => role ? getDefaultRoute(role) : '/login',

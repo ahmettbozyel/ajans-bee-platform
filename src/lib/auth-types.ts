@@ -3,7 +3,7 @@
 // ==========================================
 
 // Roller
-export type UserRole = 'admin' | 'personel' | 'operasyon'
+export type UserRole = 'admin' | 'yonetici' | 'operasyon' | 'personel' | 'stajer'
 
 // Kullanıcı tipi (public.users tablosu)
 export interface AppUser {
@@ -29,8 +29,10 @@ export type ModuleSlug =
 // Rol bazlı erişim matrisi
 export const ROLE_ACCESS: Record<UserRole, ModuleSlug[]> = {
   admin: ['dashboard', 'markalar', 'teknik-hizmetler', 'icerik-uret', 'gunluk-isler', 'giris-cikis', 'ayarlar'],
+  yonetici: ['teknik-hizmetler', 'gunluk-isler', 'giris-cikis', 'ayarlar'],
+  operasyon: ['gunluk-isler', 'giris-cikis', 'teknik-hizmetler'],
   personel: ['gunluk-isler', 'giris-cikis'],
-  operasyon: ['gunluk-isler', 'giris-cikis', 'teknik-hizmetler']
+  stajer: ['gunluk-isler', 'giris-cikis']
 }
 
 // Erişim kontrol fonksiyonları
@@ -42,13 +44,16 @@ export function canAccess(role: UserRole, module: ModuleSlug): boolean {
 export function canEdit(role: UserRole, module: ModuleSlug): boolean {
   // Admin her şeyi düzenleyebilir
   if (role === 'admin') return true
-  
+
+  // Yönetici teknik hizmetleri ve ayarları düzenleyebilir
+  if (role === 'yonetici' && (module === 'teknik-hizmetler' || module === 'ayarlar')) return true
+
   // Operasyon teknik hizmetleri düzenleyebilir
   if (role === 'operasyon' && module === 'teknik-hizmetler') return true
-  
+
   // Herkes kendi günlük işlerini düzenleyebilir
   if (module === 'gunluk-isler' || module === 'giris-cikis') return true
-  
+
   return false
 }
 
@@ -56,9 +61,13 @@ export function getDefaultRoute(role: UserRole): string {
   switch (role) {
     case 'admin':
       return '/dashboard'
+    case 'yonetici':
+      return '/gunluk-isler'
     case 'operasyon':
       return '/gunluk-isler'
     case 'personel':
+      return '/gunluk-isler'
+    case 'stajer':
       return '/gunluk-isler'
     default:
       return '/gunluk-isler'

@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { UserRole } from '@/lib/auth-types'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,7 +18,7 @@ export async function createUser(data: {
   email: string
   password: string
   full_name: string
-  role: 'admin' | 'operasyon' | 'personel'
+  role: UserRole
 }) {
   try {
     // 1. Auth'da kullanıcı oluştur (trigger otomatik public.users'a ekleyecek)
@@ -54,10 +55,10 @@ export async function createUser(data: {
 }
 
 export async function updateUser(
-  userId: string, 
+  userId: string,
   data: {
     full_name?: string
-    role?: 'admin' | 'operasyon' | 'personel'
+    role?: UserRole
     is_active?: boolean
   }
 ) {

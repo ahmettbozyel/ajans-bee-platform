@@ -17,19 +17,23 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+import { UserRole } from '@/lib/auth-types'
+
 interface User {
   id: string
   email: string
   full_name: string | null
-  role: 'admin' | 'operasyon' | 'personel'
+  role: UserRole
   is_active: boolean
   created_at: string
 }
 
 const ROLES = [
   { value: 'admin', label: 'Admin', color: 'emerald', description: 'Tam yetki' },
+  { value: 'yonetici', label: 'Yönetici', color: 'amber', description: 'Teknik + Ayarlar' },
   { value: 'operasyon', label: 'Operasyon', color: 'violet', description: 'Teknik + Personel' },
   { value: 'personel', label: 'Personel', color: 'blue', description: 'Günlük işler' },
+  { value: 'stajer', label: 'Stajyer', color: 'cyan', description: 'Günlük işler' },
 ]
 
 export function UsersTab() {
@@ -43,7 +47,7 @@ export function UsersTab() {
   const [formData, setFormData] = useState({
     email: '',
     full_name: '',
-    role: 'personel' as 'admin' | 'operasyon' | 'personel',
+    role: 'personel' as UserRole,
     password: ''
   })
 
