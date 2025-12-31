@@ -859,7 +859,7 @@ function PersonelStatsPanel({ tasks, allMonthTasks, categories }: {
 
 // Main Page Component
 export default function GunlukIslerPage() {
-  const { appUser, isAdmin } = useAuth()
+  const { appUser, isAdmin, isYonetici } = useAuth()
   const [tasks, setTasks] = useState<DailyTask[]>([])
   const [revisions, setRevisions] = useState<TaskRevision[]>([])
   const [monthTasks, setMonthTasks] = useState<DailyTask[]>([])
@@ -906,14 +906,16 @@ export default function GunlukIslerPage() {
       
       if (brandsData) setBrands(brandsData)
 
-      if (isAdmin) {
+      // Yönetici de admin gibi tüm personeli görür
+      if (isAdmin || isYonetici) {
         const { data: usersData } = await supabase
           .from('users')
           .select('*')
           .eq('is_active', true)
           .neq('role', 'admin')
+          .neq('role', 'yonetici')
           .order('full_name')
-        
+
         if (usersData) setUsers(usersData as AppUser[])
       }
 
@@ -929,7 +931,7 @@ export default function GunlukIslerPage() {
         .eq('work_date', selectedDate)
         .order('created_at', { ascending: false })
       
-      if (!isAdmin && appUser) {
+      if (!isAdmin && !isYonetici && appUser) {
         query = query.eq('user_id', appUser.id)
       } else if (selectedUser !== 'all') {
         query = query.eq('user_id', selectedUser)
@@ -959,8 +961,8 @@ export default function GunlukIslerPage() {
         }
       }
       
-      // Personel için bu ay işleri
-      if (!isAdmin && appUser) {
+      // Personel için bu ay işleri (admin ve yönetici hariç)
+      if (!isAdmin && !isYonetici && appUser) {
         const now = new Date(selectedDate)
         const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
         const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]
@@ -983,7 +985,7 @@ export default function GunlukIslerPage() {
     } finally {
       setLoading(false)
     }
-  }, [selectedDate, selectedUser, selectedBrand, isAdmin, appUser, supabase])
+  }, [selectedDate, selectedUser, selectedBrand, isAdmin, isYonetici, appUser, supabase])
 
   useEffect(() => {
     fetchData()
@@ -1179,9 +1181,9 @@ export default function GunlukIslerPage() {
     alert('Excel export özelliği yakında eklenecek!')
   }
 
-  // Admin ve Personel için farklı render
-  if (!isAdmin) {
-    // PERSONEL GÖRÜNÜMÜ
+  // Admin/Yönetici ve Personel için farklı render
+  if (!isAdmin && !isYonetici) {
+    // PERSONEL GÖRÜNÜMÜ (operasyon, personel, stajer)
     return (
       <div className="space-y-6">
         {/* Başlık */}
@@ -1347,7 +1349,7 @@ export default function GunlukIslerPage() {
                   <TaskCard
                     key={task.id}
                     task={task as DailyTask & { user?: { id: string; full_name: string | null } }}
-                    isAdmin={false}
+                    isAdmin={isAdmin || isYonetici}
                     revisions={revisions}
                     onPause={handlePause}
                     onResume={handleResume}
@@ -1644,7 +1646,7 @@ export default function GunlukIslerPage() {
               <TaskCard
                 key={task.id}
                 task={task as DailyTask & { user?: { id: string; full_name: string | null } }}
-                isAdmin={isAdmin}
+                isAdmin={isAdmin || isYonetici}
                 revisions={revisions}
                 onPause={handlePause}
                 onResume={handleResume}

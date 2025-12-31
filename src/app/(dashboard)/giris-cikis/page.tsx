@@ -20,7 +20,7 @@ import {
 import { AdminView, StaffView } from './components'
 
 export default function GirisCikisPage() {
-  const { appUser, isAdmin } = useAuth()
+  const { appUser, isAdmin, isYonetici, isStajer } = useAuth()
   const [todayRecords, setTodayRecords] = useState<AttendanceWithUser[]>([])
   const [myHistory, setMyHistory] = useState<Attendance[]>([])
   const [allMonthlyRecords, setAllMonthlyRecords] = useState<Attendance[]>([])
@@ -58,12 +58,13 @@ export default function GirisCikisPage() {
     if (!appUser) return
     setLoading(true)
     try {
-      if (isAdmin) {
-        const { data: usersData } = await supabase.from('users').select('*').eq('is_active', true).neq('role', 'admin').order('full_name')
+      // Yönetici de admin gibi tüm personeli görür
+      if (isAdmin || isYonetici) {
+        const { data: usersData } = await supabase.from('users').select('*').eq('is_active', true).neq('role', 'admin').neq('role', 'yonetici').order('full_name')
         if (usersData) setUsers(usersData as AppUser[])
 
         const { data: recordsData } = await supabase.from('attendance').select('*, user:users(*)').eq('date', selectedDate).order('check_in', { ascending: true })
-        if (recordsData) setTodayRecords((recordsData as unknown as AttendanceWithUser[]).filter(r => r.user?.role !== 'admin'))
+        if (recordsData) setTodayRecords((recordsData as unknown as AttendanceWithUser[]).filter(r => r.user?.role !== 'admin' && r.user?.role !== 'yonetici'))
 
         const [year, month] = selectedMonth.split('-').map(Number)
         const startDate = `${year}-${String(month).padStart(2, '0')}-01`
@@ -100,7 +101,7 @@ export default function GirisCikisPage() {
           })))
         }
       } else {
-        // Staff view
+        // Staff view (personel, stajer, operasyon)
         const { data: todayData } = await supabase.from('attendance').select('*').eq('user_id', appUser.id).eq('date', selectedDate).single()
         setTodayRecords(todayData ? [todayData as Attendance] : [])
 
@@ -110,7 +111,7 @@ export default function GirisCikisPage() {
         if (historyData) setMyHistory(historyData as Attendance[])
 
         // Leaderboard data
-        const { data: allUsersData } = await supabase.from('users').select('*').eq('is_active', true).neq('role', 'admin').order('full_name')
+        const { data: allUsersData } = await supabase.from('users').select('*').eq('is_active', true).neq('role', 'admin').neq('role', 'yonetici').order('full_name')
         if (allUsersData) setUsers(allUsersData as AppUser[])
 
         const now = new Date()
@@ -143,7 +144,7 @@ export default function GirisCikisPage() {
       const { data: records, error } = await supabase.from('attendance').select('*, user:users(full_name, email, role)').gte('date', startDate).lte('date', endDate).order('date', { ascending: true }).order('user_id', { ascending: true })
       if (error) throw error
 
-      const filteredRecords = (records as any[])?.filter(r => r.user?.role !== 'admin') || []
+      const filteredRecords = (records as any[])?.filter(r => r.user?.role !== 'admin' && r.user?.role !== 'yonetici') || []
       if (filteredRecords.length === 0) { alert('Bu ay için kayıt bulunamadı.'); setExportLoading(false); return }
 
       const mainData = filteredRecords.map((record: any) => {
@@ -198,12 +199,14 @@ export default function GirisCikisPage() {
   const hasCheckedOut = myRecord?.check_out != null
 
   const handleCheckIn = async () => {
-    if (!appUser || isAdmin) return
+    if (!appUser || isAdmin || isYonetici) return
     setActionLoading(true)
     try {
       const now = new Date()
-      const location = await getLocation()
-      const lateMinutes = calculateLateMinutes(now)
+      // Stajer için konum kontrolü yok
+      const location = isStajer ? null : await getLocation()
+      // Stajer için geç kalma kontrolü yok
+      const lateMinutes = isStajer ? 0 : calculateLateMinutes(now)
       if (lateMinutes > 0) { setPendingCheckIn({ now, location, lateMinutes }); setShowLateModal(true); setActionLoading(false); return }
       await saveCheckIn(now, location, 0, '')
     } catch (error) { console.error('Check-in error:', error); setActionLoading(false) }
@@ -232,11 +235,13 @@ export default function GirisCikisPage() {
   }
 
   const handleCheckOut = async () => {
-    if (!appUser || !myRecord || isAdmin) return
+    if (!appUser || !myRecord || isAdmin || isYonetici) return
     setActionLoading(true)
     try {
       const now = new Date()
-      const location = await getLocation()
+      // Stajer için konum kontrolü yok
+      const location = isStajer ? null : await getLocation()
+      // Stajer için mesai var (overtime calculation stays)
       const overtimeMinutes = calculateOvertimeMinutes(now)
       const earlyLeaveMinutes = calculateEarlyLeaveMinutes(now)
       if (overtimeMinutes > 0) { setPendingCheckOut({ now, location, overtimeMinutes, earlyLeaveMinutes }); setShowOvertimeModal(true); setActionLoading(false); return }
@@ -281,8 +286,8 @@ export default function GirisCikisPage() {
     )
   }
 
-  // Render appropriate view
-  if (isAdmin) {
+  // Render appropriate view - Yönetici de admin paneli görür
+  if (isAdmin || isYonetici) {
     return (
       <AdminView
         currentTime={currentTime}
