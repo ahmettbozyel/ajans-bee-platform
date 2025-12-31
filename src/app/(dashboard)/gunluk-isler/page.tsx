@@ -1226,47 +1226,49 @@ export default function GunlukIslerPage() {
                 Bugün
               </button>
 
-              <div className="w-px h-8 bg-white/10" />
+              <div className="w-px h-8 bg-white/10 mx-2" />
 
-              {/* Filtreler */}
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="İş ara..."
-                  className="w-40 h-8 pl-8 pr-3 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500/50"
-                />
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
+              {/* Filtreler - Ortalanmış */}
+              <div className="flex-1 flex items-center justify-center gap-3">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="İş ara..."
+                    className="w-52 h-9 pl-9 pr-4 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500/50"
+                  />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                </div>
+
+                <Select value={selectedBrand} onValueChange={setSelectedBrand}>
+                  <SelectTrigger className="w-[180px] h-9 rounded-lg bg-white/5 border-white/10 text-zinc-300 text-sm">
+                    <Building2 className="w-4 h-4 mr-2 text-zinc-500" />
+                    <SelectValue placeholder="Tüm Markalar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tüm Markalar</SelectItem>
+                    {brands.map(brand => (
+                      <SelectItem key={brand.id} value={brand.id}>{brand.brand_name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-[160px] h-9 rounded-lg bg-white/5 border-white/10 text-zinc-300 text-sm">
+                    <Tag className="w-4 h-4 mr-2 text-zinc-500" />
+                    <SelectValue placeholder="Tüm Kategoriler" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tüm Kategoriler</SelectItem>
+                    {categories.map(cat => (
+                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              <Select value={selectedBrand} onValueChange={setSelectedBrand}>
-                <SelectTrigger className="w-[140px] h-8 rounded-lg bg-white/5 border-white/10 text-zinc-300 text-sm">
-                  <Building2 className="w-3.5 h-3.5 mr-1.5 text-zinc-500" />
-                  <SelectValue placeholder="Tüm Markalar" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tüm Markalar</SelectItem>
-                  {brands.map(brand => (
-                    <SelectItem key={brand.id} value={brand.id}>{brand.brand_name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-[130px] h-8 rounded-lg bg-white/5 border-white/10 text-zinc-300 text-sm">
-                  <Tag className="w-3.5 h-3.5 mr-1.5 text-zinc-500" />
-                  <SelectValue placeholder="Tüm Kategoriler" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tüm Kategoriler</SelectItem>
-                  {categories.map(cat => (
-                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <div className="w-px h-8 bg-white/10" />
+              <div className="w-px h-8 bg-white/10 mx-2" />
             </div>
 
             {/* Mini Stats */}
