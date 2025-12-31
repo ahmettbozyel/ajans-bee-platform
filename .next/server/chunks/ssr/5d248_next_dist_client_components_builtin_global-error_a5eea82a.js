@@ -1,3 +1,0 @@
-module.exports=[17174,(a,b,c)=>{let{createClientModuleProxy:d}=a.r(69294);a.n(d("[project]/Desktop/ajans-bee-platform/node_modules/next/dist/client/components/builtin/global-error.js <module evaluation>"))},59650,(a,b,c)=>{let{createClientModuleProxy:d}=a.r(69294);a.n(d("[project]/Desktop/ajans-bee-platform/node_modules/next/dist/client/components/builtin/global-error.js"))},8272,a=>{"use strict";a.i(17174);var b=a.i(59650);a.n(b)}];
-
-//# sourceMappingURL=5d248_next_dist_client_components_builtin_global-error_a5eea82a.js.map
