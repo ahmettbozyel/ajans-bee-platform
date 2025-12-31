@@ -1,5 +1,36 @@
 {
-  "node": {},
+  "node": {
+    "4031db28220d4685ee7dbe6a55d32a4e18622b27fe": {
+      "workers": {
+        "app/(dashboard)/ayarlar/page": {
+          "moduleId": "[project]/Desktop/ajans-bee-platform/.next-internal/server/app/(dashboard)/ayarlar/page/actions.js { ACTIONS_MODULE0 => \"[project]/Desktop/ajans-bee-platform/src/app/(dashboard)/ayarlar/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "createUser",
+          "filename": "Desktop/ajans-bee-platform/src/app/(dashboard)/ayarlar/actions.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/ayarlar/page": "action-browser"
+      },
+      "filename": "Desktop/ajans-bee-platform/src/app/(dashboard)/ayarlar/actions.ts",
+      "exportedName": "createUser"
+    },
+    "60f364d87ee7149ac8e95af200ae4f9b3bd1018f83": {
+      "workers": {
+        "app/(dashboard)/ayarlar/page": {
+          "moduleId": "[project]/Desktop/ajans-bee-platform/.next-internal/server/app/(dashboard)/ayarlar/page/actions.js { ACTIONS_MODULE0 => \"[project]/Desktop/ajans-bee-platform/src/app/(dashboard)/ayarlar/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "updateUser",
+          "filename": "Desktop/ajans-bee-platform/src/app/(dashboard)/ayarlar/actions.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/ayarlar/page": "action-browser"
+      },
+      "filename": "Desktop/ajans-bee-platform/src/app/(dashboard)/ayarlar/actions.ts",
+      "exportedName": "updateUser"
+    }
+  },
   "edge": {},
-  "encryptionKey": "7ZrVFnNwzedfBuWlIULS43RApLnR09q8OAIlDtohl9I="
+  "encryptionKey": "VaGwmfEkj8H75ZLvK1WDW3VZv7imBnVY+cp5GitP8TE="
 }

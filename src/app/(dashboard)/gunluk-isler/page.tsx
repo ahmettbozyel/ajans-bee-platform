@@ -30,9 +30,23 @@ import {
   PlayCircle,
   ChevronDown,
   BarChart3,
-  Tag
+  Tag,
+  RotateCcw,
+  History
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+
+// TaskRevision tipi
+interface TaskRevision {
+  id: string
+  task_id: string
+  revision_number: number
+  note: string | null
+  start_time: string
+  end_time: string | null
+  duration: number
+  created_at: string
+}
 
 // Süre formatla (saniye -> Xs Xd)
 function formatDuration(seconds: number): string {
@@ -194,28 +208,35 @@ function StatCard({ icon, value, label, color, subtitle }: {
   )
 }
 
-// Task Card Component - TEMİZ VE MİNİMAL
+// Task Card Component - ACCORDION İLE
 function TaskCard({ 
   task, 
   isAdmin, 
+  revisions,
   onPause, 
   onResume, 
   onComplete, 
   onStartRevision,
+  onReopen,
   onEdit,
   onDelete 
 }: { 
   task: DailyTask & { user?: { id: string; full_name: string | null } }
   isAdmin: boolean
+  revisions: TaskRevision[]
   onPause: (task: DailyTask) => void
   onResume: (task: DailyTask) => void
   onComplete: (task: DailyTask) => void
   onStartRevision: (task: DailyTask) => void
+  onReopen: (task: DailyTask) => void
   onEdit: (task: DailyTask) => void
   onDelete: (task: DailyTask) => void
 }) {
   const [currentDuration, setCurrentDuration] = useState(task.total_duration)
-  const [showActions, setShowActions] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
+  
+  // Bu task'a ait revizyonlar
+  const taskRevisions = revisions.filter(r => r.task_id === task.id).sort((a, b) => a.revision_number - b.revision_number)
   
   useEffect(() => {
     if (task.status !== 'active') {
@@ -246,156 +267,299 @@ function TaskCard({
   const categoryColor = CATEGORY_COLORS[categorySlug] || CATEGORY_COLORS['genel']
   
   return (
-    <div 
-      className={`glass-card rounded-2xl p-5 transition-all hover:border-white/20 group ${getCardClasses()}`}
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
-    >
-      {/* Üst Satır: Avatar + İsim + Status + Kategori + Marka + Revize Dots + Edit/Delete */}
-      <div className="flex items-center gap-2 mb-3">
-        {/* Avatar + İsim */}
-        {isAdmin && task.user && (
-          <div className="flex items-center gap-2">
-            <div className={`h-7 w-7 rounded-full bg-gradient-to-br ${getAvatarColor(task.user.full_name)} flex items-center justify-center`}>
-              <span className="text-white text-xs font-bold">
-                {task.user.full_name?.charAt(0) || '?'}
+    <div className={`glass-card rounded-2xl transition-all hover:bg-white/[0.02] hover:border-white/20 group ${getCardClasses()}`}>
+      {/* Ana Kart İçeriği - Tıklanabilir */}
+      <div 
+        className="p-5 cursor-pointer"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        {/* Üst Satır: Avatar + İsim + Status + Kategori + Marka + Revize Dots + Edit/Delete */}
+        <div className="flex items-center gap-2 mb-3">
+          {/* Avatar + İsim */}
+          {isAdmin && task.user && (
+            <div className="flex items-center gap-2">
+              <div className={`h-7 w-7 rounded-full bg-gradient-to-br ${getAvatarColor(task.user.full_name)} flex items-center justify-center`}>
+                <span className="text-white text-xs font-bold">
+                  {task.user.full_name?.charAt(0) || '?'}
+                </span>
+              </div>
+              <span className="text-sm font-medium text-zinc-300">
+                {task.user.full_name?.split(' ')[0]}
               </span>
             </div>
-            <span className="text-sm font-medium text-zinc-300">
-              {task.user.full_name?.split(' ')[0]}
-            </span>
-          </div>
-        )}
-        
-        {/* Status Badge */}
-        <StatusBadge status={task.status} />
-        
-        {/* Kategori */}
-        <span className={`text-xs px-2 py-0.5 rounded-full ${categoryColor.bg} ${categoryColor.text} border ${categoryColor.border}`}>
-          {task.category?.name || 'Genel'}
-        </span>
-        
-        {/* Marka */}
-        {task.brand && (
-          <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
-            <Building2 className="w-3 h-3 inline mr-1" />
-            {task.brand.brand_name}
-          </span>
-        )}
-        
-        {/* Revize Dots */}
-        <RevizeDots count={task.revision_count} />
-        
-        {/* Spacer */}
-        <div className="flex-1" />
-        
-        {/* Edit/Delete - Her zaman görünür */}
-        <div className="flex items-center gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
-          <button 
-            onClick={(e) => { e.stopPropagation(); onEdit(task) }} 
-            className="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-zinc-200 transition-colors"
-          >
-            <Edit className="w-4 h-4" />
-          </button>
-          <button 
-            onClick={(e) => { e.stopPropagation(); onDelete(task) }} 
-            className="p-1.5 rounded-lg hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 transition-colors"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-      
-      {/* Açıklama */}
-      <h3 className="text-base font-semibold text-white mb-2">{task.description}</h3>
-      
-      {/* Alt Satır: Saat + Süre + (Revize Badge) */}
-      <div className="flex items-center gap-3 text-sm">
-        <div className="flex items-center gap-2 text-zinc-400">
-          <Clock className="w-4 h-4" />
-          <span className="font-mono text-sm">{formatTime(task.start_time)}</span>
-          <span className="text-zinc-600">→</span>
-          {task.end_time ? (
-            <span className="font-mono text-sm">{formatTime(task.end_time)}</span>
-          ) : (
-            <span className="text-zinc-600 font-mono">...</span>
-          )}
-        </div>
-        
-        {/* Süre Badge */}
-        {task.status === 'active' ? (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-400 font-mono text-sm font-semibold">
-            {formatDuration(currentDuration)}
-          </span>
-        ) : task.status === 'completed' ? (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 font-mono text-sm">
-            <Check className="w-3 h-3" />
-            {formatDuration(task.total_duration)}
-          </span>
-        ) : (
-          <span className="px-2 py-0.5 rounded-lg bg-white/5 text-zinc-400 font-mono text-sm">
-            {formatDuration(task.total_duration)}
-          </span>
-        )}
-        
-        {/* Revize süresi varsa */}
-        {task.revision_count > 0 && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-rose-500/10 text-rose-400 font-mono text-sm">
-            <RefreshCw className="w-3 h-3" />
-            {task.revision_count > 0 ? `${task.revision_count * 35}d` : ''}
-          </span>
-        )}
-      </div>
-      
-      {/* Quick Actions - Hover'da görünür */}
-      {showActions && task.status !== 'completed' && (
-        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/5">
-          {task.status === 'active' && (
-            <>
-              <button 
-                onClick={() => onPause(task)} 
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-medium hover:bg-amber-500/20 transition-colors"
-              >
-                <Pause className="w-3 h-3" />
-                Beklet
-              </button>
-              <button 
-                onClick={() => onComplete(task)} 
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600 transition-colors"
-              >
-                <Check className="w-3 h-3" />
-                Bitti
-              </button>
-            </>
           )}
           
-          {task.status === 'paused' && (
-            <>
-              <button 
-                onClick={() => onResume(task)} 
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-medium hover:bg-emerald-500/20 transition-colors"
-              >
-                <Play className="w-3 h-3" />
-                Devam
-              </button>
-              <button 
-                onClick={() => onComplete(task)} 
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600 transition-colors"
-              >
-                <Check className="w-3 h-3" />
-                Bitti
-              </button>
-              <button 
-                onClick={() => onStartRevision(task)} 
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-medium hover:bg-rose-500/20 transition-colors"
-              >
-                <RefreshCw className="w-3 h-3" />
-                Revize
-              </button>
-            </>
+          {/* Status Badge */}
+          <StatusBadge status={task.status} />
+          
+          {/* Kategori */}
+          <span className={`text-xs px-2 py-0.5 rounded-full ${categoryColor.bg} ${categoryColor.text} border ${categoryColor.border}`}>
+            {task.category?.name || 'Genel'}
+          </span>
+          
+          {/* Marka */}
+          {task.brand && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
+              <Building2 className="w-3 h-3 inline mr-1" />
+              {task.brand.brand_name}
+            </span>
+          )}
+          
+          {/* Revize Dots */}
+          <RevizeDots count={task.revision_count} />
+          
+          {/* Spacer */}
+          <div className="flex-1" />
+          
+          {/* Edit/Delete - Her zaman görünür */}
+          <div className="flex items-center gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
+            <button 
+              onClick={(e) => { e.stopPropagation(); onEdit(task) }} 
+              className="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-zinc-200 transition-colors"
+            >
+              <Edit className="w-4 h-4" />
+            </button>
+            <button 
+              onClick={(e) => { e.stopPropagation(); onDelete(task) }} 
+              className="p-1.5 rounded-lg hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+        
+        {/* Açıklama */}
+        <h3 className="text-base font-semibold text-white mb-2">{task.description}</h3>
+        
+        {/* Alt Satır: Saat + Süre + (Revize Badge) */}
+        <div className="flex items-center gap-3 text-sm">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <Clock className="w-4 h-4" />
+            <span className="font-mono text-sm">{formatTime(task.start_time)}</span>
+            <span className="text-zinc-600">→</span>
+            {task.end_time ? (
+              <span className="font-mono text-sm">{formatTime(task.end_time)}</span>
+            ) : (
+              <span className="text-zinc-600 font-mono">...</span>
+            )}
+          </div>
+          
+          {/* Süre Badge */}
+          {task.status === 'active' ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-400 font-mono text-sm font-semibold">
+              {formatDuration(currentDuration)}
+            </span>
+          ) : task.status === 'completed' ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 font-mono text-sm">
+              <Check className="w-3 h-3" />
+              {formatDuration(task.total_duration)}
+            </span>
+          ) : (
+            <span className="px-2 py-0.5 rounded-lg bg-white/5 text-zinc-400 font-mono text-sm">
+              {formatDuration(task.total_duration)}
+            </span>
+          )}
+          
+          {/* Revize badge */}
+          {task.revision_count > 0 && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-rose-500/10 text-rose-400 font-mono text-sm">
+              <RefreshCw className="w-3 h-3" />
+              R{task.revision_count}
+            </span>
           )}
         </div>
+      </div>
+      
+      {/* Genişletilmiş Alan - Accordion */}
+      {isExpanded && (
+        <div className="border-t border-white/10 p-5 space-y-4">
+          {/* Zaman Detayı */}
+          <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <History className="w-4 h-4 text-zinc-500" />
+              <span className="text-zinc-400">Başlangıç:</span>
+              <span className="font-mono text-white">{formatTime(task.start_time)}</span>
+            </div>
+            {task.end_time && (
+              <div className="flex items-center gap-2">
+                <span className="text-zinc-400">Bitiş:</span>
+                <span className="font-mono text-white">{formatTime(task.end_time)}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="text-zinc-400">Toplam:</span>
+              <span className="font-mono font-semibold text-cyan-400">{formatDuration(task.total_duration)}</span>
+            </div>
+          </div>
+          
+          {/* Revize Geçmişi */}
+          {taskRevisions.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-zinc-400">
+                <RefreshCw className="w-4 h-4 text-rose-400" />
+                <span>Revize Geçmişi</span>
+              </div>
+              <div className="space-y-2 pl-6">
+                {taskRevisions.map((rev) => (
+                  <div key={rev.id} className="flex items-start gap-3 text-sm">
+                    <span className="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 text-xs font-medium">
+                      R{rev.revision_number}
+                    </span>
+                    <div className="flex-1">
+                      {rev.note ? (
+                        <p className="text-zinc-300">{rev.note}</p>
+                      ) : (
+                        <p className="text-zinc-500 italic">Not girilmedi</p>
+                      )}
+                      <p className="text-xs text-zinc-500 mt-0.5">
+                        {formatTime(rev.start_time)}
+                        {rev.duration > 0 && ` • ${formatDuration(rev.duration)}`}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Action Butonları */}
+          <div className="flex items-center gap-2 pt-2">
+            {task.status === 'active' && (
+              <>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); onPause(task) }} 
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-medium hover:bg-amber-500/20 transition-colors"
+                >
+                  <Pause className="w-3 h-3" />
+                  Beklet
+                </button>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); onComplete(task) }} 
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600 transition-colors"
+                >
+                  <Check className="w-3 h-3" />
+                  Bitti
+                </button>
+              </>
+            )}
+            
+            {task.status === 'paused' && (
+              <>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); onResume(task) }} 
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-medium hover:bg-emerald-500/20 transition-colors"
+                >
+                  <Play className="w-3 h-3" />
+                  Devam Et
+                </button>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); onComplete(task) }} 
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600 transition-colors"
+                >
+                  <Check className="w-3 h-3" />
+                  Bitti
+                </button>
+              </>
+            )}
+            
+            {task.status === 'completed' && (
+              <>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); onStartRevision(task) }} 
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-medium hover:bg-rose-500/20 transition-colors"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  Revize Başlat
+                </button>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); onReopen(task) }} 
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-medium hover:bg-amber-500/20 transition-colors"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  Yenile
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       )}
+    </div>
+  )
+}
+
+// Revize Modal Component
+function RevisionModal({ 
+  task, 
+  onClose, 
+  onSubmit 
+}: { 
+  task: DailyTask
+  onClose: () => void
+  onSubmit: (note: string) => void
+}) {
+  const [note, setNote] = useState('')
+  const [saving, setSaving] = useState(false)
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+    await onSubmit(note)
+    setSaving(false)
+  }
+  
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-2xl border border-white/10 shadow-2xl" style={{ backgroundColor: '#18181b' }}>
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-white/10">
+          <h2 className="text-lg font-semibold text-white">Revize Başlat</h2>
+          <p className="text-sm text-zinc-400 mt-1">{task.description}</p>
+        </div>
+        
+        {/* Content */}
+        <form onSubmit={handleSubmit}>
+          <div className="p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-2">
+                Revize Notu <span className="text-zinc-500">(Opsiyonel)</span>
+              </label>
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Müşteri geri bildirimi, değişiklik detayı..."
+                rows={3}
+                className="w-full px-4 py-3 rounded-xl text-sm text-white bg-white/5 border border-white/10 placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 resize-none transition-all"
+              />
+            </div>
+            
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20">
+              <p className="text-xs text-rose-400">
+                <RefreshCw className="w-3 h-3 inline mr-1" />
+                Revize başlatıldığında görev tekrar aktif olacak ve sayaç devam edecek.
+              </p>
+            </div>
+          </div>
+          
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-white/10 flex justify-end gap-3">
+            <button 
+              type="button"
+              onClick={onClose}
+              className="h-11 px-5 rounded-xl text-sm font-medium bg-white/5 border border-white/10 text-zinc-300 hover:bg-white/10 active:scale-[0.98] transition-all"
+            >
+              İptal
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="h-11 px-5 rounded-xl text-white text-sm font-medium bg-gradient-to-r from-rose-600 to-pink-600 shadow-lg shadow-rose-500/25 hover:shadow-rose-500/40 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center gap-2"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              Revize Başlat
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }
@@ -696,6 +860,7 @@ function PersonelStatsPanel({ tasks, allMonthTasks, categories }: {
 export default function GunlukIslerPage() {
   const { appUser, isAdmin } = useAuth()
   const [tasks, setTasks] = useState<DailyTask[]>([])
+  const [revisions, setRevisions] = useState<TaskRevision[]>([])
   const [monthTasks, setMonthTasks] = useState<DailyTask[]>([])
   const [categories, setCategories] = useState<TaskCategory[]>([])
   const [brands, setBrands] = useState<{ id: string; brand_name: string }[]>([])
@@ -707,6 +872,8 @@ export default function GunlukIslerPage() {
   const [selectedBrand, setSelectedBrand] = useState<string>('all')
   
   const [showModal, setShowModal] = useState(false)
+  const [showRevisionModal, setShowRevisionModal] = useState(false)
+  const [revisionTask, setRevisionTask] = useState<DailyTask | null>(null)
   const [editingTask, setEditingTask] = useState<DailyTask | null>(null)
   const [formData, setFormData] = useState({
     brand_id: '',
@@ -771,7 +938,23 @@ export default function GunlukIslerPage() {
       
       const { data: tasksData } = await query
       
-      if (tasksData) setTasks(tasksData as DailyTask[])
+      if (tasksData) {
+        setTasks(tasksData as DailyTask[])
+        
+        // Bu task'lara ait revizyonları çek
+        const taskIds = tasksData.map((t: DailyTask) => t.id)
+        if (taskIds.length > 0) {
+          const { data: revisionsData } = await (supabase as any)
+            .from('task_revisions')
+            .select('*')
+            .in('task_id', taskIds)
+            .order('revision_number')
+          
+          if (revisionsData) setRevisions(revisionsData as TaskRevision[])
+        } else {
+          setRevisions([])
+        }
+      }
       
       // Personel için bu ay işleri
       if (!isAdmin && appUser) {
@@ -905,24 +1088,55 @@ export default function GunlukIslerPage() {
     fetchData()
   }
 
-  const handleStartRevision = async (task: DailyTask) => {
+  // Revize Modal'ı aç
+  const handleOpenRevisionModal = (task: DailyTask) => {
+    setRevisionTask(task)
+    setShowRevisionModal(true)
+  }
+
+  // Revize başlat (modal'dan)
+  const handleStartRevision = async (note: string) => {
+    if (!revisionTask) return
+    
     const now = new Date()
     
+    // Task'ı güncelle
     await (supabase as any)
       .from('daily_tasks')
       .update({
-        revision_count: task.revision_count + 1
+        status: 'active',
+        start_time: now.toISOString(),
+        end_time: null,
+        revision_count: revisionTask.revision_count + 1
       })
-      .eq('id', task.id)
+      .eq('id', revisionTask.id)
     
+    // Revize kaydı oluştur
     await (supabase as any)
       .from('task_revisions')
       .insert({
-        task_id: task.id,
-        revision_number: task.revision_count + 1,
+        task_id: revisionTask.id,
+        revision_number: revisionTask.revision_count + 1,
+        note: note || null,
         start_time: now.toISOString(),
         duration: 0
       })
+    
+    setShowRevisionModal(false)
+    setRevisionTask(null)
+    fetchData()
+  }
+
+  // Yenile (yanlış kapatma) - Revize olmadan tekrar aç
+  const handleReopen = async (task: DailyTask) => {
+    await (supabase as any)
+      .from('daily_tasks')
+      .update({
+        status: 'active',
+        start_time: new Date().toISOString(),
+        end_time: null
+      })
+      .eq('id', task.id)
     
     fetchData()
   }
@@ -971,7 +1185,7 @@ export default function GunlukIslerPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">Günlük İşler</h1>
-            <p className="text-sm text-zinc-400">Tüm personelin günlük iş kayıtları</p>
+            <p className="text-sm text-zinc-400">Günlük iş kayıtlarım</p>
           </div>
           <Button onClick={() => { setEditingTask(null); setFormData({ brand_id: '', category_id: '', description: '' }); setShowModal(true) }} className="bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white">
             <Plus className="w-4 h-4 mr-2" />
@@ -1077,10 +1291,12 @@ export default function GunlukIslerPage() {
                   key={task.id}
                   task={task as DailyTask & { user?: { id: string; full_name: string | null } }}
                   isAdmin={false}
+                  revisions={revisions}
                   onPause={handlePause}
                   onResume={handleResume}
                   onComplete={handleComplete}
-                  onStartRevision={handleStartRevision}
+                  onStartRevision={handleOpenRevisionModal}
+                  onReopen={handleReopen}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                 />
@@ -1092,89 +1308,98 @@ export default function GunlukIslerPage() {
           <PersonelStatsPanel tasks={tasks} allMonthTasks={monthTasks} categories={categories} />
         </div>
 
-        {/* Modal */}
+        {/* İş Ekleme/Düzenleme Modal */}
         {showModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-2xl bg-zinc-900 border border-zinc-800 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-zinc-100">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-2xl border border-white/10 shadow-2xl" style={{ backgroundColor: '#18181b' }}>
+              <div className="px-6 py-4 border-b border-white/10">
+                <h2 className="text-lg font-semibold text-white">
                   {editingTask ? 'İşi Düzenle' : 'Yeni İş Ekle'}
                 </h2>
-                <button onClick={() => setShowModal(false)} className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400">
-                  <X className="w-5 h-5" />
-                </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-zinc-400 mb-2">Marka (Opsiyonel)</label>
-                  <Select value={formData.brand_id || "none"} onValueChange={(value) => setFormData({ ...formData, brand_id: value === "none" ? "" : value })}>
-                    <SelectTrigger className="w-full bg-zinc-800 border-zinc-700 text-zinc-100">
-                      <SelectValue placeholder="Genel" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Genel</SelectItem>
-                      {brands.map((brand) => (
-                        <SelectItem key={brand.id} value={brand.id}>{brand.brand_name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <form onSubmit={handleSubmit}>
+                <div className="p-6 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Marka <span className="text-zinc-500">(Opsiyonel)</span></label>
+                    <Select value={formData.brand_id || "none"} onValueChange={(value) => setFormData({ ...formData, brand_id: value === "none" ? "" : value })}>
+                      <SelectTrigger className="w-full h-11 rounded-xl bg-white/5 border-white/10 text-white">
+                        <SelectValue placeholder="Genel" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Genel</SelectItem>
+                        {brands.map((brand) => (
+                          <SelectItem key={brand.id} value={brand.id}>{brand.brand_name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-zinc-400 mb-2">Kategori *</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {categories.map((cat) => {
-                      const catColor = CATEGORY_COLORS[cat.slug] || CATEGORY_COLORS['genel']
-                      return (
-                        <button
-                          key={cat.id}
-                          type="button"
-                          onClick={() => setFormData({ ...formData, category_id: cat.id })}
-                          className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${catColor.bg} ${catColor.text} border ${catColor.border} ${
-                            formData.category_id === cat.id 
-                              ? 'ring-2 ring-indigo-500 ring-offset-2 ring-offset-zinc-900' 
-                              : 'hover:opacity-80'
-                          }`}
-                        >
-                          {cat.name}
-                        </button>
-                      )
-                    })}
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Kategori <span className="text-rose-400">*</span></label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {categories.map((cat) => {
+                        const catColor = CATEGORY_COLORS[cat.slug] || CATEGORY_COLORS['genel']
+                        return (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, category_id: cat.id })}
+                            className={`px-3 py-2 rounded-xl text-xs font-medium transition-all ${catColor.bg} ${catColor.text} border ${catColor.border} ${
+                              formData.category_id === cat.id 
+                                ? 'ring-2 ring-indigo-500 ring-offset-2 ring-offset-[#18181b]' 
+                                : 'hover:opacity-80'
+                            }`}
+                          >
+                            {cat.name}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Açıklama <span className="text-rose-400">*</span></label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="Ne yapıyorsun?"
+                      rows={3}
+                      className="w-full px-4 py-3 rounded-xl text-sm text-white bg-white/5 border border-white/10 placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 resize-none transition-all"
+                      required
+                    />
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-zinc-400 mb-2">Açıklama *</label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Ne yapıyorsun?"
-                    rows={3}
-                    className="w-full px-4 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500 resize-none"
-                    required
-                  />
-                </div>
-
-                <div className="flex gap-3 pt-2">
+                <div className="px-6 py-4 border-t border-white/10 flex justify-end gap-3">
                   <button 
                     type="button" 
                     onClick={() => setShowModal(false)} 
-                    className="flex-1 px-4 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-300 hover:bg-zinc-700 transition-colors font-medium"
+                    className="h-11 px-5 rounded-xl text-sm font-medium bg-white/5 border border-white/10 text-zinc-300 hover:bg-white/10 active:scale-[0.98] transition-all"
                   >
                     İptal
                   </button>
                   <button
                     type="submit"
                     disabled={saving || !formData.category_id || !formData.description.trim()}
-                    className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                    className="h-11 px-5 rounded-xl text-white text-sm font-medium bg-gradient-to-r from-indigo-600 to-violet-600 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4" />{editingTask ? 'Güncelle' : 'Başlat'}</>}
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                    {editingTask ? 'Güncelle' : 'Başlat'}
                   </button>
                 </div>
               </form>
             </div>
           </div>
+        )}
+
+        {/* Revize Modal */}
+        {showRevisionModal && revisionTask && (
+          <RevisionModal 
+            task={revisionTask}
+            onClose={() => { setShowRevisionModal(false); setRevisionTask(null) }}
+            onSubmit={handleStartRevision}
+          />
         )}
       </div>
     )
@@ -1325,7 +1550,7 @@ export default function GunlukIslerPage() {
           <div className="flex items-center gap-2">
             <span className="text-sm text-zinc-500">Marka:</span>
             <Select value={selectedBrand} onValueChange={setSelectedBrand}>
-              <SelectTrigger className="w-[180px] bg-zinc-800 border-zinc-700 text-zinc-300 text-sm">
+              <SelectTrigger className="w-[180px] h-10 rounded-xl bg-white/5 border-white/10 text-zinc-300 text-sm">
                 <SelectValue placeholder="Tümü" />
               </SelectTrigger>
               <SelectContent>
@@ -1362,10 +1587,12 @@ export default function GunlukIslerPage() {
                 key={task.id}
                 task={task as DailyTask & { user?: { id: string; full_name: string | null } }}
                 isAdmin={isAdmin}
+                revisions={revisions}
                 onPause={handlePause}
                 onResume={handleResume}
                 onComplete={handleComplete}
-                onStartRevision={handleStartRevision}
+                onStartRevision={handleOpenRevisionModal}
+                onReopen={handleReopen}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
               />
@@ -1376,89 +1603,98 @@ export default function GunlukIslerPage() {
         <AdminStatsPanel tasks={tasks} users={users} />
       </div>
 
-      {/* Modal - Dark Mode Uyumlu */}
+      {/* İş Ekleme/Düzenleme Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-zinc-900 border border-zinc-800 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-zinc-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-white/10 shadow-2xl" style={{ backgroundColor: '#18181b' }}>
+            <div className="px-6 py-4 border-b border-white/10">
+              <h2 className="text-lg font-semibold text-white">
                 {editingTask ? 'İşi Düzenle' : 'Yeni İş Ekle'}
               </h2>
-              <button onClick={() => setShowModal(false)} className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400">
-                <X className="w-5 h-5" />
-              </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">Marka (Opsiyonel)</label>
-                <Select value={formData.brand_id || "none"} onValueChange={(value) => setFormData({ ...formData, brand_id: value === "none" ? "" : value })}>
-                  <SelectTrigger className="w-full bg-zinc-800 border-zinc-700 text-zinc-100">
-                    <SelectValue placeholder="Genel" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Genel</SelectItem>
-                    {brands.map((brand) => (
-                      <SelectItem key={brand.id} value={brand.id}>{brand.brand_name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <form onSubmit={handleSubmit}>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Marka <span className="text-zinc-500">(Opsiyonel)</span></label>
+                  <Select value={formData.brand_id || "none"} onValueChange={(value) => setFormData({ ...formData, brand_id: value === "none" ? "" : value })}>
+                    <SelectTrigger className="w-full h-11 rounded-xl bg-white/5 border-white/10 text-white">
+                      <SelectValue placeholder="Genel" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Genel</SelectItem>
+                      {brands.map((brand) => (
+                        <SelectItem key={brand.id} value={brand.id}>{brand.brand_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">Kategori *</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {categories.map((cat) => {
-                    const catColor = CATEGORY_COLORS[cat.slug] || CATEGORY_COLORS['genel']
-                    return (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, category_id: cat.id })}
-                        className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${catColor.bg} ${catColor.text} border ${catColor.border} ${
-                          formData.category_id === cat.id 
-                            ? 'ring-2 ring-indigo-500 ring-offset-2 ring-offset-zinc-900' 
-                            : 'hover:opacity-80'
-                        }`}
-                      >
-                        {cat.name}
-                      </button>
-                    )
-                  })}
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Kategori <span className="text-rose-400">*</span></label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {categories.map((cat) => {
+                      const catColor = CATEGORY_COLORS[cat.slug] || CATEGORY_COLORS['genel']
+                      return (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, category_id: cat.id })}
+                          className={`px-3 py-2 rounded-xl text-xs font-medium transition-all ${catColor.bg} ${catColor.text} border ${catColor.border} ${
+                            formData.category_id === cat.id 
+                              ? 'ring-2 ring-indigo-500 ring-offset-2 ring-offset-[#18181b]' 
+                              : 'hover:opacity-80'
+                          }`}
+                        >
+                          {cat.name}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Açıklama <span className="text-rose-400">*</span></label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Ne yapıyorsun?"
+                    rows={3}
+                    className="w-full px-4 py-3 rounded-xl text-sm text-white bg-white/5 border border-white/10 placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 resize-none transition-all"
+                    required
+                  />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">Açıklama *</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Ne yapıyorsun?"
-                  rows={3}
-                  className="w-full px-4 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500 resize-none"
-                  required
-                />
-              </div>
-
-              <div className="flex gap-3 pt-2">
+              <div className="px-6 py-4 border-t border-white/10 flex justify-end gap-3">
                 <button 
                   type="button" 
                   onClick={() => setShowModal(false)} 
-                  className="flex-1 px-4 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-300 hover:bg-zinc-700 transition-colors font-medium"
+                  className="h-11 px-5 rounded-xl text-sm font-medium bg-white/5 border border-white/10 text-zinc-300 hover:bg-white/10 active:scale-[0.98] transition-all"
                 >
                   İptal
                 </button>
                 <button
                   type="submit"
                   disabled={saving || !formData.category_id || !formData.description.trim()}
-                  className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                  className="h-11 px-5 rounded-xl text-white text-sm font-medium bg-gradient-to-r from-indigo-600 to-violet-600 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4" />{editingTask ? 'Güncelle' : 'Başlat'}</>}
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                  {editingTask ? 'Güncelle' : 'Başlat'}
                 </button>
               </div>
             </form>
           </div>
         </div>
+      )}
+
+      {/* Revize Modal */}
+      {showRevisionModal && revisionTask && (
+        <RevisionModal 
+          task={revisionTask}
+          onClose={() => { setShowRevisionModal(false); setRevisionTask(null) }}
+          onSubmit={handleStartRevision}
+        />
       )}
     </div>
   )

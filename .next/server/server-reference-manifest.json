@@ -1,5 +1,36 @@
 {
-  "node": {},
+  "node": {
+    "40c6349a3ff72b94b955d71ff3b806d5993f6b52fe": {
+      "workers": {
+        "app/(dashboard)/ayarlar/page": {
+          "moduleId": 21344,
+          "async": false,
+          "exportedName": "createUser",
+          "filename": "Desktop/ajans-bee-platform/src/app/(dashboard)/ayarlar/actions.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/ayarlar/page": "action-browser"
+      },
+      "filename": "Desktop/ajans-bee-platform/src/app/(dashboard)/ayarlar/actions.ts",
+      "exportedName": "createUser"
+    },
+    "6021d564c258898c0593e081d4fb664d7af27a94b1": {
+      "workers": {
+        "app/(dashboard)/ayarlar/page": {
+          "moduleId": 21344,
+          "async": false,
+          "exportedName": "updateUser",
+          "filename": "Desktop/ajans-bee-platform/src/app/(dashboard)/ayarlar/actions.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/ayarlar/page": "action-browser"
+      },
+      "filename": "Desktop/ajans-bee-platform/src/app/(dashboard)/ayarlar/actions.ts",
+      "exportedName": "updateUser"
+    }
+  },
   "edge": {},
-  "encryptionKey": "fV4lNp3InInyRxoAhmurQsobThADxDwPKGwy35n7+I8="
+  "encryptionKey": "ZngXhielQ/6UVchoaMfQUfLua21/kx7jBYHdHr02nvM="
 }

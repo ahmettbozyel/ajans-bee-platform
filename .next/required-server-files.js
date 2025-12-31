@@ -140,8 +140,8 @@ self.__SERVER_FILES_MANIFEST={
       "isExperimentalCompile": false
     }
   },
-  "appDir": "/Users/ahmetbozyel/Downloads/ajans-bee-platform-main",
-  "relativeAppDir": "Downloads/ajans-bee-platform-main",
+  "appDir": "/Users/ahmetbozyel/Desktop/ajans-bee-platform",
+  "relativeAppDir": "Desktop/ajans-bee-platform",
   "files": [
     ".next/routes-manifest.json",
     ".next/server/pages-manifest.json",

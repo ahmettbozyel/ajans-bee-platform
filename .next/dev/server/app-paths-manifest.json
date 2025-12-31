@@ -1,6 +1,14 @@
 {
-  "/(auth)/login/page": "app/(auth)/login/page.js",
+  "/(dashboard)/ayarlar/page": "app/(dashboard)/ayarlar/page.js",
   "/(dashboard)/customers/[id]/page": "app/(dashboard)/customers/[id]/page.js",
   "/(dashboard)/dashboard/page": "app/(dashboard)/dashboard/page.js",
-  "/(dashboard)/musteriler/page": "app/(dashboard)/musteriler/page.js"
+  "/(dashboard)/giris-cikis/page": "app/(dashboard)/giris-cikis/page.js",
+  "/(dashboard)/gorseller/page": "app/(dashboard)/gorseller/page.js",
+  "/(dashboard)/gunluk-isler/page": "app/(dashboard)/gunluk-isler/page.js",
+  "/(dashboard)/icerik-uret/page": "app/(dashboard)/icerik-uret/page.js",
+  "/(dashboard)/musteriler/page": "app/(dashboard)/musteriler/page.js",
+  "/(dashboard)/teknik-hizmetler/page": "app/(dashboard)/teknik-hizmetler/page.js",
+  "/api/customers/route": "app/api/customers/route.js",
+  "/api/service-providers/route": "app/api/service-providers/route.js",
+  "/api/technical-services/route": "app/api/technical-services/route.js"
 }

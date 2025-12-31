@@ -191,6 +191,33 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../../src/app/api/meta/sync/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/meta/sync">> = Specific
+  const handler = {} as typeof import("../../../src/app/api/meta/sync/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../src/app/api/meta/test/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/meta/test">> = Specific
+  const handler = {} as typeof import("../../../src/app/api/meta/test/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../src/app/api/performance/meta/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/performance/meta">> = Specific
+  const handler = {} as typeof import("../../../src/app/api/performance/meta/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../../src/app/api/service-providers/[id]/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/service-providers/[id]">> = Specific

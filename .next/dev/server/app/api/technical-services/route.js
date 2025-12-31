@@ -1,0 +1,10 @@
+var R=require("../../../chunks/[turbopack]_runtime.js")("server/app/api/technical-services/route.js")
+R.c("server/chunks/5d248_next_4e8bd16a._.js")
+R.c("server/chunks/5d248_@opentelemetry_api_build_esm_291bc282._.js")
+R.c("server/chunks/5d248_@supabase_auth-js_dist_module_cd25aff7._.js")
+R.c("server/chunks/5d248_zod_v4_4811468c._.js")
+R.c("server/chunks/5d248_22aad965._.js")
+R.c("server/chunks/[root-of-the-server]__f0dedae3._.js")
+R.c("server/chunks/9c2c2__next-internal_server_app_api_technical-services_route_actions_2deb34e0.js")
+R.m("[project]/Desktop/ajans-bee-platform/node_modules/next/dist/esm/build/templates/app-route.js { INNER_APP_ROUTE => \"[project]/Desktop/ajans-bee-platform/src/app/api/technical-services/route.ts [app-route] (ecmascript)\" } [app-route] (ecmascript)")
+module.exports=R.m("[project]/Desktop/ajans-bee-platform/node_modules/next/dist/esm/build/templates/app-route.js { INNER_APP_ROUTE => \"[project]/Desktop/ajans-bee-platform/src/app/api/technical-services/route.ts [app-route] (ecmascript)\" } [app-route] (ecmascript)").exports

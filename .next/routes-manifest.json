@@ -20,7 +20,32 @@
     "afterFiles": [],
     "fallback": []
   },
-  "dynamicRoutes": [],
+  "dynamicRoutes": [
+    {
+      "page": "/api/service-providers/[id]",
+      "regex": "^/api/service\\-providers/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/service\\-providers/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/api/technical-services/[id]",
+      "regex": "^/api/technical\\-services/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/technical\\-services/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/customers/[id]",
+      "regex": "^/customers/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/customers/(?<nxtPid>[^/]+?)(?:/)?$"
+    }
+  ],
   "staticRoutes": [
     {
       "page": "/",
@@ -47,6 +72,48 @@
       "namedRegex": "^/api/auth/signout(?:/)?$"
     },
     {
+      "page": "/api/customers",
+      "regex": "^/api/customers(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/customers(?:/)?$"
+    },
+    {
+      "page": "/api/meta/sync",
+      "regex": "^/api/meta/sync(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/meta/sync(?:/)?$"
+    },
+    {
+      "page": "/api/meta/test",
+      "regex": "^/api/meta/test(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/meta/test(?:/)?$"
+    },
+    {
+      "page": "/api/performance/meta",
+      "regex": "^/api/performance/meta(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/performance/meta(?:/)?$"
+    },
+    {
+      "page": "/api/service-providers",
+      "regex": "^/api/service\\-providers(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/service\\-providers(?:/)?$"
+    },
+    {
+      "page": "/api/technical-services",
+      "regex": "^/api/technical\\-services(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/technical\\-services(?:/)?$"
+    },
+    {
+      "page": "/ayarlar",
+      "regex": "^/ayarlar(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/ayarlar(?:/)?$"
+    },
+    {
       "page": "/dashboard",
       "regex": "^/dashboard(?:/)?$",
       "routeKeys": {},
@@ -65,10 +132,22 @@
       "namedRegex": "^/gecmis(?:/)?$"
     },
     {
+      "page": "/giris-cikis",
+      "regex": "^/giris\\-cikis(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/giris\\-cikis(?:/)?$"
+    },
+    {
       "page": "/gorseller",
       "regex": "^/gorseller(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/gorseller(?:/)?$"
+    },
+    {
+      "page": "/gunluk-isler",
+      "regex": "^/gunluk\\-isler(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/gunluk\\-isler(?:/)?$"
     },
     {
       "page": "/icerik-uret",
@@ -93,6 +172,12 @@
       "regex": "^/register(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/register(?:/)?$"
+    },
+    {
+      "page": "/teknik-hizmetler",
+      "regex": "^/teknik\\-hizmetler(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/teknik\\-hizmetler(?:/)?$"
     }
   ],
   "dataRoutes": [],

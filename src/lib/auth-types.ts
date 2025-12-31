@@ -116,6 +116,7 @@ export interface TaskRevision {
   id: string
   task_id: string
   revision_number: number
+  note: string | null  // Revize açıklaması
   start_time: string
   end_time: string | null
   duration: number  // saniye
