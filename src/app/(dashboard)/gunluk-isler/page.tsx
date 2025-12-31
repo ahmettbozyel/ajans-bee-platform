@@ -1219,20 +1219,58 @@ export default function GunlukIslerPage() {
                 <ChevronRight className="w-4 h-4" />
               </button>
               
-              <button 
+              <button
                 onClick={goToToday}
                 className="ml-2 px-2.5 py-1 rounded-lg bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 text-xs font-medium hover:bg-indigo-500/30 transition-all"
               >
                 Bugün
               </button>
-              
+
               <div className="w-px h-8 bg-white/10" />
-              
-              <span className="text-zinc-400">{formatDateLong(selectedDate)}</span>
+
+              {/* Filtreler */}
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="İş ara..."
+                  className="w-40 h-8 pl-8 pr-3 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500/50"
+                />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
+              </div>
+
+              <Select value={selectedBrand} onValueChange={setSelectedBrand}>
+                <SelectTrigger className="w-[140px] h-8 rounded-lg bg-white/5 border-white/10 text-zinc-300 text-sm">
+                  <Building2 className="w-3.5 h-3.5 mr-1.5 text-zinc-500" />
+                  <SelectValue placeholder="Tüm Markalar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tüm Markalar</SelectItem>
+                  {brands.map(brand => (
+                    <SelectItem key={brand.id} value={brand.id}>{brand.brand_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-[130px] h-8 rounded-lg bg-white/5 border-white/10 text-zinc-300 text-sm">
+                  <Tag className="w-3.5 h-3.5 mr-1.5 text-zinc-500" />
+                  <SelectValue placeholder="Tüm Kategoriler" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tüm Kategoriler</SelectItem>
+                  {categories.map(cat => (
+                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <div className="w-px h-8 bg-white/10" />
             </div>
-            
+
             {/* Mini Stats */}
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <ListChecks className="w-4 h-4 text-indigo-400" />
                 <span className="text-sm text-zinc-400">Bugün:</span>
@@ -1249,51 +1287,6 @@ export default function GunlukIslerPage() {
                 <span className="text-sm font-bold text-rose-400">{stats.revisions}</span>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Filtreler */}
-        <div className="glass-card rounded-xl p-3 border border-white/10">
-          <div className="flex items-center gap-3">
-            {/* Arama */}
-            <div className="relative flex-1 max-w-xs">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="İş ara..."
-                className="w-full h-9 pl-9 pr-4 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500/50"
-              />
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-            </div>
-
-            {/* Marka Filtresi */}
-            <Select value={selectedBrand} onValueChange={setSelectedBrand}>
-              <SelectTrigger className="w-[160px] h-9 rounded-lg bg-white/5 border-white/10 text-zinc-300 text-sm">
-                <Building2 className="w-4 h-4 mr-2 text-zinc-500" />
-                <SelectValue placeholder="Tüm Markalar" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tüm Markalar</SelectItem>
-                {brands.map(brand => (
-                  <SelectItem key={brand.id} value={brand.id}>{brand.brand_name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Kategori Filtresi */}
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-[140px] h-9 rounded-lg bg-white/5 border-white/10 text-zinc-300 text-sm">
-                <Tag className="w-4 h-4 mr-2 text-zinc-500" />
-                <SelectValue placeholder="Tüm Kategoriler" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tüm Kategoriler</SelectItem>
-                {categories.map(cat => (
-                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </div>
 
