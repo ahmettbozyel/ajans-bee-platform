@@ -32,7 +32,8 @@ import {
   BarChart3,
   Tag,
   RotateCcw,
-  History
+  History,
+  Search
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -870,7 +871,9 @@ export default function GunlukIslerPage() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const [selectedUser, setSelectedUser] = useState<string>('all')
   const [selectedBrand, setSelectedBrand] = useState<string>('all')
-  
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
+
   const [showModal, setShowModal] = useState(false)
   const [showRevisionModal, setShowRevisionModal] = useState(false)
   const [revisionTask, setRevisionTask] = useState<DailyTask | null>(null)
@@ -1249,20 +1252,48 @@ export default function GunlukIslerPage() {
           </div>
         </div>
 
-        {/* Personel Info Bar */}
+        {/* Filtreler */}
         <div className="glass-card rounded-xl p-3 border border-white/10">
           <div className="flex items-center gap-3">
-            <Users className="w-4 h-4 text-zinc-500" />
-            <span className="text-sm text-zinc-400">Personel:</span>
-            <div className="flex items-center gap-2">
-              <div className={`h-6 w-6 rounded-full bg-gradient-to-br ${getAvatarColor(appUser?.full_name || null)} flex items-center justify-center`}>
-                <span className="text-white text-[10px] font-bold">
-                  {appUser?.full_name?.charAt(0) || '?'}
-                </span>
-              </div>
-              <span className="text-sm font-medium text-white">{appUser?.full_name}</span>
-              <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400">{stats.total} iş</span>
+            {/* Arama */}
+            <div className="relative flex-1 max-w-xs">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="İş ara..."
+                className="w-full h-9 pl-9 pr-4 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500/50"
+              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
             </div>
+
+            {/* Marka Filtresi */}
+            <Select value={selectedBrand} onValueChange={setSelectedBrand}>
+              <SelectTrigger className="w-[160px] h-9 rounded-lg bg-white/5 border-white/10 text-zinc-300 text-sm">
+                <Building2 className="w-4 h-4 mr-2 text-zinc-500" />
+                <SelectValue placeholder="Tüm Markalar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tüm Markalar</SelectItem>
+                {brands.map(brand => (
+                  <SelectItem key={brand.id} value={brand.id}>{brand.brand_name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Kategori Filtresi */}
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-[140px] h-9 rounded-lg bg-white/5 border-white/10 text-zinc-300 text-sm">
+                <Tag className="w-4 h-4 mr-2 text-zinc-500" />
+                <SelectValue placeholder="Tüm Kategoriler" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tüm Kategoriler</SelectItem>
+                {categories.map(cat => (
+                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -1286,21 +1317,53 @@ export default function GunlukIslerPage() {
                 </Button>
               </div>
             ) : (
-              tasks.map(task => (
-                <TaskCard
-                  key={task.id}
-                  task={task as DailyTask & { user?: { id: string; full_name: string | null } }}
-                  isAdmin={false}
-                  revisions={revisions}
-                  onPause={handlePause}
-                  onResume={handleResume}
-                  onComplete={handleComplete}
-                  onStartRevision={handleOpenRevisionModal}
-                  onReopen={handleReopen}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                />
-              ))
+              (() => {
+                const filteredTasks = tasks.filter(task => {
+                  if (searchQuery && !task.description.toLowerCase().includes(searchQuery.toLowerCase())) {
+                    return false
+                  }
+                  if (selectedBrand !== 'all' && task.brand_id !== selectedBrand) {
+                    return false
+                  }
+                  if (selectedCategory !== 'all' && task.category_id !== selectedCategory) {
+                    return false
+                  }
+                  return true
+                })
+
+                if (filteredTasks.length === 0) {
+                  return (
+                    <div className="text-center py-12 glass-card rounded-2xl border border-white/10">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
+                        <Search className="w-8 h-8 text-zinc-600" />
+                      </div>
+                      <p className="text-zinc-400">Filtrelere uygun iş bulunamadı</p>
+                      <button
+                        onClick={() => { setSearchQuery(''); setSelectedBrand('all'); setSelectedCategory('all') }}
+                        className="mt-4 text-sm text-indigo-400 hover:text-indigo-300"
+                      >
+                        Filtreleri Temizle
+                      </button>
+                    </div>
+                  )
+                }
+
+                return filteredTasks.map(task => (
+                  <TaskCard
+                    key={task.id}
+                    task={task as DailyTask & { user?: { id: string; full_name: string | null } }}
+                    isAdmin={false}
+                    revisions={revisions}
+                    onPause={handlePause}
+                    onResume={handleResume}
+                    onComplete={handleComplete}
+                    onStartRevision={handleOpenRevisionModal}
+                    onReopen={handleReopen}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
+                ))
+              })()
             )}
           </div>
           
