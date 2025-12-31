@@ -1226,24 +1226,24 @@ export default function GunlukIslerPage() {
                 Bugün
               </button>
 
-              <div className="w-px h-8 bg-white/10 mx-2" />
+              <div className="w-px h-8 bg-white/10 mx-3" />
 
-              {/* Filtreler - Ortalanmış */}
-              <div className="flex-1 flex items-center justify-center gap-3">
-                <div className="relative">
+              {/* Filtreler - Yayılmış */}
+              <div className="flex-1 flex items-center gap-4">
+                <div className="relative flex-1">
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="İş ara..."
-                    className="w-52 h-9 pl-9 pr-4 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500/50"
+                    className="w-full h-9 pl-9 pr-4 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500/50"
                   />
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                 </div>
 
                 <Select value={selectedBrand} onValueChange={setSelectedBrand}>
-                  <SelectTrigger className="w-[180px] h-9 rounded-lg bg-white/5 border-white/10 text-zinc-300 text-sm">
-                    <Building2 className="w-4 h-4 mr-2 text-zinc-500" />
+                  <SelectTrigger className="w-[200px] h-9 rounded-lg bg-white/5 border-white/10 text-zinc-300 text-sm">
+                    <Building2 className="w-4 h-4 mr-2 text-zinc-500 flex-shrink-0" />
                     <SelectValue placeholder="Tüm Markalar" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1255,8 +1255,8 @@ export default function GunlukIslerPage() {
                 </Select>
 
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-[160px] h-9 rounded-lg bg-white/5 border-white/10 text-zinc-300 text-sm">
-                    <Tag className="w-4 h-4 mr-2 text-zinc-500" />
+                  <SelectTrigger className="w-[180px] h-9 rounded-lg bg-white/5 border-white/10 text-zinc-300 text-sm">
+                    <Tag className="w-4 h-4 mr-2 text-zinc-500 flex-shrink-0" />
                     <SelectValue placeholder="Tüm Kategoriler" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1268,7 +1268,7 @@ export default function GunlukIslerPage() {
                 </Select>
               </div>
 
-              <div className="w-px h-8 bg-white/10 mx-2" />
+              <div className="w-px h-8 bg-white/10 mx-3" />
             </div>
 
             {/* Mini Stats */}
