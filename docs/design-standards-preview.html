@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ajans Bee - Design Standards Preview</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #09090b;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Glass Effects */
+    .glass {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    .glass-card {
+      background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    /* Glow Effects */
+    .glow-indigo {
+      border: 1px solid rgba(99, 102, 241, 0.4) !important;
+      box-shadow: 0 0 20px -5px rgba(99, 102, 241, 0.4) !important;
+    }
+    .glow-violet {
+      border: 1px solid rgba(139, 92, 246, 0.4) !important;
+      box-shadow: 0 0 20px -5px rgba(139, 92, 246, 0.4) !important;
+    }
+    .glow-cyan {
+      border: 1px solid rgba(34, 211, 238, 0.4) !important;
+      box-shadow: 0 0 20px -5px rgba(34, 211, 238, 0.4) !important;
+    }
+    .glow-emerald {
+      border: 1px solid rgba(16, 185, 129, 0.4) !important;
+      box-shadow: 0 0 20px -5px rgba(16, 185, 129, 0.4) !important;
+    }
+    .glow-amber {
+      border: 1px solid rgba(245, 158, 11, 0.4) !important;
+      box-shadow: 0 0 20px -5px rgba(245, 158, 11, 0.4) !important;
+    }
+    .glow-rose {
+      border: 1px solid rgba(244, 63, 94, 0.4) !important;
+      box-shadow: 0 0 20px -5px rgba(244, 63, 94, 0.4) !important;
+    }
+    .glow-fuchsia {
+      border: 1px solid rgba(217, 70, 239, 0.4) !important;
+      box-shadow: 0 0 20px -5px rgba(217, 70, 239, 0.4) !important;
+    }
+    .glow-bee {
+      border: 1px solid rgba(255, 214, 0, 0.4) !important;
+      box-shadow: 0 0 20px -5px rgba(255, 214, 0, 0.4) !important;
+    }
+
+    /* Card Hover */
+    .card-hover {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .card-hover:hover {
+      transform: translateY(-2px);
+      border-color: rgba(139, 92, 246, 0.6) !important;
+      box-shadow: 0 0 30px -5px rgba(139, 92, 246, 0.5) !important;
+    }
+
+    /* Input Glow */
+    .input-glow:focus {
+      outline: none;
+      border-color: rgba(99, 102, 241, 0.5);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    /* Button Press */
+    .btn-press:active {
+      transform: scale(0.98);
+    }
+
+    /* Progress Colors */
+    .progress-rose { background: linear-gradient(to right, #f43f5e, #ec4899); }
+    .progress-amber { background: linear-gradient(to right, #f59e0b, #f97316); }
+    .progress-cyan { background: linear-gradient(to right, #22d3ee, #3b82f6); }
+    .progress-emerald { background: linear-gradient(to right, #10b981, #14b8a6); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+  </style>
+</head>
+<body class="bg-zinc-950 text-white min-h-screen p-8">
+
+  <!-- Header -->
+  <div class="max-w-6xl mx-auto mb-12">
+    <div class="flex items-center gap-4 mb-4">
+      <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+        <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-3xl font-bold text-white">Design Standards Preview</h1>
+        <p class="text-zinc-500">Ajans Bee Platform - v3.2</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-6xl mx-auto space-y-16">
+
+    <!-- ==================== 1. RENKLER ==================== -->
+    <section>
+      <h2 class="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+        <span class="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">1</span>
+        Renkler & Glow Efektleri
+      </h2>
+
+      <!-- Primary & Secondary -->
+      <div class="mb-8">
+        <h3 class="text-sm font-medium text-zinc-400 mb-4">Primary & Secondary</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="glass-card rounded-2xl p-6 glow-indigo">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-12 h-12 rounded-xl bg-indigo-500"></div>
+              <div>
+                <p class="font-semibold text-white">Primary - Indigo</p>
+                <p class="text-xs font-mono text-zinc-500">#6366f1 / indigo-500</p>
+              </div>
+            </div>
+            <p class="text-sm text-zinc-400">Ana aksiyonlar, linkler, aktif durumlar</p>
+          </div>
+          <div class="glass-card rounded-2xl p-6 glow-violet">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-12 h-12 rounded-xl bg-violet-500"></div>
+              <div>
+                <p class="font-semibold text-white">Secondary - Violet</p>
+                <p class="text-xs font-mono text-zinc-500">#8b5cf6 / violet-500</p>
+              </div>
+            </div>
+            <p class="text-sm text-zinc-400">Hover efektleri, gradientler</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Accent Colors with Glow -->
+      <div>
+        <h3 class="text-sm font-medium text-zinc-400 mb-4">Accent Renkler + Glow Efektleri</h3>
+        <div class="grid grid-cols-6 gap-4">
+          <div class="glass-card rounded-xl p-4 glow-cyan text-center">
+            <div class="w-10 h-10 rounded-lg bg-cyan-500 mx-auto mb-2"></div>
+            <p class="text-xs font-medium text-cyan-400">Cyan</p>
+            <p class="text-[10px] font-mono text-zinc-600">#22d3ee</p>
+          </div>
+          <div class="glass-card rounded-xl p-4 glow-emerald text-center">
+            <div class="w-10 h-10 rounded-lg bg-emerald-500 mx-auto mb-2"></div>
+            <p class="text-xs font-medium text-emerald-400">Emerald</p>
+            <p class="text-[10px] font-mono text-zinc-600">#10b981</p>
+          </div>
+          <div class="glass-card rounded-xl p-4 glow-amber text-center">
+            <div class="w-10 h-10 rounded-lg bg-amber-500 mx-auto mb-2"></div>
+            <p class="text-xs font-medium text-amber-400">Amber</p>
+            <p class="text-[10px] font-mono text-zinc-600">#f59e0b</p>
+          </div>
+          <div class="glass-card rounded-xl p-4 glow-rose text-center">
+            <div class="w-10 h-10 rounded-lg bg-rose-500 mx-auto mb-2"></div>
+            <p class="text-xs font-medium text-rose-400">Rose</p>
+            <p class="text-[10px] font-mono text-zinc-600">#f43f5e</p>
+          </div>
+          <div class="glass-card rounded-xl p-4 glow-fuchsia text-center">
+            <div class="w-10 h-10 rounded-lg bg-fuchsia-500 mx-auto mb-2"></div>
+            <p class="text-xs font-medium text-fuchsia-400">Fuchsia</p>
+            <p class="text-[10px] font-mono text-zinc-600">#d946ef</p>
+          </div>
+          <div class="glass-card rounded-xl p-4 glow-bee text-center">
+            <div class="w-10 h-10 rounded-lg mx-auto mb-2" style="background: #FFD600;"></div>
+            <p class="text-xs font-medium text-yellow-400">Bee Yellow</p>
+            <p class="text-[10px] font-mono text-zinc-600">#FFD600</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 2. RADIUS ==================== -->
+    <section>
+      <h2 class="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+        <span class="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center text-violet-400">2</span>
+        Border Radius Karsilastirma
+      </h2>
+
+      <!-- Kart Radius -->
+      <div class="mb-8">
+        <h3 class="text-sm font-medium text-zinc-400 mb-4">Kartlar: rounded-2xl vs rounded-xl</h3>
+        <div class="grid grid-cols-2 gap-6">
+          <div class="glass-card rounded-2xl p-6 border border-white/10">
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-sm font-medium text-white">rounded-2xl</span>
+              <span class="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Kullanilan</span>
+            </div>
+            <p class="text-sm text-zinc-500">Buyuk kartlar, modal'lar, ana container'lar icin ideal. Daha yumusak gorunum.</p>
+            <p class="text-xs font-mono text-zinc-600 mt-2">16px radius</p>
+          </div>
+          <div class="glass-card rounded-xl p-6 border border-white/10">
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-sm font-medium text-white">rounded-xl</span>
+              <span class="text-xs px-2 py-1 rounded-full bg-zinc-500/20 text-zinc-400 border border-zinc-500/30">Alternatif</span>
+            </div>
+            <p class="text-sm text-zinc-500">Orta boy kartlar, nested elementler icin. Biraz daha keskin.</p>
+            <p class="text-xs font-mono text-zinc-600 mt-2">12px radius</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Buton Radius -->
+      <div class="mb-8">
+        <h3 class="text-sm font-medium text-zinc-400 mb-4">Butonlar: rounded-xl vs rounded-lg</h3>
+        <div class="flex gap-6 items-center">
+          <div class="text-center">
+            <button class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-medium rounded-xl mb-2">
+              rounded-xl
+            </button>
+            <p class="text-xs text-zinc-500">12px - Buyuk butonlar</p>
+          </div>
+          <div class="text-center">
+            <button class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-medium rounded-lg mb-2">
+              rounded-lg
+            </button>
+            <p class="text-xs text-zinc-500">8px - Kucuk butonlar</p>
+          </div>
+          <div class="text-center">
+            <button class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-medium rounded-full mb-2">
+              rounded-full
+            </button>
+            <p class="text-xs text-zinc-500">Pill butonlar</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input Radius -->
+      <div>
+        <h3 class="text-sm font-medium text-zinc-400 mb-4">Inputlar: rounded-lg vs rounded-md</h3>
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <label class="text-xs text-zinc-500 mb-2 block">rounded-lg (8px) - Kullanilan</label>
+            <input type="text" placeholder="Email adresiniz..." class="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-zinc-600 input-glow">
+          </div>
+          <div>
+            <label class="text-xs text-zinc-500 mb-2 block">rounded-md (6px) - Alternatif</label>
+            <input type="text" placeholder="Email adresiniz..." class="w-full px-4 py-3 rounded-md bg-white/5 border border-white/10 text-white placeholder:text-zinc-600 input-glow">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 3. SPACING ==================== -->
+    <section>
+      <h2 class="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+        <span class="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-400">3</span>
+        Spacing Karsilastirma
+      </h2>
+
+      <!-- Kart Padding -->
+      <div class="mb-8">
+        <h3 class="text-sm font-medium text-zinc-400 mb-4">Kart Padding: p-4 vs p-5 vs p-6</h3>
+        <div class="grid grid-cols-3 gap-6">
+          <div class="glass-card rounded-2xl p-4 border border-white/10">
+            <p class="text-sm font-medium text-white mb-1">p-4 (16px)</p>
+            <p class="text-xs text-zinc-500">Kompakt kartlar, sidebar itemlari</p>
+          </div>
+          <div class="glass-card rounded-2xl p-5 border border-emerald-500/30">
+            <p class="text-sm font-medium text-white mb-1">p-5 (20px)</p>
+            <p class="text-xs text-emerald-400">En sik kullanilan</p>
+          </div>
+          <div class="glass-card rounded-2xl p-6 border border-white/10">
+            <p class="text-sm font-medium text-white mb-1">p-6 (24px)</p>
+            <p class="text-xs text-zinc-500">Genis kartlar, hero section</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gap -->
+      <div>
+        <h3 class="text-sm font-medium text-zinc-400 mb-4">Gap: gap-2 vs gap-4 vs gap-6</h3>
+        <div class="space-y-6">
+          <div>
+            <p class="text-xs text-zinc-500 mb-2">gap-2 (8px) - Inline elementler</p>
+            <div class="flex gap-2">
+              <span class="px-3 py-1 rounded-lg bg-indigo-500/20 text-indigo-400 text-sm">Tag 1</span>
+              <span class="px-3 py-1 rounded-lg bg-violet-500/20 text-violet-400 text-sm">Tag 2</span>
+              <span class="px-3 py-1 rounded-lg bg-cyan-500/20 text-cyan-400 text-sm">Tag 3</span>
+            </div>
+          </div>
+          <div>
+            <p class="text-xs text-zinc-500 mb-2">gap-4 (16px) - Grid itemlari</p>
+            <div class="flex gap-4">
+              <div class="w-20 h-20 rounded-xl bg-white/5 border border-white/10"></div>
+              <div class="w-20 h-20 rounded-xl bg-white/5 border border-white/10"></div>
+              <div class="w-20 h-20 rounded-xl bg-white/5 border border-white/10"></div>
+            </div>
+          </div>
+          <div>
+            <p class="text-xs text-zinc-500 mb-2">gap-6 (24px) - Buyuk sectionlar</p>
+            <div class="flex gap-6">
+              <div class="w-32 h-20 rounded-xl bg-white/5 border border-white/10"></div>
+              <div class="w-32 h-20 rounded-xl bg-white/5 border border-white/10"></div>
+              <div class="w-32 h-20 rounded-xl bg-white/5 border border-white/10"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 4. COMPONENTS ==================== -->
+    <section>
+      <h2 class="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+        <span class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">4</span>
+        Component Ornekleri
+      </h2>
+
+      <!-- Glass Card -->
+      <div class="mb-8">
+        <h3 class="text-sm font-medium text-zinc-400 mb-4">Glass Card</h3>
+        <div class="grid grid-cols-2 gap-6">
+          <div class="glass-card rounded-2xl p-5 border border-white/10 card-hover">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
+                <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-semibold text-white">Toplam Musteri</h4>
+                <p class="text-xs text-zinc-500">Aktif musteriler</p>
+              </div>
+            </div>
+            <p class="text-3xl font-bold text-white">247</p>
+            <p class="text-xs text-emerald-400 mt-2">+12% bu ay</p>
+          </div>
+          <div class="glass-card rounded-2xl p-5 border border-white/10">
+            <p class="text-xs font-mono text-zinc-500 mb-2">Kod:</p>
+            <pre class="text-xs text-zinc-400 bg-black/30 rounded-lg p-3 overflow-x-auto"><code>class="glass-card rounded-2xl p-5
+       border border-white/10 card-hover"</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stat Cards with Glow -->
+      <div class="mb-8">
+        <h3 class="text-sm font-medium text-zinc-400 mb-4">Stat Cards (Glow Efektli)</h3>
+        <div class="grid grid-cols-4 gap-4">
+          <div class="glass-card rounded-2xl p-5 glow-indigo">
+            <div class="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 w-fit mb-4">
+              <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+              </svg>
+            </div>
+            <p class="text-2xl font-bold text-white">1,234</p>
+            <p class="text-sm text-zinc-500">Kullanicilar</p>
+          </div>
+          <div class="glass-card rounded-2xl p-5 glow-violet">
+            <div class="p-3 rounded-xl bg-violet-500/10 border border-violet-500/20 w-fit mb-4">
+              <svg class="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+              </svg>
+            </div>
+            <p class="text-2xl font-bold text-white">89</p>
+            <p class="text-sm text-zinc-500">Gorevler</p>
+          </div>
+          <div class="glass-card rounded-2xl p-5 glow-cyan">
+            <div class="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 w-fit mb-4">
+              <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+              </svg>
+            </div>
+            <p class="text-2xl font-bold text-white">%94</p>
+            <p class="text-sm text-zinc-500">Basari</p>
+          </div>
+          <div class="glass-card rounded-2xl p-5 glow-emerald">
+            <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 w-fit mb-4">
+              <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <p class="text-2xl font-bold text-white">142</p>
+            <p class="text-sm text-zinc-500">Tamamlanan</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="mb-8">
+        <h3 class="text-sm font-medium text-zinc-400 mb-4">Butonlar</h3>
+        <div class="flex flex-wrap gap-4 items-center">
+          <button class="btn-press px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-medium shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-shadow">
+            Primary
+          </button>
+          <button class="btn-press px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-medium hover:bg-white/10 transition-colors">
+            Secondary
+          </button>
+          <button class="btn-press px-5 py-2.5 rounded-xl text-zinc-400 text-sm font-medium hover:text-white hover:bg-white/5 transition-colors">
+            Ghost
+          </button>
+          <button class="btn-press px-5 py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-sm font-medium hover:bg-emerald-500/30 transition-colors">
+            Success
+          </button>
+          <button class="btn-press px-5 py-2.5 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-400 text-sm font-medium hover:bg-rose-500/30 transition-colors">
+            Danger
+          </button>
+        </div>
+      </div>
+
+      <!-- Inputs -->
+      <div class="mb-8">
+        <h3 class="text-sm font-medium text-zinc-400 mb-4">Inputlar</h3>
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <label class="text-sm text-zinc-300 mb-2 block">Normal Input</label>
+            <input type="text" placeholder="Bir seyler yazin..." class="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-zinc-600 input-glow transition-all">
+          </div>
+          <div>
+            <label class="text-sm text-zinc-300 mb-2 block">Icon ile Input</label>
+            <div class="relative">
+              <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+              <input type="text" placeholder="Ara..." class="w-full pl-12 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-zinc-600 input-glow transition-all">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Badges -->
+      <div class="mb-8">
+        <h3 class="text-sm font-medium text-zinc-400 mb-4">Badge'ler</h3>
+        <div class="flex flex-wrap gap-3">
+          <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">Indigo</span>
+          <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-violet-500/20 text-violet-400 border border-violet-500/30">Violet</span>
+          <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">Cyan</span>
+          <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Emerald</span>
+          <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30">Amber</span>
+          <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-rose-500/20 text-rose-400 border border-rose-500/30">Rose</span>
+          <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-fuchsia-500/20 text-fuchsia-400 border border-fuchsia-500/30">Fuchsia</span>
+          <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-zinc-500/20 text-zinc-400 border border-zinc-500/30">Zinc</span>
+        </div>
+      </div>
+
+      <!-- Progress Bars -->
+      <div class="mb-8">
+        <h3 class="text-sm font-medium text-zinc-400 mb-4">Progress Bar'lar (Brief Tamamlanma)</h3>
+        <div class="space-y-4">
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-zinc-400">0-30% (Rose)</span>
+              <span class="text-rose-400">25%</span>
+            </div>
+            <div class="h-2 bg-white/5 rounded-full overflow-hidden">
+              <div class="h-full w-1/4 progress-rose rounded-full"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-zinc-400">31-70% (Amber)</span>
+              <span class="text-amber-400">55%</span>
+            </div>
+            <div class="h-2 bg-white/5 rounded-full overflow-hidden">
+              <div class="h-full w-1/2 progress-amber rounded-full"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-zinc-400">71-99% (Cyan)</span>
+              <span class="text-cyan-400">85%</span>
+            </div>
+            <div class="h-2 bg-white/5 rounded-full overflow-hidden">
+              <div class="h-full w-4/5 progress-cyan rounded-full"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-zinc-400">100% (Emerald)</span>
+              <span class="text-emerald-400">100%</span>
+            </div>
+            <div class="h-2 bg-white/5 rounded-full overflow-hidden">
+              <div class="h-full w-full progress-emerald rounded-full"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table Row Example -->
+      <div>
+        <h3 class="text-sm font-medium text-zinc-400 mb-4">Tablo Satiri Ornegi</h3>
+        <div class="glass-card rounded-2xl border border-white/10 overflow-hidden">
+          <div class="px-5 py-3 border-b border-white/5 flex items-center justify-between">
+            <span class="text-sm font-medium text-zinc-400">Musteri Listesi</span>
+            <span class="text-xs text-zinc-500">3 kayit</span>
+          </div>
+          <div class="divide-y divide-white/5">
+            <div class="px-5 py-4 flex items-center gap-4 hover:bg-white/[0.02] transition-colors">
+              <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-semibold">A</div>
+              <div class="flex-1">
+                <p class="font-medium text-white">Ajans Bee</p>
+                <p class="text-xs text-zinc-500">Digital Agency</p>
+              </div>
+              <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Aktif</span>
+            </div>
+            <div class="px-5 py-4 flex items-center gap-4 hover:bg-white/[0.02] transition-colors">
+              <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-semibold">T</div>
+              <div class="flex-1">
+                <p class="font-medium text-white">Tech Corp</p>
+                <p class="text-xs text-zinc-500">SaaS Company</p>
+              </div>
+              <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30">Beklemede</span>
+            </div>
+            <div class="px-5 py-4 flex items-center gap-4 hover:bg-white/[0.02] transition-colors">
+              <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white font-semibold">M</div>
+              <div class="flex-1">
+                <p class="font-medium text-white">Moda House</p>
+                <p class="text-xs text-zinc-500">E-commerce</p>
+              </div>
+              <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-zinc-500/20 text-zinc-400 border border-zinc-500/30">Pasif</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== CHEAT SHEET ==================== -->
+    <section class="pb-12">
+      <h2 class="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+        <span class="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400">5</span>
+        Hizli Basvuru (Cheat Sheet)
+      </h2>
+
+      <div class="grid grid-cols-2 gap-6">
+        <div class="glass-card rounded-2xl p-5 border border-white/10">
+          <h4 class="font-medium text-white mb-3">En Cok Kullanilan Class'lar</h4>
+          <div class="space-y-2 text-sm font-mono">
+            <p class="text-zinc-400"><span class="text-indigo-400">rounded-2xl</span> - Kartlar</p>
+            <p class="text-zinc-400"><span class="text-indigo-400">rounded-xl</span> - Butonlar, iconlar</p>
+            <p class="text-zinc-400"><span class="text-indigo-400">rounded-lg</span> - Inputlar</p>
+            <p class="text-zinc-400"><span class="text-indigo-400">rounded-full</span> - Badge'ler</p>
+            <p class="text-zinc-400"><span class="text-indigo-400">p-5</span> - Kart padding</p>
+            <p class="text-zinc-400"><span class="text-indigo-400">gap-4</span> - Grid gap</p>
+            <p class="text-zinc-400"><span class="text-indigo-400">gap-2</span> - Inline gap</p>
+          </div>
+        </div>
+        <div class="glass-card rounded-2xl p-5 border border-white/10">
+          <h4 class="font-medium text-white mb-3">Custom Class'lar</h4>
+          <div class="space-y-2 text-sm font-mono">
+            <p class="text-zinc-400"><span class="text-violet-400">glass-card</span> - Glass efekt</p>
+            <p class="text-zinc-400"><span class="text-violet-400">glow-{color}</span> - Border glow</p>
+            <p class="text-zinc-400"><span class="text-violet-400">card-hover</span> - Hover animasyonu</p>
+            <p class="text-zinc-400"><span class="text-violet-400">input-glow</span> - Focus efekti</p>
+            <p class="text-zinc-400"><span class="text-violet-400">btn-press</span> - Click efekti</p>
+            <p class="text-zinc-400"><span class="text-violet-400">progress-{color}</span> - Progress renk</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="max-w-6xl mx-auto border-t border-white/5 pt-8 pb-12 text-center">
+    <p class="text-sm text-zinc-500">Ajans Bee Platform - Design System v3.2</p>
+    <p class="text-xs text-zinc-600 mt-1">Glass Morphism + Glow Border Theme</p>
+  </div>
+
+</body>
+</html>

@@ -21,22 +21,22 @@ function getSectorLabel(value: string): string {
   return SECTORS.find(s => s.value === value)?.label || value
 }
 
-// Progress bar rengi
+// Progress bar rengi (dark mode only)
 function getProgressColor(value: number): { bar: string; text: string } {
-  if (value >= 100) return { bar: 'from-emerald-500 to-teal-500', text: 'text-emerald-600 dark:text-emerald-400' }
-  if (value >= 71) return { bar: 'from-cyan-500 to-blue-500', text: 'text-cyan-600 dark:text-cyan-400' }
-  if (value >= 31) return { bar: 'from-amber-500 to-orange-500', text: 'text-amber-600 dark:text-amber-400' }
-  return { bar: 'from-rose-500 to-pink-500', text: 'text-rose-600 dark:text-rose-400' }
+  if (value >= 100) return { bar: 'progress-emerald', text: 'text-emerald-400' }
+  if (value >= 71) return { bar: 'progress-cyan', text: 'text-cyan-400' }
+  if (value >= 31) return { bar: 'progress-amber', text: 'text-amber-400' }
+  return { bar: 'progress-rose', text: 'text-rose-400' }
 }
 
-// Marka kartı için gradient renk paletleri
+// Marka kartı için gradient renk paletleri (dark mode only)
 const cardGradients = [
-  { bg: 'from-violet-100 to-purple-100 dark:from-violet-500/20 dark:to-purple-500/20', border: 'border-violet-200 dark:border-violet-500/20', icon: 'text-violet-600 dark:text-violet-400' },
-  { bg: 'from-amber-100 to-yellow-100 dark:from-amber-500/20 dark:to-yellow-500/20', border: 'border-amber-200 dark:border-amber-500/20', icon: 'text-amber-600 dark:text-amber-400' },
-  { bg: 'from-rose-100 to-pink-100 dark:from-rose-500/20 dark:to-pink-500/20', border: 'border-rose-200 dark:border-rose-500/20', icon: 'text-rose-600 dark:text-rose-400' },
-  { bg: 'from-cyan-100 to-blue-100 dark:from-cyan-500/20 dark:to-blue-500/20', border: 'border-cyan-200 dark:border-cyan-500/20', icon: 'text-cyan-600 dark:text-cyan-400' },
-  { bg: 'from-emerald-100 to-teal-100 dark:from-emerald-500/20 dark:to-teal-500/20', border: 'border-emerald-200 dark:border-emerald-500/20', icon: 'text-emerald-600 dark:text-emerald-400' },
-  { bg: 'from-indigo-100 to-violet-100 dark:from-indigo-500/20 dark:to-violet-500/20', border: 'border-indigo-200 dark:border-indigo-500/20', icon: 'text-indigo-600 dark:text-indigo-400' },
+  { bg: 'from-violet-500/20 to-purple-500/20', border: 'border-violet-500/20', icon: 'text-violet-400' },
+  { bg: 'from-amber-500/20 to-yellow-500/20', border: 'border-amber-500/20', icon: 'text-amber-400' },
+  { bg: 'from-rose-500/20 to-pink-500/20', border: 'border-rose-500/20', icon: 'text-rose-400' },
+  { bg: 'from-cyan-500/20 to-blue-500/20', border: 'border-cyan-500/20', icon: 'text-cyan-400' },
+  { bg: 'from-emerald-500/20 to-teal-500/20', border: 'border-emerald-500/20', icon: 'text-emerald-400' },
+  { bg: 'from-indigo-500/20 to-violet-500/20', border: 'border-indigo-500/20', icon: 'text-indigo-400' },
 ]
 
 // Yeni marka formu için initial state
@@ -223,62 +223,62 @@ export default function MusterilerPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
         {/* Toplam Marka */}
         <div className="glass-card rounded-2xl p-5 glow-indigo card-hover">
-          <div className="p-3 rounded-xl bg-indigo-100 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 w-fit mb-4">
-            <Building2 className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+          <div className="icon-box icon-box-indigo mb-4">
+            <Building2 className="w-6 h-6" />
           </div>
-          <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">{customers.length}</p>
+          <p className="text-3xl font-bold text-white mb-1">{customers.length}</p>
           <p className="text-sm text-zinc-500">Toplam Marka</p>
         </div>
 
         {/* Aktif */}
         <div className="glass-card rounded-2xl p-5 glow-emerald card-hover">
-          <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 w-fit mb-4">
-            <Eye className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+          <div className="icon-box icon-box-emerald mb-4">
+            <Eye className="w-6 h-6" />
           </div>
-          <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">{activeCount}</p>
+          <p className="text-3xl font-bold text-white mb-1">{activeCount}</p>
           <p className="text-sm text-zinc-500">Aktif</p>
         </div>
 
         {/* Pasif */}
         <div className="glass-card rounded-2xl p-5 glow-amber card-hover">
-          <div className="p-3 rounded-xl bg-amber-100 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 w-fit mb-4">
-            <PauseCircle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+          <div className="icon-box icon-box-amber mb-4">
+            <PauseCircle className="w-6 h-6" />
           </div>
-          <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">{inactiveCount}</p>
+          <p className="text-3xl font-bold text-white mb-1">{inactiveCount}</p>
           <p className="text-sm text-zinc-500">Pasif</p>
         </div>
 
         {/* İçerik Üretildi */}
         <div className="glass-card rounded-2xl p-5 glow-violet card-hover">
-          <div className="p-3 rounded-xl bg-violet-100 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 w-fit mb-4">
-            <Sparkles className="w-6 h-6 text-violet-600 dark:text-violet-400" />
+          <div className="icon-box icon-box-violet mb-4">
+            <Sparkles className="w-6 h-6" />
           </div>
-          <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">0</p>
+          <p className="text-3xl font-bold text-white mb-1">0</p>
           <p className="text-sm text-zinc-500">İçerik Üretildi</p>
         </div>
       </div>
 
       {/* Search and Filter */}
-      <div className="glass-card rounded-2xl p-4 border border-zinc-200 dark:border-white/10">
+      <div className="glass-card rounded-2xl p-4 border border-white/10">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
             <Input
               placeholder="Marka ara..."
-              className="pl-10 input-glow bg-zinc-100 dark:bg-white/5 border-zinc-200 dark:border-white/10"
+              className="pl-10 input-dark"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           
           {inactiveCount > 0 && (
-            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10">
               <Switch
                 id="show-inactive"
                 checked={showInactive}
                 onCheckedChange={setShowInactive}
               />
-              <Label htmlFor="show-inactive" className="text-sm cursor-pointer flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+              <Label htmlFor="show-inactive" className="text-sm cursor-pointer flex items-center gap-1.5 text-zinc-400">
                 {showInactive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                 Pasif ({inactiveCount})
               </Label>
@@ -288,7 +288,7 @@ export default function MusterilerPage() {
       </div>
 
       {/* Section Title */}
-      <h2 className="text-base font-semibold text-zinc-900 dark:text-white">
+      <h2 className="text-base font-semibold text-white">
         {showInactive ? 'Tüm Markalar' : 'Aktif Markalar'} ({filteredCustomers.length})
       </h2>
 
@@ -298,11 +298,11 @@ export default function MusterilerPage() {
           <div className="animate-pulse">Yükleniyor...</div>
         </div>
       ) : filteredCustomers.length === 0 ? (
-        <div className="glass-card rounded-2xl p-12 text-center border border-zinc-200 dark:border-white/10">
-          <div className="w-16 h-16 rounded-2xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 flex items-center justify-center mx-auto mb-4 float-animation">
+        <div className="glass-card rounded-2xl p-12 text-center border border-white/10">
+          <div className="icon-box icon-box-default w-16 h-16 flex items-center justify-center mx-auto mb-4 animate-float">
             <Building2 className="w-8 h-8 text-zinc-400" />
           </div>
-          <h3 className="font-semibold text-zinc-900 dark:text-white mb-2">
+          <h3 className="font-semibold text-white mb-2">
             {searchQuery ? 'Marka bulunamadı' : 'Henüz marka eklenmedi'}
           </h3>
           <p className="text-sm text-zinc-500 mb-6">
@@ -329,7 +329,7 @@ export default function MusterilerPage() {
             return (
               <div 
                 key={customer.id} 
-                className={`glass-card rounded-2xl p-5 border border-zinc-200 dark:border-white/10 card-hover cursor-pointer group ${
+                className={`glass-card rounded-2xl p-5 border border-white/10 card-hover cursor-pointer group ${
                   isInactive ? 'opacity-60' : ''
                 }`}
                 onClick={() => handleCustomerClick(customer)}
@@ -340,7 +340,7 @@ export default function MusterilerPage() {
                     <Building2 className={`w-6 h-6 ${gradient.icon}`} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-zinc-900 dark:text-white truncate">{customer.name}</h3>
+                    <h3 className="font-semibold text-white truncate">{customer.name}</h3>
                     {customer.website_url && (
                       <p className="text-xs text-zinc-500 font-mono truncate">
                         {(() => {
@@ -356,7 +356,7 @@ export default function MusterilerPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10"
+                      className="h-8 w-8 rounded-lg hover:bg-white/10"
                       onClick={(e) => {
                         e.stopPropagation()
                         router.push(`/customers/${customer.id}`)
@@ -382,17 +382,17 @@ export default function MusterilerPage() {
                 {/* Badges */}
                 <div className="flex flex-wrap gap-2 mb-4">
                   {customer.customer_type && (
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-400 font-medium border border-violet-200 dark:border-violet-500/20">
+                    <span className="badge badge-violet">
                       {getCustomerTypeLabel(customer.customer_type)}
                     </span>
                   )}
                   {customer.sector && (
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                    <span className="badge badge-neutral">
                       {getSectorLabel(customer.sector)}
                     </span>
                   )}
                   {isInactive && (
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-500">
+                    <span className="badge badge-neutral">
                       Pasif
                     </span>
                   )}
@@ -404,9 +404,9 @@ export default function MusterilerPage() {
                     <span className="text-xs text-zinc-500">Brief</span>
                     <span className={`text-xs font-mono font-semibold ${colors.text}`}>%{completion}</span>
                   </div>
-                  <div className="h-2 rounded-full bg-zinc-200 dark:bg-white/10">
+                  <div className="progress-bar">
                     <div 
-                      className={`h-full rounded-full bg-gradient-to-r ${colors.bar} transition-all duration-500`}
+                      className={`h-full rounded-full ${colors.bar} transition-all duration-500`}
                       style={{ width: `${completion}%` }}
                     />
                   </div>

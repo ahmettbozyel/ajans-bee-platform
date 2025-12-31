@@ -420,7 +420,7 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
         
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
-          <div className="max-w-6xl mx-auto">
+          <div>
             <div className="grid grid-cols-3 gap-6">
               
               {/* LEFT (2/3) */}
@@ -668,7 +668,7 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
         
         {/* Brief Tab - 2/3 + 1/3 LAYOUT + STICKY BOTTOM SAVE */}
         {activeTab === 'brief' && (
-          <div className="max-w-6xl mx-auto">
+          <div>
             <div className="grid grid-cols-3 gap-6">
               
               {/* LEFT (2/3) - Brief Form */}
@@ -780,7 +780,7 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
         
         {/* İçerik Üret Tab */}
         {activeTab === 'icerik-uret' && (
-          <div className="max-w-4xl mx-auto">
+          <div>
             <div className="glass-card rounded-2xl border border-zinc-200 dark:border-white/10 p-12 text-center">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-fuchsia-100 to-violet-100 dark:from-fuchsia-500/10 dark:to-violet-500/10 border border-fuchsia-200 dark:border-fuchsia-500/20 flex items-center justify-center mx-auto mb-4 float-animation">
                 <Sparkles className="w-8 h-8 text-fuchsia-600 dark:text-fuchsia-400" />
@@ -815,9 +815,9 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
         
         {/* Dosyalar Tab */}
         {activeTab === 'dosyalar' && (
-          <div className="max-w-4xl mx-auto">
-            <CustomerFilesTab 
-              customer={customer} 
+          <div>
+            <CustomerFilesTab
+              customer={customer}
               onUpdate={fetchCustomer}
             />
           </div>
@@ -825,9 +825,9 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
 
         {/* Performans Tab */}
         {activeTab === 'performans' && (
-          <div className="max-w-6xl mx-auto">
-            <CustomerPerformanceTab 
-              customer={customer} 
+          <div>
+            <CustomerPerformanceTab
+              customer={customer}
               onUpdate={fetchCustomer}
             />
           </div>

@@ -27,6 +27,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import type { Customer, SocialMediaData, Competitor, SpecialEvent } from '@/lib/customer-types'
@@ -787,16 +788,17 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
               Marka Dosyaları
             </CardTitle>
             <div className="flex items-center gap-2">
-              <select
-                value={uploadCategory}
-                onChange={(e) => setUploadCategory(e.target.value)}
-                className="text-xs border rounded px-2 py-1"
-              >
-                <option value="logo">Logo</option>
-                <option value="brand-guide">Brand Guide</option>
-                <option value="corporate-identity">Kurumsal Kimlik</option>
-                <option value="other">Diğer</option>
-              </select>
+              <Select value={uploadCategory} onValueChange={setUploadCategory}>
+                <SelectTrigger className="w-[140px] h-8 text-xs bg-zinc-800 border-zinc-700">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="logo">Logo</SelectItem>
+                  <SelectItem value="brand-guide">Brand Guide</SelectItem>
+                  <SelectItem value="corporate-identity">Kurumsal Kimlik</SelectItem>
+                  <SelectItem value="other">Diğer</SelectItem>
+                </SelectContent>
+              </Select>
               <Button variant="outline" size="sm" className="relative" disabled={uploading}>
                 <Upload className="h-3 w-3 mr-1" />
                 {uploading ? 'Yükleniyor...' : 'Yükle'}

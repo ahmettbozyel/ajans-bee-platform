@@ -53,28 +53,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#09090b] relative overflow-hidden">
+    <div className="min-h-screen bg-body relative overflow-hidden">
       {/* Background Gradients */}
-      <div 
-        className="fixed inset-0 pointer-events-none"
-        style={{
-          background: 'radial-gradient(ellipse at 10% 10%, rgba(99,102,241,0.12) 0%, transparent 40%), radial-gradient(ellipse at 90% 90%, rgba(139,92,246,0.08) 0%, transparent 40%)'
-        }}
-      />
+      <div className="fixed inset-0 pointer-events-none bg-content" />
       
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           
           {/* Logo & Title */}
           <div className="text-center mb-8 animate-float">
-            <div 
-              className="inline-flex items-center justify-center h-20 w-20 rounded-2xl mb-6"
-              style={{
-                background: 'linear-gradient(135deg, rgba(251,191,36,0.2) 0%, rgba(234,179,8,0.1) 100%)',
-                border: '1px solid rgba(255,214,0,0.4)',
-                boxShadow: '0 0 20px -5px rgba(255,214,0,0.4)'
-              }}
-            >
+            <div className="inline-flex items-center justify-center h-20 w-20 rounded-2xl mb-6 logo-container glow-bee">
               <AjansBeeLogoSVG className="w-12 h-12" />
             </div>
             <h1 className="text-2xl font-bold text-white mb-2">Ajans Bee AI Platform</h1>
@@ -82,15 +70,7 @@ export default function LoginPage() {
           </div>
           
           {/* Form Card */}
-          <div 
-            className="rounded-2xl p-8"
-            style={{
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(139,92,246,0.4)',
-              boxShadow: '0 0 30px -5px rgba(139,92,246,0.4)'
-            }}
-          >
+          <div className="glass-card rounded-2xl p-8 glow-violet">
             <form onSubmit={handleLogin} className="space-y-5">
               
               {/* Error Message */}
@@ -101,8 +81,8 @@ export default function LoginPage() {
               )}
               
               {/* E-posta */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">E-posta</label>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-zinc-400">E-posta</label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
                   <input 
@@ -111,26 +91,14 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full pl-12 pr-4 py-3.5 rounded-xl text-sm text-white placeholder:text-zinc-600 transition-all focus:outline-none"
-                    style={{
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.1)'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = 'rgba(139,92,246,0.5)'
-                      e.target.style.boxShadow = '0 0 0 3px rgba(139,92,246,0.15)'
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = 'rgba(255,255,255,0.1)'
-                      e.target.style.boxShadow = 'none'
-                    }}
+                    className="input-dark pl-12"
                   />
                 </div>
               </div>
               
               {/* Şifre */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">Şifre</label>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-zinc-400">Şifre</label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
                   <input 
@@ -139,19 +107,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="w-full pl-12 pr-12 py-3.5 rounded-xl text-sm text-white placeholder:text-zinc-600 transition-all focus:outline-none"
-                    style={{
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.1)'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = 'rgba(139,92,246,0.5)'
-                      e.target.style.boxShadow = '0 0 0 3px rgba(139,92,246,0.15)'
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = 'rgba(255,255,255,0.1)'
-                      e.target.style.boxShadow = 'none'
-                    }}
+                    className="input-dark pl-12 pr-12"
                   />
                   <button 
                     type="button" 
@@ -167,11 +123,7 @@ export default function LoginPage() {
               <button 
                 type="submit" 
                 disabled={loading}
-                className="w-full py-3.5 rounded-xl text-white text-sm font-semibold transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{
-                  background: 'linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%)',
-                  boxShadow: '0 10px 25px -5px rgba(99,102,241,0.4)'
-                }}
+                className="btn-primary w-full py-3.5 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -191,7 +143,7 @@ export default function LoginPage() {
                 <div className="w-full border-t border-white/10"></div>
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="px-3 text-zinc-600" style={{ background: 'rgba(24,24,27,0.8)' }}>iletişim</span>
+                <span className="px-3 text-zinc-600 bg-[#18181b]">iletişim</span>
               </div>
             </div>
             
@@ -202,25 +154,12 @@ export default function LoginPage() {
                 info@ajansbee.com
               </a>
             </p>
-            
           </div>
           
           {/* Footer */}
           <p className="text-center text-xs text-zinc-600 mt-6">© 2025 Ajans Bee. Tüm hakları saklıdır.</p>
-          
         </div>
       </div>
-      
-      {/* Float Animation */}
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-8px); }
-        }
-        .animate-float {
-          animation: float 4s ease-in-out infinite;
-        }
-      `}</style>
     </div>
   )
 }

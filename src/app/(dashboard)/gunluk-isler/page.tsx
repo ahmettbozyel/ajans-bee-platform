@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase/client'
 import { DailyTask, TaskCategory, AppUser, TaskStatus, AVATAR_COLORS, CATEGORY_COLORS } from '@/lib/auth-types'
-import { 
-  Plus, 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Plus,
   Calendar,
   Building2,
   Trash2,
@@ -1107,16 +1108,17 @@ export default function GunlukIslerPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-zinc-400 mb-2">Marka (Opsiyonel)</label>
-                  <select
-                    value={formData.brand_id}
-                    onChange={(e) => setFormData({ ...formData, brand_id: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 focus:outline-none focus:border-indigo-500 [&>option]:bg-zinc-800 [&>option]:text-zinc-100"
-                  >
-                    <option value="">Genel</option>
-                    {brands.map((brand) => (
-                      <option key={brand.id} value={brand.id}>{brand.brand_name}</option>
-                    ))}
-                  </select>
+                  <Select value={formData.brand_id || "none"} onValueChange={(value) => setFormData({ ...formData, brand_id: value === "none" ? "" : value })}>
+                    <SelectTrigger className="w-full bg-zinc-800 border-zinc-700 text-zinc-100">
+                      <SelectValue placeholder="Genel" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Genel</SelectItem>
+                      {brands.map((brand) => (
+                        <SelectItem key={brand.id} value={brand.id}>{brand.brand_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
@@ -1322,16 +1324,17 @@ export default function GunlukIslerPage() {
           
           <div className="flex items-center gap-2">
             <span className="text-sm text-zinc-500">Marka:</span>
-            <select
-              value={selectedBrand}
-              onChange={(e) => setSelectedBrand(e.target.value)}
-              className="px-3 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-300 text-sm focus:outline-none focus:border-indigo-500 [&>option]:bg-zinc-800 [&>option]:text-zinc-100"
-            >
-              <option value="all">Tümü</option>
-              {brands.map(brand => (
-                <option key={brand.id} value={brand.id}>{brand.brand_name}</option>
-              ))}
-            </select>
+            <Select value={selectedBrand} onValueChange={setSelectedBrand}>
+              <SelectTrigger className="w-[180px] bg-zinc-800 border-zinc-700 text-zinc-300 text-sm">
+                <SelectValue placeholder="Tümü" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tümü</SelectItem>
+                {brands.map(brand => (
+                  <SelectItem key={brand.id} value={brand.id}>{brand.brand_name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
@@ -1389,16 +1392,17 @@ export default function GunlukIslerPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-zinc-400 mb-2">Marka (Opsiyonel)</label>
-                <select
-                  value={formData.brand_id}
-                  onChange={(e) => setFormData({ ...formData, brand_id: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 focus:outline-none focus:border-indigo-500 [&>option]:bg-zinc-800 [&>option]:text-zinc-100"
-                >
-                  <option value="">Genel</option>
-                  {brands.map((brand) => (
-                    <option key={brand.id} value={brand.id}>{brand.brand_name}</option>
-                  ))}
-                </select>
+                <Select value={formData.brand_id || "none"} onValueChange={(value) => setFormData({ ...formData, brand_id: value === "none" ? "" : value })}>
+                  <SelectTrigger className="w-full bg-zinc-800 border-zinc-700 text-zinc-100">
+                    <SelectValue placeholder="Genel" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Genel</SelectItem>
+                    {brands.map((brand) => (
+                      <SelectItem key={brand.id} value={brand.id}>{brand.brand_name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>

@@ -1,21 +1,23 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { 
   Server, Globe, ShieldCheck, Mail, Building2, Calendar, AlertTriangle,
-  Search, Plus, Loader2, Settings, RefreshCw, Pencil, Trash2
+  Search, Plus, Loader2, Settings, RefreshCw, Pencil, Trash2, 
+  DollarSign, CreditCard, Eye, AlertCircle, Clock, ChevronLeft, ChevronRight, ChevronDown
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import type { ServiceType } from '@/lib/service-provider-types'
-import { SERVICE_TYPES, SERVICE_TYPE_COLORS } from '@/lib/service-provider-types'
+import { SERVICE_TYPES } from '@/lib/service-provider-types'
 import type { TechnicalServiceWithRelations } from '@/lib/technical-service-types-new'
-import { SERVICE_STATUSES } from '@/lib/technical-service-types-new'
 import Link from 'next/link'
 import { ServiceModal } from './components/service-modal'
+import { ConfirmModal } from '@/components/ui/confirm-modal'
 
-// Helper: Gün farkı hesapla
+// ==========================================
+// HELPERS
+// ==========================================
+
 function getDaysDiff(date: string | null): number | null {
   if (!date) return null
   const today = new Date()
@@ -24,7 +26,6 @@ function getDaysDiff(date: string | null): number | null {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 }
 
-// Helper: Servis ikon
 function ServiceIcon({ type, className }: { type: ServiceType; className?: string }) {
   const icons = {
     hosting: Server,
@@ -36,7 +37,6 @@ function ServiceIcon({ type, className }: { type: ServiceType; className?: strin
   return <Icon className={className} />
 }
 
-// Helper: Fiyat hesapla
 function calculatePrice(service: TechnicalServiceWithRelations): number {
   if (!service.provider?.base_price_usd) return 0
   const basePrice = service.provider.base_price_usd
@@ -45,7 +45,6 @@ function calculatePrice(service: TechnicalServiceWithRelations): number {
   return basePrice * quantity * (1 - discount / 100)
 }
 
-// Helper: Yeni yenileme tarihi hesapla
 function getNextRenewalDate(currentDate: string | null, billingCycle: 'monthly' | 'yearly' = 'yearly'): string {
   const baseDate = currentDate ? new Date(currentDate) : new Date()
   if (billingCycle === 'monthly') {
@@ -56,16 +55,79 @@ function getNextRenewalDate(currentDate: string | null, billingCycle: 'monthly' 
   return baseDate.toISOString().split('T')[0]
 }
 
+function formatDate(dateStr: string | null): string {
+  if (!dateStr) return '-'
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+// Provider renkleri
+const providerStyles: Record<string, { bg: string; badge: string; text: string; progress: string }> = {
+  'siteground': { 
+    bg: 'bg-gradient-to-br from-indigo-500 to-violet-600', 
+    badge: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/20',
+    text: 'text-indigo-400',
+    progress: 'bg-gradient-to-r from-indigo-500 to-violet-600'
+  },
+  'natro': { 
+    bg: 'bg-gradient-to-br from-amber-500 to-orange-600', 
+    badge: 'bg-amber-500/20 text-amber-400 border-amber-500/20',
+    text: 'text-amber-400',
+    progress: 'bg-gradient-to-r from-amber-500 to-orange-500'
+  },
+  'veridyen': { 
+    bg: 'bg-gradient-to-br from-emerald-500 to-teal-600', 
+    badge: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20',
+    text: 'text-emerald-400',
+    progress: 'bg-gradient-to-r from-emerald-500 to-teal-500'
+  },
+  'hostinger': { 
+    bg: 'bg-gradient-to-br from-violet-500 to-purple-600', 
+    badge: 'bg-violet-500/20 text-violet-400 border-violet-500/20',
+    text: 'text-violet-400',
+    progress: 'bg-gradient-to-r from-violet-500 to-purple-500'
+  },
+  'default': { 
+    bg: 'bg-gradient-to-br from-zinc-600 to-zinc-700', 
+    badge: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/20',
+    text: 'text-zinc-400',
+    progress: 'bg-gradient-to-r from-zinc-500 to-zinc-600'
+  }
+}
+
+function getProviderStyle(name: string) {
+  const key = name?.toLowerCase() || 'default'
+  return providerStyles[key] || providerStyles.default
+}
+
+// ==========================================
+// PAGINATION
+// ==========================================
+const ITEMS_PER_PAGE = 10
+
+// ==========================================
+// MAIN COMPONENT
+// ==========================================
 export default function TeknikHizmetlerPage() {
   const [services, setServices] = useState<TechnicalServiceWithRelations[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilter, setActiveFilter] = useState<ServiceType | 'all'>('all')
   const [renewingId, setRenewingId] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [sortBy, setSortBy] = useState<'renewal' | 'brand' | 'provider' | 'price'>('renewal')
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingService, setEditingService] = useState<TechnicalServiceWithRelations | null>(null)
+  
+  // Confirm modal state
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean
+    type: 'renew' | 'delete'
+    service: TechnicalServiceWithRelations | null
+    newDate?: string
+  }>({ isOpen: false, type: 'renew', service: null })
 
   useEffect(() => {
     loadData()
@@ -86,6 +148,101 @@ export default function TeknikHizmetlerPage() {
     }
   }
 
+  // Stats hesapla
+  const stats = useMemo(() => {
+    const overdue = services.filter(s => {
+      const days = getDaysDiff(s.renewal_date)
+      return days !== null && days < 0
+    })
+    const upcoming = services.filter(s => {
+      const days = getDaysDiff(s.renewal_date)
+      return days !== null && days >= 0 && days <= 30
+    })
+    const totalRevenue = services.reduce((acc, s) => acc + calculatePrice(s), 0)
+    const brands = new Set(services.map(s => s.brand_id).filter(Boolean)).size
+
+    return {
+      total: services.length,
+      brands,
+      upcoming: upcoming.length,
+      overdue: overdue.length,
+      overdueServices: overdue,
+      totalRevenue
+    }
+  }, [services])
+
+  // Provider stats
+  const providerStats = useMemo(() => {
+    const grouped: Record<string, { count: number; revenue: number; name: string; pricePerYear: number }> = {}
+    
+    services.forEach(s => {
+      const name = s.provider?.name || 'Diğer'
+      if (!grouped[name]) {
+        grouped[name] = { 
+          count: 0, 
+          revenue: 0, 
+          name,
+          pricePerYear: s.provider?.base_price_usd || 0
+        }
+      }
+      grouped[name].count++
+      grouped[name].revenue += calculatePrice(s)
+    })
+    
+    return Object.values(grouped).sort((a, b) => b.count - a.count)
+  }, [services])
+
+  // Type counts
+  const typeCounts = useMemo(() => ({
+    hosting: services.filter(s => s.service_type === 'hosting').length,
+    domain: services.filter(s => s.service_type === 'domain').length,
+    ssl: services.filter(s => s.service_type === 'ssl').length,
+    email: services.filter(s => s.service_type === 'email').length
+  }), [services])
+
+  // Filtrele ve sırala
+  const filteredServices = useMemo(() => {
+    let result = services.filter(service => {
+      const matchesSearch = searchQuery === '' || 
+        service.identifier.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        service.brand?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        service.provider?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesType = activeFilter === 'all' || service.service_type === activeFilter
+      return matchesSearch && matchesType
+    })
+
+    // Sırala
+    result.sort((a, b) => {
+      switch (sortBy) {
+        case 'brand':
+          return (a.brand?.name || '').localeCompare(b.brand?.name || '')
+        case 'provider':
+          return (a.provider?.name || '').localeCompare(b.provider?.name || '')
+        case 'price':
+          return calculatePrice(b) - calculatePrice(a)
+        case 'renewal':
+        default:
+          const daysA = getDaysDiff(a.renewal_date) ?? Infinity
+          const daysB = getDaysDiff(b.renewal_date) ?? Infinity
+          return daysA - daysB
+      }
+    })
+
+    return result
+  }, [services, searchQuery, activeFilter, sortBy])
+
+  // Pagination
+  const totalPages = Math.ceil(filteredServices.length / ITEMS_PER_PAGE)
+  const paginatedServices = filteredServices.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  )
+
+  // Reset page when filter changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [activeFilter, searchQuery])
+
   function handleAddNew() {
     setEditingService(null)
     setIsModalOpen(true)
@@ -96,12 +253,21 @@ export default function TeknikHizmetlerPage() {
     setIsModalOpen(true)
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Bu hizmeti silmek istediğinize emin misiniz?')) return
+  function handleDeleteClick(service: TechnicalServiceWithRelations) {
+    setConfirmModal({
+      isOpen: true,
+      type: 'delete',
+      service
+    })
+  }
+
+  async function handleDeleteConfirm() {
+    if (!confirmModal.service) return
     
     try {
-      const res = await fetch(`/api/technical-services/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/technical-services/${confirmModal.service.id}`, { method: 'DELETE' })
       if (res.ok) {
+        setConfirmModal({ isOpen: false, type: 'delete', service: null })
         await loadData()
       }
     } catch (error) {
@@ -109,22 +275,32 @@ export default function TeknikHizmetlerPage() {
     }
   }
 
-  async function handleRenew(service: TechnicalServiceWithRelations) {
+  function handleRenewClick(service: TechnicalServiceWithRelations) {
     const rawCycle = service.provider?.billing_cycle || 'yearly'
     const billingCycle = (rawCycle === 'monthly' ? 'monthly' : 'yearly') as 'monthly' | 'yearly'
     const newDate = getNextRenewalDate(service.renewal_date, billingCycle)
     
-    if (!confirm(`Yenileme tarihi ${newDate} olarak güncellenecek. Onaylıyor musunuz?`)) return
+    setConfirmModal({
+      isOpen: true,
+      type: 'renew',
+      service,
+      newDate
+    })
+  }
+
+  async function handleRenewConfirm() {
+    if (!confirmModal.service || !confirmModal.newDate) return
     
-    setRenewingId(service.id)
+    setRenewingId(confirmModal.service.id)
     try {
-      const res = await fetch(`/api/technical-services/${service.id}`, {
+      const res = await fetch(`/api/technical-services/${confirmModal.service.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ renewal_date: newDate })
+        body: JSON.stringify({ renewal_date: confirmModal.newDate })
       })
       
       if (res.ok) {
+        setConfirmModal({ isOpen: false, type: 'renew', service: null })
         await loadData()
       }
     } catch (error) {
@@ -134,323 +310,506 @@ export default function TeknikHizmetlerPage() {
     }
   }
 
-  function handleModalClose() {
-    setIsModalOpen(false)
-    setEditingService(null)
-  }
-
-  function handleModalSave() {
-    loadData()
-  }
-
-  // Filtrele
-  const filteredServices = services.filter(service => {
-    const matchesSearch = searchQuery === '' || 
-      service.identifier.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      service.brand?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      service.provider?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesFilter = activeFilter === 'all' || service.service_type === activeFilter
-    return matchesSearch && matchesFilter
-  })
-
-  // Stats hesapla
-  const stats = {
-    total: services.length,
-    brands: new Set(services.map(s => s.brand_id).filter(Boolean)).size,
-    upcoming: services.filter(s => {
-      const days = getDaysDiff(s.renewal_date)
-      return days !== null && days > 0 && days <= 30
-    }).length,
-    overdue: services.filter(s => {
-      const days = getDaysDiff(s.renewal_date)
-      return days !== null && days < 0
-    }).length
-  }
-
-  // Servis type count
-  const typeCounts = {
-    hosting: services.filter(s => s.service_type === 'hosting').length,
-    domain: services.filter(s => s.service_type === 'domain').length,
-    ssl: services.filter(s => s.service_type === 'ssl').length,
-    email: services.filter(s => s.service_type === 'email').length
-  }
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-cyan-500" />
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-400" />
+          <p className="text-sm text-zinc-500">Yükleniyor...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="p-6 content-bg min-h-screen">
+    <div className="space-y-6">
       
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-5 mb-6">
-        <div className="glass-card rounded-2xl p-5 glow-cyan card-hover">
-          <div className="p-3 rounded-xl bg-cyan-100 dark:bg-cyan-500/10 border border-cyan-200 dark:border-cyan-500/20 w-fit mb-4">
-            <Server className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
-          </div>
-          <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">{stats.total}</p>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Toplam Hizmet</p>
-        </div>
-        <div className="glass-card rounded-2xl p-5 glow-violet card-hover">
-          <div className="p-3 rounded-xl bg-violet-100 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 w-fit mb-4">
-            <Building2 className="w-6 h-6 text-violet-600 dark:text-violet-400" />
-          </div>
-          <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">{stats.brands}</p>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Marka</p>
-        </div>
-        <div className="glass-card rounded-2xl p-5 glow-amber card-hover">
-          <div className="p-3 rounded-xl bg-amber-100 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 w-fit mb-4">
-            <Calendar className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-          </div>
-          <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">{stats.upcoming}</p>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">30 Gün İçinde</p>
-        </div>
-        <div className="glass-card rounded-2xl p-5 glow-rose card-hover">
-          <div className="p-3 rounded-xl bg-rose-100 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 w-fit mb-4">
-            <AlertTriangle className="w-6 h-6 text-rose-600 dark:text-rose-400" />
-          </div>
-          <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">{stats.overdue}</p>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Gecikmiş</p>
-        </div>
-      </div>
-      
-      {/* Filters */}
-      <div className="glass-card rounded-xl p-4 border border-zinc-200 dark:border-white/10 mb-6">
-        <div className="flex items-center gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-            <Input 
-              type="text" 
-              placeholder="Hizmet, marka veya sağlayıcı ara..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="input-glow pl-10"
-            />
-          </div>
-          <div className="flex gap-2">
-            {SERVICE_TYPES.map(({ value, label }) => {
-              const isActive = activeFilter === value
-              const colors = SERVICE_TYPE_COLORS[value as ServiceType]
-              return (
-                <button
-                  key={value}
-                  onClick={() => setActiveFilter(isActive ? 'all' : value as ServiceType)}
-                  className={cn(
-                    "px-3 py-2 rounded-lg text-sm font-medium border transition-all",
-                    isActive 
-                      ? `${colors.bg} ${colors.text} border-current` 
-                      : "bg-zinc-100 dark:bg-white/5 border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-400"
-                  )}
-                >
-                  {label} ({typeCounts[value as ServiceType]})
-                </button>
-              )
-            })}
-          </div>
-          <Link href="/ayarlar">
-            <Button variant="outline" size="sm" className="text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700">
-              <Settings className="w-4 h-4 mr-2" />
-              Ayarlar
-            </Button>
-          </Link>
-          <Button 
-            onClick={handleAddNew}
-            className="bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Yeni Hizmet
-          </Button>
-        </div>
-      </div>
-      
-      {/* Empty State */}
-      {filteredServices.length === 0 && (
-        <div className="glass-card rounded-2xl p-12 border border-zinc-200 dark:border-white/10 text-center">
-          <div className="p-4 rounded-2xl bg-zinc-100 dark:bg-white/5 w-fit mx-auto mb-4">
-            <Server className="w-8 h-8 text-zinc-400" />
-          </div>
-          <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">
-            {services.length === 0 ? 'Henüz hizmet eklenmedi' : 'Sonuç bulunamadı'}
-          </h3>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
-            {services.length === 0 
-              ? 'Hosting, domain, SSL veya e-posta hizmetlerini buradan takip edebilirsin.' 
-              : 'Farklı bir arama terimi veya filtre deneyin.'}
-          </p>
-          {services.length === 0 && (
-            <Button 
-              onClick={handleAddNew}
-              className="bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              İlk Hizmeti Ekle
-            </Button>
-          )}
-        </div>
-      )}
-      
-      {/* Services List */}
-      {filteredServices.length > 0 && (
-        <div className="glass-card rounded-2xl border border-zinc-200 dark:border-white/10 overflow-hidden">
-          <div className="px-5 py-4 border-b border-zinc-200 dark:border-white/5 flex items-center justify-between">
-            <h2 className="font-semibold text-zinc-900 dark:text-white">
-              Tüm Hizmetler ({filteredServices.length})
-            </h2>
-            <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-              <span>Sırala:</span>
-              <span className="text-zinc-900 dark:text-white font-medium">Yenileme Tarihi</span>
+      {/* ========== ALERT BANNER ========== */}
+      {stats.overdue > 0 && (
+        <div className="glass-card rounded-2xl p-4 glow-rose flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="icon-box icon-box-rose">
+              <AlertTriangle className="w-6 h-6 text-rose-400 animate-pulse" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-white">{stats.overdue} Gecikmiş Yenileme!</h3>
+              <p className="text-sm text-zinc-400 mt-0.5">
+                {stats.overdueServices.slice(0, 3).map(s => s.identifier).join(', ')}
+                {stats.overdue > 3 && ` ve ${stats.overdue - 3} diğer`} - Hemen işlem alın
+              </p>
             </div>
           </div>
-          
-          {filteredServices.map((service) => {
-            const daysDiff = getDaysDiff(service.renewal_date)
-            const isOverdue = daysDiff !== null && daysDiff < 0
-            const isUpcoming = daysDiff !== null && daysDiff >= 0 && daysDiff <= 30
-            const colors = SERVICE_TYPE_COLORS[service.service_type]
-            const serviceLabel = SERVICE_TYPES.find(t => t.value === service.service_type)?.label
-            const price = calculatePrice(service)
-            const statusInfo = SERVICE_STATUSES.find(s => s.value === service.status)
-            const isRenewing = renewingId === service.id
+          <button 
+            onClick={() => setActiveFilter('all')}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500 text-white text-sm font-medium hover:bg-rose-600 transition-colors"
+          >
+            <Eye className="w-4 h-4" />
+            Görüntüle
+          </button>
+        </div>
+      )}
+
+      {/* ========== STAT CARDS - ROW 1 ========== */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-5">
+        {/* Toplam Hizmet */}
+        <div className="glass-card rounded-2xl p-5 glow-indigo card-hover">
+          <div className="flex items-center justify-between mb-4">
+            <div className="icon-box icon-box-indigo">
+              <Server className="w-6 h-6 text-indigo-400" />
+            </div>
+            <span className="badge badge-emerald">Aktif</span>
+          </div>
+          <p className="text-3xl font-bold text-white font-mono mb-1">{stats.total}</p>
+          <p className="text-sm text-zinc-500">Toplam Hizmet</p>
+        </div>
+
+        {/* Marka */}
+        <div className="glass-card rounded-2xl p-5 glow-violet card-hover">
+          <div className="flex items-center justify-between mb-4">
+            <div className="icon-box icon-box-violet">
+              <Building2 className="w-6 h-6 text-violet-400" />
+            </div>
+          </div>
+          <p className="text-3xl font-bold text-white font-mono mb-1">{stats.brands}</p>
+          <p className="text-sm text-zinc-500">Marka</p>
+        </div>
+
+        {/* 30 Gün İçinde */}
+        <div className="glass-card rounded-2xl p-5 glow-amber card-hover">
+          <div className="flex items-center justify-between mb-4">
+            <div className="icon-box icon-box-amber">
+              <Calendar className="w-6 h-6 text-amber-400" />
+            </div>
+            {stats.upcoming > 0 && (
+              <span className="badge badge-amber">Dikkat</span>
+            )}
+          </div>
+          <p className="text-3xl font-bold text-white font-mono mb-1">{stats.upcoming}</p>
+          <p className="text-sm text-zinc-500">30 Gün İçinde</p>
+        </div>
+
+        {/* Gecikmiş */}
+        <div className="glass-card rounded-2xl p-5 glow-rose card-hover cursor-pointer">
+          <div className="flex items-center justify-between mb-4">
+            <div className="icon-box icon-box-rose">
+              <AlertCircle className="w-6 h-6 text-rose-400" />
+            </div>
+            {stats.overdue > 0 && (
+              <span className="text-xs px-2.5 py-1 rounded-full bg-rose-500 text-white font-medium animate-pulse">Acil</span>
+            )}
+          </div>
+          <p className={cn("text-3xl font-bold font-mono mb-1", stats.overdue > 0 ? "text-rose-400" : "text-white")}>
+            {stats.overdue}
+          </p>
+          <p className="text-sm text-zinc-500">Gecikmiş</p>
+        </div>
+
+        {/* Tahmini Gelir */}
+        <div className="glass-card rounded-2xl p-5 glow-emerald card-hover col-span-2 sm:col-span-1">
+          <div className="flex items-center justify-between mb-4">
+            <div className="icon-box icon-box-emerald">
+              <DollarSign className="w-6 h-6 text-emerald-400" />
+            </div>
+            <span className="text-xs text-zinc-500">Yıllık</span>
+          </div>
+          <p className="text-3xl font-bold text-emerald-400 font-mono mb-1">
+            ${stats.totalRevenue.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+          </p>
+          <p className="text-sm text-zinc-500">Tahmini Gelir</p>
+        </div>
+      </div>
+
+      {/* ========== PROVIDER CARDS ========== */}
+      {providerStats.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          {providerStats.slice(0, 3).map((provider) => {
+            const style = getProviderStyle(provider.name)
+            const percentage = stats.total > 0 ? Math.round((provider.count / stats.total) * 100) : 0
             
             return (
-              <div 
-                key={service.id}
-                className={cn(
-                  "p-4 border-b border-zinc-200 dark:border-white/5 transition-colors group",
-                  isOverdue && "bg-rose-50/50 dark:bg-rose-950/20",
-                  isUpcoming && !isOverdue && "bg-amber-50/30 dark:bg-amber-950/10",
-                  !isOverdue && !isUpcoming && "hover:bg-zinc-50 dark:hover:bg-white/[0.02]"
-                )}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className={cn(
-                      "h-12 w-12 rounded-xl flex items-center justify-center border",
-                      colors.bg,
-                      "border-zinc-200 dark:border-white/10"
-                    )}>
-                      <ServiceIcon type={service.service_type} className={cn("w-6 h-6", colors.text)} />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="font-medium text-zinc-900 dark:text-white">{service.identifier}</p>
-                        <span className={cn(
-                          "text-xs px-2 py-0.5 rounded-full font-medium",
-                          colors.bg, colors.text
-                        )}>
-                          {serviceLabel}
-                        </span>
-                        {service.provider && (
-                          <span className="text-xs text-zinc-500 dark:text-zinc-400">{service.provider.name}</span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {service.brand && (
-                          <div className="flex items-center gap-1">
-                            <Building2 className="w-3 h-3 text-zinc-400" />
-                            <span className="text-xs text-zinc-500 dark:text-zinc-400">{service.brand.name}</span>
-                          </div>
-                        )}
-                        {price > 0 && (
-                          <span className="text-xs text-zinc-400 font-mono">
-                            ${price.toFixed(2)}/{service.provider?.billing_cycle === 'monthly' ? 'ay' : 'yıl'}
-                          </span>
-                        )}
-                        {service.quantity > 1 && (
-                          <span className="text-xs bg-zinc-100 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 px-1.5 py-0.5 rounded">
-                            x{service.quantity}
-                          </span>
-                        )}
-                        {service.auto_renew && (
-                          <div className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
-                            <RefreshCw className="w-3 h-3" />
-                            Otomatik
-                          </div>
-                        )}
-                      </div>
-                    </div>
+              <div key={provider.name} className="glass-card rounded-2xl p-5 border border-white/10 card-hover">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", style.bg)}>
+                    <span className="text-white text-sm font-bold">
+                      {provider.name.substring(0, 2).toUpperCase()}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    {isOverdue ? (
-                      <>
-                        <span className="text-xs px-2.5 py-1 rounded-full bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400 font-semibold border border-rose-200 dark:border-rose-500/30 animate-pulse">
-                          {Math.abs(daysDiff!)} gün geçti!
-                        </span>
-                        <Button 
-                          size="sm" 
-                          onClick={() => handleRenew(service)}
-                          disabled={isRenewing}
-                          className="bg-rose-600 hover:bg-rose-500 text-white"
-                        >
-                          {isRenewing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1" />}
-                          Şimdi Yenile
-                        </Button>
-                      </>
-                    ) : isUpcoming ? (
-                      <>
-                        <span className="text-xs px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-semibold border border-amber-200 dark:border-amber-500/30">
-                          {daysDiff} gün kaldı
-                        </span>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleRenew(service)}
-                          disabled={isRenewing}
-                          className="text-zinc-700 dark:text-zinc-300 border-zinc-300 dark:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                        >
-                          {isRenewing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1" />}
-                          Yenile
-                        </Button>
-                      </>
-                    ) : daysDiff !== null ? (
-                      <>
-                        <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">{daysDiff} gün</span>
-                        <span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                          {statusInfo?.label || 'Aktif'}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-xs text-zinc-400">Tarih yok</span>
-                    )}
-                    
-                    {/* Action Buttons */}
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleEdit(service)}
-                      >
-                        <Pencil className="w-4 h-4 text-zinc-400" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleDelete(service.id)}
-                      >
-                        <Trash2 className="w-4 h-4 text-rose-400" />
-                      </Button>
-                    </div>
+                  <div>
+                    <p className="font-semibold text-white">{provider.name}</p>
+                    <p className="text-xs text-zinc-500">{provider.pricePerYear}$/yıl</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-2xl font-bold text-white font-mono">{provider.count}</p>
+                    <p className="text-xs text-zinc-500">hosting</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-emerald-400 font-mono">
+                      ${provider.revenue.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                    </p>
+                    <p className="text-xs text-zinc-500">yıllık</p>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between mb-1.5">
+                    <span className="text-xs text-zinc-500">Dağılım</span>
+                    <span className={cn("text-xs font-mono font-semibold", style.text)}>{percentage}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-white/10">
+                    <div 
+                      className={cn("h-full rounded-full", style.progress)} 
+                      style={{ width: `${percentage}%` }}
+                    />
                   </div>
                 </div>
               </div>
             )
           })}
+
+          {/* Ödeme Durumu */}
+          <div className="glass-card rounded-2xl p-5 border border-white/10 card-hover">
+            <div className="flex items-center gap-2 mb-4">
+              <CreditCard className="w-5 h-5 text-zinc-400" />
+              <p className="font-semibold text-white">Ödeme Durumu</p>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-2 rounded-lg bg-white/5">
+                <span className="text-sm text-zinc-400">Ödendi</span>
+                <span className="text-sm font-mono font-semibold text-emerald-400">
+                  {stats.total - stats.overdue - stats.upcoming}
+                </span>
+              </div>
+              <div className="flex items-center justify-between p-2 rounded-lg bg-white/5">
+                <span className="text-sm text-zinc-400">Bekliyor</span>
+                <span className="text-sm font-mono font-semibold text-amber-400">{stats.upcoming}</span>
+              </div>
+              <div className="flex items-center justify-between p-2 rounded-lg bg-white/5">
+                <span className="text-sm text-zinc-400">Gecikmiş</span>
+                <span className="text-sm font-mono font-semibold text-rose-400">{stats.overdue}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========== FILTER BAR ========== */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+        {/* Type Filters */}
+        <div className="flex flex-wrap gap-2">
+          {SERVICE_TYPES.map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => setActiveFilter(activeFilter === value ? 'all' : value as ServiceType)}
+              className={cn(
+                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all",
+                activeFilter === value 
+                  ? "bg-indigo-500/20 border-indigo-500/30 text-indigo-400" 
+                  : "bg-white/5 border-white/10 text-zinc-400 hover:text-white hover:bg-white/10"
+              )}
+            >
+              {label} ({typeCounts[value as ServiceType]})
+            </button>
+          ))}
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-3">
+          <Link href="/ayarlar">
+            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-zinc-400 text-sm hover:text-white hover:bg-white/10 transition-colors">
+              <Settings className="w-4 h-4" />
+              Ayarlar
+            </button>
+          </Link>
+          <button 
+            onClick={handleAddNew}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl btn-primary text-white text-sm font-medium"
+          >
+            <Plus className="w-4 h-4" />
+            Yeni Hizmet
+          </button>
+        </div>
+      </div>
+
+      {/* ========== HİZMET LİSTESİ ========== */}
+      {filteredServices.length === 0 ? (
+        <div className="glass-card rounded-2xl p-12 border border-white/10 text-center">
+          <div className="icon-box icon-box-default w-16 h-16 flex items-center justify-center mx-auto mb-4 animate-float">
+            <Server className="w-8 h-8 text-zinc-500" />
+          </div>
+          <h3 className="font-semibold text-white mb-2">
+            {services.length === 0 ? 'Henüz hizmet eklenmedi' : 'Sonuç bulunamadı'}
+          </h3>
+          <p className="text-sm text-zinc-500 mb-6">
+            {services.length === 0 
+              ? 'Hosting, domain, SSL veya e-posta hizmetlerini buradan takip edebilirsin.' 
+              : 'Farklı bir filtre deneyin.'}
+          </p>
+          {services.length === 0 && (
+            <button onClick={handleAddNew} className="btn-primary px-5 py-2.5 rounded-xl">
+              <Plus className="w-4 h-4 mr-2 inline" />
+              İlk Hizmeti Ekle
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="glass-card rounded-2xl border border-white/10 overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between p-5 border-b border-white/10">
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-white">Tüm Hizmetler</h3>
+              <span className="text-xs px-2.5 py-1 rounded-full bg-zinc-800 text-zinc-400 font-mono">
+                {filteredServices.length}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-zinc-500">Sırala:</span>
+              <div className="relative">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                  className="appearance-none pl-3 pr-8 py-1.5 rounded-lg text-sm bg-white/5 border border-white/10 text-white cursor-pointer focus:outline-none focus:border-indigo-500/50"
+                >
+                  <option value="renewal">Yenileme Tarihi</option>
+                  <option value="brand">Marka (A-Z)</option>
+                  <option value="provider">Sağlayıcı</option>
+                  <option value="price">Fiyat</option>
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+
+          {/* List */}
+          <div className="divide-y divide-white/5">
+            {paginatedServices.map((service) => {
+              const daysDiff = getDaysDiff(service.renewal_date)
+              const isOverdue = daysDiff !== null && daysDiff < 0
+              const isUpcoming = daysDiff !== null && daysDiff >= 0 && daysDiff <= 30
+              const price = calculatePrice(service)
+              const isRenewing = renewingId === service.id
+              const providerStyle = getProviderStyle(service.provider?.name || '')
+              
+              return (
+                <div 
+                  key={service.id}
+                  className={cn(
+                    "flex items-center gap-4 p-5 transition-colors group",
+                    isOverdue && "bg-rose-500/5 hover:bg-rose-500/10",
+                    isUpcoming && !isOverdue && "hover:bg-amber-500/5",
+                    !isOverdue && !isUpcoming && "hover:bg-white/[0.02]"
+                  )}
+                >
+                  {/* Icon */}
+                  <div className={cn(
+                    "icon-box",
+                    isOverdue ? "icon-box-rose" :
+                    isUpcoming ? "icon-box-amber" : "icon-box-indigo"
+                  )}>
+                    <ServiceIcon 
+                      type={service.service_type} 
+                      className={cn(
+                        "w-5 h-5",
+                        isOverdue ? "text-rose-400" :
+                        isUpcoming ? "text-amber-400" : "text-indigo-400"
+                      )} 
+                    />
+                  </div>
+                  
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-white truncate">{service.identifier}</p>
+                      {isOverdue && (
+                        <span className="text-xs px-2.5 py-1 rounded-full bg-rose-500 text-white font-medium">
+                          Gecikmiş
+                        </span>
+                      )}
+                      {isUpcoming && !isOverdue && daysDiff !== null && daysDiff <= 14 && (
+                        <span className="badge badge-amber font-semibold">{daysDiff} gün</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 mt-1">
+                      {service.brand && (
+                        <span className="text-xs text-zinc-500">🏢 {service.brand.name}</span>
+                      )}
+                      {service.provider && (
+                        <span className={cn(
+                          "text-xs px-2 py-0.5 rounded border",
+                          providerStyle.badge
+                        )}>
+                          {service.provider.name}
+                        </span>
+                      )}
+                      {price > 0 && (
+                        <span className="text-xs text-zinc-500">
+                          {price.toFixed(0)}$/{service.provider?.billing_cycle === 'monthly' ? 'ay' : 'yıl'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Date */}
+                  <div className="text-right">
+                    <p className={cn(
+                      "text-sm font-mono",
+                      isOverdue ? "text-rose-400" :
+                      isUpcoming ? "text-amber-400" : "text-white"
+                    )}>
+                      {formatDate(service.renewal_date)}
+                    </p>
+                    {daysDiff !== null && (
+                      <p className={cn(
+                        "text-xs",
+                        isOverdue ? "text-rose-300" : "text-zinc-500"
+                      )}>
+                        {isOverdue 
+                          ? `${Math.abs(daysDiff)} gün gecikmiş` 
+                          : `${daysDiff} gün kaldı`}
+                      </p>
+                    )}
+                  </div>
+                  
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => handleRenewClick(service)}
+                      disabled={isRenewing}
+                      className={cn(
+                        "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors",
+                        isOverdue 
+                          ? "bg-rose-500 text-white hover:bg-rose-600" 
+                          : isUpcoming
+                            ? "bg-white/5 border border-white/10 text-zinc-300 hover:text-white hover:bg-white/10"
+                            : "bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 opacity-0 group-hover:opacity-100"
+                      )}
+                    >
+                      {isRenewing ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <RefreshCw className="w-4 h-4" />
+                          Yenile
+                        </>
+                      )}
+                    </button>
+                    
+                    {/* Edit/Delete - hover'da göster */}
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={() => handleEdit(service)}
+                        className="p-2 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteClick(service)}
+                        className="p-2 rounded-lg hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Footer / Pagination */}
+          <div className="flex items-center justify-between p-5 border-t border-white/10">
+            <p className="text-sm text-zinc-500">
+              {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, filteredServices.length)} / {filteredServices.length} gösteriliyor
+            </p>
+            
+            {totalPages > 1 && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-sm border transition-colors",
+                    currentPage === 1 
+                      ? "bg-white/5 border-white/10 text-zinc-600 cursor-not-allowed"
+                      : "bg-white/5 border-white/10 text-zinc-400 hover:text-white hover:bg-white/10"
+                  )}
+                >
+                  Önceki
+                </button>
+                
+                {Array.from({ length: Math.min(totalPages, 3) }, (_, i) => {
+                  let pageNum: number
+                  if (totalPages <= 3) {
+                    pageNum = i + 1
+                  } else if (currentPage === 1) {
+                    pageNum = i + 1
+                  } else if (currentPage === totalPages) {
+                    pageNum = totalPages - 2 + i
+                  } else {
+                    pageNum = currentPage - 1 + i
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={cn(
+                        "w-8 h-8 rounded-lg text-sm font-medium transition-colors",
+                        currentPage === pageNum
+                          ? "bg-indigo-500 text-white"
+                          : "bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10"
+                      )}
+                    >
+                      {pageNum}
+                    </button>
+                  )
+                })}
+                
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-sm border transition-colors",
+                    currentPage === totalPages 
+                      ? "bg-white/5 border-white/10 text-zinc-600 cursor-not-allowed"
+                      : "bg-white/5 border-white/10 text-zinc-400 hover:text-white hover:bg-white/10"
+                  )}
+                >
+                  Sonraki
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
       {/* Service Modal */}
       <ServiceModal
         isOpen={isModalOpen}
-        onClose={handleModalClose}
-        onSave={handleModalSave}
+        onClose={() => { setIsModalOpen(false); setEditingService(null); }}
+        onSave={loadData}
         editingService={editingService}
       />
-      
+
+      {/* Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, type: 'renew', service: null })}
+        onConfirm={confirmModal.type === 'renew' ? handleRenewConfirm : handleDeleteConfirm}
+        variant={confirmModal.type === 'renew' ? 'renew' : 'danger'}
+        title={
+          confirmModal.type === 'renew' 
+            ? 'Hizmeti Yenile' 
+            : 'Hizmeti Sil'
+        }
+        description={
+          confirmModal.type === 'renew'
+            ? `"${confirmModal.service?.identifier}" hizmetinin yenileme tarihi ${formatDate(confirmModal.newDate || null)} olarak güncellenecek.`
+            : `"${confirmModal.service?.identifier}" hizmetini silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`
+        }
+        confirmText={confirmModal.type === 'renew' ? 'Yenile' : 'Sil'}
+        cancelText="İptal"
+        isLoading={renewingId === confirmModal.service?.id}
+      />
     </div>
   )
 }

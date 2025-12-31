@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { AppUser, RecordType } from '@/lib/auth-types'
-import { 
-  X, 
+import {
+  X,
   Plus,
   Calendar,
   User,
@@ -18,6 +18,7 @@ import {
   CalendarRange
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 
 interface ManualEntryModalProps {
@@ -218,19 +219,18 @@ export function ManualEntryModal({ isOpen, onClose, onSuccess, users, selectedDa
               <User className="w-4 h-4" />
               Personel
             </label>
-            <select
-              value={selectedUser}
-              onChange={(e) => setSelectedUser(e.target.value)}
-              className="w-full px-4 py-2.5 bg-zinc-800 border border-zinc-700 rounded-xl text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              required
-            >
-              <option value="">Personel seçin...</option>
-              {users.map(user => (
-                <option key={user.id} value={user.id}>
-                  {user.full_name || user.email}
-                </option>
-              ))}
-            </select>
+            <Select value={selectedUser} onValueChange={setSelectedUser} required>
+              <SelectTrigger className="w-full bg-zinc-800 border-zinc-700 text-zinc-100 text-sm">
+                <SelectValue placeholder="Personel seçin..." />
+              </SelectTrigger>
+              <SelectContent>
+                {users.map(user => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.full_name || user.email}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Tarih Aralığı Toggle */}

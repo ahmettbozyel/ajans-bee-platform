@@ -2,11 +2,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-// Admin client - RLS bypass
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Admin client - RLS bypass (lazy initialization)
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 const N8N_WEBHOOK_URL = 'https://n8n.beeswebsite.com/webhook/meta-performance'
 
@@ -83,7 +85,7 @@ export async function POST(request: NextRequest) {
             const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0
 
             // Save to performance_ads
-            const { data: savedAds, error: adsError } = await supabaseAdmin
+            const { data: savedAds, error: adsError } = await getSupabaseAdmin()
               .from('performance_ads')
               .upsert({
                 customer_id,
@@ -150,7 +152,7 @@ export async function POST(request: NextRequest) {
             startDate.setDate(startDate.getDate() - 30)
 
             // Save to performance_social
-            const { data: savedFb, error: fbError } = await supabaseAdmin
+            const { data: savedFb, error: fbError } = await getSupabaseAdmin()
               .from('performance_social')
               .upsert({
                 customer_id,
@@ -213,7 +215,7 @@ export async function POST(request: NextRequest) {
             startDate.setDate(startDate.getDate() - 30)
 
             // Save to performance_social
-            const { data: savedIg, error: igError } = await supabaseAdmin
+            const { data: savedIg, error: igError } = await getSupabaseAdmin()
               .from('performance_social')
               .upsert({
                 customer_id,
@@ -288,7 +290,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch ads data
     if (!platform || platform === 'meta' || platform === 'all') {
-      const { data: adsData, error: adsError } = await supabaseAdmin
+      const { data: adsData, error: adsError } = await getSupabaseAdmin()
         .from('performance_ads')
         .select('*')
         .eq('customer_id', customer_id)
@@ -302,7 +304,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch social data
     if (!platform || platform === 'facebook' || platform === 'instagram' || platform === 'all') {
-      let query = supabaseAdmin
+      let query = getSupabaseAdmin()
         .from('performance_social')
         .select('*')
         .eq('customer_id', customer_id)
@@ -324,7 +326,7 @@ export async function GET(request: NextRequest) {
     if (results.ads && results.ads.length > 0) {
       const adsIds = results.ads.map(ad => ad.id)
       
-      const { data: campaignData, error: campaignError } = await supabaseAdmin
+      const { data: campaignData, error: campaignError } = await getSupabaseAdmin()
         .from('performance_campaigns')
         .select('*')
         .in('performance_ads_id', adsIds)

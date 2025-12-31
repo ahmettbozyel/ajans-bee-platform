@@ -79,24 +79,30 @@ if (!parsed.success) return Response.json({ error: parsed.error }, { status: 400
 - Teknik (sayılar, kod): JetBrains Mono
 
 ### Layout
-- Sidebar: w-72 (288px)
+- Sidebar: w-64 (256px)
 - Card padding: p-5
 - Border radius: rounded-2xl
 - Glow border: 8 varyant (indigo, violet, cyan, emerald, amber, rose, fuchsia, bee)
 
 ### Progress Renkleri
-| Yüzde | Renk |
-|-------|------|
-| 0-30% | Rose |
-| 31-70% | Amber |
-| 71-99% | Cyan |
-| 100% | Emerald |
+| Yüzde | Class | Renk |
+|-------|-------|------|
+| 0-30% | progress-rose | Kırmızı |
+| 31-70% | progress-amber | Turuncu |
+| 71-99% | progress-cyan | Mavi |
+| 100% | progress-emerald | Yeşil |
+
+### ÖNEMLİ: LIGHT MODE YOK!
+- `dark:` prefix KULLANMA
+- `html:not(.dark)` CSS YAZMA
+- Sadece dark mode stilleri kullan
+- UI-KIT.md'yi oku: /docs/UI-KIT.md
 
 ### Component Checklist
-- [ ] Dark mode stili var mı?
-- [ ] Light mode stili var mı?
+- [ ] Sadece dark mode stili var mı? (dark: prefix YOK)
 - [ ] Hover efekti var mı?
 - [ ] Renk paleti doğru mu?
+- [ ] UI-KIT.md'deki class'lar kullanıldı mı?
 
 ---
 

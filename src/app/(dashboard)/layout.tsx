@@ -14,43 +14,255 @@ import {
   Settings,
   LogOut,
   Menu,
+  X,
   Loader2,
-  Sun,
-  Moon,
   Search,
-  Bell,
   ClipboardList,
   Clock,
-  Users
+  FolderOpen,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import type { User } from '@supabase/supabase-js'
 
-// Ajans Bee Logo SVG Component
-function AjansBeeLogoSVG({ className, isDark }: { className?: string, isDark: boolean }) {
+// ==========================================
+// AJANS BEE LOGO SVG
+// ==========================================
+function AjansBeeLogoSVG({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 39.9 53.7">
-      <polyline points="8.6,21.9 2.8,2.4 2.8,34.5" fill={isDark ? '#a1a1aa' : '#71717a'}/>
+      <polyline points="8.6,21.9 2.8,2.4 2.8,34.5" fill="#a1a1aa"/>
       <path d="M26.6,34.8c0,3.4-2.7,6.1-6.1,6.1s-6.1-2.7-6.1-6.1s2.7-6.1,6.1-6.1C23.9,28.7,26.6,31.4,26.6,34.8" fill="#FFD600"/>
-      <path d="M38.3,34.8C38.3,25,30.3,17,20.5,17S2.8,25,2.8,34.8c0,7.2,4.3,13.3,10.4,16.1l2.3-6.7c-3.4-1.8-5.7-5.3-5.7-9.4c0-5.9,4.8-10.7,10.7-10.7s10.7,4.8,10.7,10.7c0,4-2.2,7.5-5.5,9.4l2.3,6.7C34,48.1,38.3,41.9,38.3,34.8" fill={isDark ? '#d4d4d8' : '#3f3f46'}/>
+      <path d="M38.3,34.8C38.3,25,30.3,17,20.5,17S2.8,25,2.8,34.8c0,7.2,4.3,13.3,10.4,16.1l2.3-6.7c-3.4-1.8-5.7-5.3-5.7-9.4c0-5.9,4.8-10.7,10.7-10.7s10.7,4.8,10.7,10.7c0,4-2.2,7.5-5.5,9.4l2.3,6.7C34,48.1,38.3,41.9,38.3,34.8" fill="#d4d4d8"/>
     </svg>
   )
 }
 
-// Üst Navigation Tabs
+// ==========================================
+// NAVIGATION CONFIG
+// ==========================================
 const navTabs = [
   { label: 'Dashboard', href: '/dashboard' },
   { label: 'Markalar', href: '/musteriler' },
-  { label: 'Components', href: '#' },
 ]
 
-// Erişim kontrolü için izin verilen sayfalar
+// Erişim kontrolü
 const ALLOWED_PAGES: Record<string, string[]> = {
-  admin: ['*'], // Her şeye erişebilir
+  admin: ['*'],
   operasyon: ['/gunluk-isler', '/giris-cikis', '/teknik-hizmetler', '/ayarlar'],
   personel: ['/gunluk-isler', '/giris-cikis']
 }
 
+// ==========================================
+// SIDEBAR COMPONENT
+// ==========================================
+function Sidebar({ 
+  isOpen, 
+  onClose,
+  pathname,
+  isAdmin,
+  isOperasyon,
+  counts,
+  appUser,
+  onSignOut
+}: {
+  isOpen: boolean
+  onClose: () => void
+  pathname: string
+  isAdmin: boolean
+  isOperasyon: boolean
+  counts: { customers: number; services: number }
+  appUser: any
+  onSignOut: () => void
+}) {
+  const isActive = (href: string) => {
+    if (href === '/dashboard') return pathname === '/' || pathname === '/dashboard'
+    return pathname.startsWith(href)
+  }
+
+  const getUserName = () => {
+    if (appUser?.full_name) return appUser.full_name.split(' ')[0]
+    if (appUser?.email) {
+      const name = appUser.email.split('@')[0]
+      return name.charAt(0).toUpperCase() + name.slice(1)
+    }
+    return 'Kullanıcı'
+  }
+
+  const getRoleBadge = () => {
+    if (isAdmin) return { label: 'Admin', class: 'badge-emerald' }
+    if (isOperasyon) return { label: 'Operasyon', class: 'badge-violet' }
+    return { label: 'Personel', class: 'badge-neutral' }
+  }
+
+  const roleBadge = getRoleBadge()
+
+  return (
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <aside 
+        className={`
+          fixed top-0 left-0 z-50 h-screen w-64 bg-sidebar border-r border-white/5
+          transform transition-transform duration-300 ease-in-out
+          lg:translate-x-0 lg:top-12
+          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}
+      >
+        <div className="flex flex-col h-full">
+          
+          {/* Logo Section */}
+          <div className="p-5 section-divider">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="h-11 w-11 rounded-xl logo-container flex items-center justify-center">
+                    <AjansBeeLogoSVG className="w-7 h-7" />
+                  </div>
+                  <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-[#09090b] pulse-status" />
+                </div>
+                <div>
+                  <h1 className="font-bold text-base text-white">Ajans Bee</h1>
+                  <p className="text-[10px] font-mono tracking-widest uppercase text-zinc-500">AI Platform</p>
+                </div>
+              </div>
+              
+              {/* Mobile Close Button */}
+              <button 
+                onClick={onClose}
+                className="lg:hidden p-2 rounded-lg hover:bg-white/10 text-zinc-400"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+            
+            {/* Admin Menü */}
+            {isAdmin && (
+              <>
+                <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 text-zinc-500">Ana Menü</p>
+                
+                <Link href="/dashboard" className={`menu-item ${isActive('/dashboard') ? 'menu-active text-white' : 'text-zinc-400'}`}>
+                  <LayoutDashboard className={`w-5 h-5 ${isActive('/dashboard') ? 'text-indigo-400' : ''}`} />
+                  <span className="text-sm font-medium">Dashboard</span>
+                </Link>
+
+                <Link href="/musteriler" className={`menu-item ${isActive('/musteriler') || isActive('/customers') ? 'menu-active text-white' : 'text-zinc-400'}`}>
+                  <Building2 className="w-5 h-5" />
+                  <span className="text-sm font-medium">Markalar</span>
+                  {counts.customers > 0 && (
+                    <span className="ml-auto text-[11px] bg-violet-500/20 text-violet-400 px-2 py-0.5 rounded-full font-mono">{counts.customers}</span>
+                  )}
+                </Link>
+
+                <Link href="/teknik-hizmetler" className={`menu-item ${isActive('/teknik-hizmetler') ? 'menu-active text-white' : 'text-zinc-400'}`}>
+                  <Server className="w-5 h-5" />
+                  <span className="text-sm font-medium">Teknik Hizmetler</span>
+                  {counts.services > 0 && (
+                    <span className="ml-auto text-[11px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-mono">{counts.services}</span>
+                  )}
+                </Link>
+
+                <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 mt-5 text-zinc-500">Araçlar</p>
+                
+                <Link href="/icerik-uret" className={`menu-item ${isActive('/icerik-uret') ? 'menu-active text-white' : 'text-zinc-400'}`}>
+                  <Sparkles className="w-5 h-5" />
+                  <span className="text-sm font-medium">İçerik Üret</span>
+                  <span className="ml-auto badge badge-fuchsia font-mono">AI</span>
+                </Link>
+
+                <Link href="/gorseller" className={`menu-item ${isActive('/gorseller') ? 'menu-active text-white' : 'text-zinc-400'}`}>
+                  <FolderOpen className="w-5 h-5" />
+                  <span className="text-sm font-medium">Dosyalar</span>
+                </Link>
+              </>
+            )}
+
+            {/* Operasyon Menü */}
+            {isOperasyon && (
+              <>
+                <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 text-zinc-500">Araçlar</p>
+                
+                <Link href="/teknik-hizmetler" className={`menu-item ${isActive('/teknik-hizmetler') ? 'menu-active text-white' : 'text-zinc-400'}`}>
+                  <Server className="w-5 h-5" />
+                  <span className="text-sm font-medium">Teknik Hizmetler</span>
+                  {counts.services > 0 && (
+                    <span className="ml-auto text-[11px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-mono">{counts.services}</span>
+                  )}
+                </Link>
+              </>
+            )}
+
+            {/* Personel Menü (herkes için) */}
+            <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 mt-5 text-zinc-500">Personel</p>
+            
+            <Link href="/gunluk-isler" className={`menu-item ${isActive('/gunluk-isler') ? 'menu-active text-white' : 'text-zinc-400'}`}>
+              <ClipboardList className="w-5 h-5" />
+              <span className="text-sm font-medium">Günlük İşler</span>
+            </Link>
+
+            <Link href="/giris-cikis" className={`menu-item ${isActive('/giris-cikis') ? 'menu-active text-white' : 'text-zinc-400'}`}>
+              <Clock className="w-5 h-5" />
+              <span className="text-sm font-medium">Giriş/Çıkış</span>
+            </Link>
+
+            {/* Admin Sistem Menüsü */}
+            {isAdmin && (
+              <>
+                <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 mt-5 text-zinc-500">Sistem</p>
+                
+                <Link href="/ayarlar" className={`menu-item ${isActive('/ayarlar') ? 'menu-active text-white' : 'text-zinc-400'}`}>
+                  <Settings className="w-5 h-5" />
+                  <span className="text-sm font-medium">Ayarlar</span>
+                </Link>
+              </>
+            )}
+          </nav>
+
+          {/* User Section */}
+          <div className="p-3 section-divider border-t">
+            <div className="user-card rounded-xl p-3">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">
+                    {appUser?.email?.charAt(0).toUpperCase() || 'A'}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-white truncate">
+                    {appUser?.full_name || getUserName()}
+                  </p>
+                  <span className={`badge ${roleBadge.class}`}>
+                    {roleBadge.label}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={onSignOut}
+                className="group w-full mt-3 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20"
+              >
+                <LogOut className="w-4 h-4 text-rose-400 transition-transform group-hover:-translate-x-0.5" />
+                <span className="text-rose-400">Çıkış Yap</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </>
+  )
+}
+
+// ==========================================
+// MAIN LAYOUT
+// ==========================================
 export default function DashboardLayout({
   children,
 }: {
@@ -60,56 +272,37 @@ export default function DashboardLayout({
   const pathname = usePathname()
   const { appUser, loading: authLoading, isAdmin, signOut } = useAuth()
   const [counts, setCounts] = useState({ customers: 0, services: 0 })
-  const [isDark, setIsDark] = useState(true)
-  const [mounted, setMounted] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   
   const supabase = createClient()
 
-  // Marka detay sayfasında mı kontrol et
-  const isCustomerDetailPage = pathname.startsWith('/customers/') || pathname.startsWith('/musteriler/')
+  // Marka detay sayfası kontrolü
   const isDetailPage = pathname.includes('/customers/') && pathname.split('/').length > 2
   
-  // Kullanıcının bu sayfaya erişimi var mı?
+  // Erişim kontrolü
   const hasAccess = (role: string, path: string): boolean => {
     if (role === 'admin') return true
     const allowedPaths = ALLOWED_PAGES[role] || []
     return allowedPaths.some(p => path.startsWith(p))
   }
 
+  // Auth & Data fetch
   useEffect(() => {
-    setMounted(true)
-    // Check saved theme or system preference
-    const savedTheme = localStorage.getItem('theme')
-    if (savedTheme) {
-      setIsDark(savedTheme === 'dark')
-      document.documentElement.classList.toggle('dark', savedTheme === 'dark')
-    } else {
-      const isDarkMode = document.documentElement.classList.contains('dark')
-      setIsDark(isDarkMode)
-    }
-  }, [])
-
-  useEffect(() => {
-    // Auth loading bitmeden bekle
     if (authLoading) return
     
-    // Kullanıcı yoksa login'e yönlendir
     if (!appUser) {
       router.push('/login')
       return
     }
     
-    // Erişim kontrolü
     const userRole = appUser.role || 'personel'
     if (!hasAccess(userRole, pathname)) {
       router.push('/gunluk-isler')
       return
     }
     
-    // Verileri çek (arka planda, loading bekletmeden)
     async function fetchData() {
       try {
-        // Admin veya operasyon için verileri çek
         if (isAdmin || appUser?.role === 'operasyon') {
           const [customersRes, servicesRes] = await Promise.all([
             supabase.from('customers').select('id', { count: 'exact', head: true }),
@@ -128,114 +321,39 @@ export default function DashboardLayout({
     fetchData()
   }, [authLoading, appUser, isAdmin, router, supabase, pathname])
 
-  const toggleTheme = () => {
-    const newIsDark = !isDark
-    setIsDark(newIsDark)
-    document.documentElement.classList.toggle('dark', newIsDark)
-    localStorage.setItem('theme', newIsDark ? 'dark' : 'light')
-  }
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    setSidebarOpen(false)
+  }, [pathname])
 
   async function handleSignOut() {
     await signOut()
     router.push('/login')
   }
 
-  const isActive = (href: string) => {
-    if (href === '/dashboard' || href === '/') {
-      return pathname === '/' || pathname === '/dashboard'
-    }
-    return pathname.startsWith(href)
-  }
-
   const isTabActive = (href: string) => {
-    if (href === '/dashboard') {
-      return pathname === '/' || pathname === '/dashboard'
-    }
+    if (href === '/dashboard') return pathname === '/' || pathname === '/dashboard'
     return pathname.startsWith(href)
   }
 
   const getUserName = () => {
-    if (appUser?.full_name) {
-      return appUser.full_name.split(' ')[0]
-    } else if (appUser?.email) {
+    if (appUser?.full_name) return appUser.full_name.split(' ')[0]
+    if (appUser?.email) {
       const name = appUser.email.split('@')[0]
       return name.charAt(0).toUpperCase() + name.slice(1)
     }
     return 'Kullanıcı'
   }
-  
-  const getRoleBadge = () => {
-    if (isAdmin) return { label: 'Admin', color: 'emerald' }
-    if (appUser?.role === 'operasyon') return { label: 'Operasyon', color: 'violet' }
-    return { label: 'Personel', color: 'blue' }
-  }
 
-  // Operasyon mu?
   const isOperasyon = appUser?.role === 'operasyon'
 
-  // ==========================================
-  // THEME-AWARE STYLES
-  // ==========================================
-  const styles = {
-    // Body background
-    bodyBg: isDark ? '#09090b' : '#f8fafc',
-    
-    // Top nav
-    topNavBg: isDark ? 'rgba(24, 24, 27, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-    topNavBorder: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
-    
-    // Sidebar
-    sidebarBg: isDark 
-      ? 'linear-gradient(180deg, rgba(17,17,20,0.98) 0%, rgba(9,9,11,0.99) 100%)'
-      : 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
-    sidebarBorder: isDark ? 'rgba(255, 255, 255, 0.05)' : '#e2e8f0',
-    
-    // Glass header
-    glassBg: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.8)',
-    glassBorder: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
-    
-    // Content background
-    contentBg: isDark 
-      ? 'radial-gradient(ellipse at 10% 10%, rgba(99,102,241,0.12) 0%, transparent 40%), radial-gradient(ellipse at 90% 90%, rgba(139,92,246,0.08) 0%, transparent 40%)'
-      : 'radial-gradient(ellipse at 10% 10%, rgba(99,102,241,0.06) 0%, transparent 40%), radial-gradient(ellipse at 90% 90%, rgba(139,92,246,0.04) 0%, transparent 40%)',
-    
-    // Text colors
-    textPrimary: isDark ? '#ffffff' : '#0f172a',
-    textSecondary: isDark ? '#a1a1aa' : '#64748b',
-    textMuted: isDark ? '#71717a' : '#94a3b8',
-    
-    // Input/button backgrounds
-    inputBg: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
-    inputBorder: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
-    
-    // Menu active
-    menuActiveBg: isDark 
-      ? 'linear-gradient(90deg, rgba(99,102,241,0.2) 0%, rgba(99,102,241,0.05) 100%)'
-      : 'linear-gradient(90deg, rgba(99,102,241,0.12) 0%, rgba(99,102,241,0.02) 100%)',
-    
-    // User card
-    userCardBg: isDark 
-      ? 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)'
-      : 'rgba(255, 255, 255, 0.9)',
-    userCardBorder: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
-    
-    // Status dot border
-    statusDotBorder: isDark ? '#09090b' : '#ffffff',
-    
-    // Logo container
-    logoBg: isDark 
-      ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(234, 179, 8, 0.1) 100%)'
-      : 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(234, 179, 8, 0.08) 100%)',
-    logoBorder: isDark ? 'rgba(245, 158, 11, 0.3)' : 'rgba(245, 158, 11, 0.4)',
-  }
-
-  // Auth loading bekle
+  // Loading state
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: styles.bodyBg }}>
+      <div className="min-h-screen flex items-center justify-center bg-body">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
-          <p className="text-sm" style={{ color: styles.textMuted }}>Yükleniyor...</p>
+          <p className="text-sm text-zinc-500">Yükleniyor...</p>
         </div>
       </div>
     )
@@ -243,42 +361,39 @@ export default function DashboardLayout({
 
   if (!appUser) return null
   
-  // Erişim yoksa hiçbir şey gösterme (yönlendirme yapılıyor)
   const userRole = appUser.role || 'personel'
   if (!hasAccess(userRole, pathname)) return null
 
-  const TOP_BAR_HEIGHT = 48
-  const roleBadge = getRoleBadge()
-
   return (
-    <div className="min-h-screen transition-colors duration-300" style={{ background: styles.bodyBg }}>
+    <div className="min-h-screen bg-body">
       
       {/* ========== TOP NAV ========== */}
-      <header 
-        className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-4 py-2 transition-colors duration-300"
-        style={{
-          background: styles.topNavBg,
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          borderBottom: `1px solid ${styles.topNavBorder}`
-        }}
-      >
-        {/* Sol: Version + Tabs */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-mono" style={{ color: styles.textMuted }}>UI Kit v1.0</span>
+      <header className="fixed top-0 left-0 right-0 z-50 h-12 bg-topnav border-b border-white/10 flex items-center justify-between px-4">
+        {/* Sol: Hamburger + Version + Tabs */}
+        <div className="flex items-center gap-3">
+          {/* Mobile Hamburger */}
+          <button 
+            onClick={() => setSidebarOpen(true)}
+            className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-white/10 text-zinc-400"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          
+          <span className="text-xs font-mono text-zinc-500 hidden sm:block">v2.0</span>
+          
           {isAdmin && (
             <>
-              <span style={{ color: styles.textMuted }}>|</span>
-              <div className="flex gap-1">
+              <span className="text-zinc-600 hidden sm:block">|</span>
+              <div className="hidden sm:flex gap-1">
                 {navTabs.map((tab) => (
                   <Link
                     key={tab.href}
                     href={tab.href}
-                    className="px-3 py-1.5 text-xs font-medium rounded-md transition-all"
-                    style={{
-                      background: isTabActive(tab.href) ? (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)') : 'transparent',
-                      color: isTabActive(tab.href) ? styles.textPrimary : styles.textSecondary
-                    }}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                      isTabActive(tab.href) 
+                        ? 'bg-white/10 text-white' 
+                        : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                    }`}
                   >
                     {tab.label}
                   </Link>
@@ -288,348 +403,94 @@ export default function DashboardLayout({
           )}
         </div>
         
-        {/* Sağ: Dark Mode Toggle */}
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-mono" style={{ color: styles.textMuted }}>
-            {isDark ? 'Dark Mode' : 'Light Mode'}
-          </span>
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-lg transition-all hover:rotate-12"
-            style={{
-              background: styles.inputBg,
-              border: `1px solid ${styles.inputBorder}`
-            }}
-          >
-            {isDark ? (
-              <Sun className="w-4 h-4 text-amber-400" />
-            ) : (
-              <Moon className="w-4 h-4 text-indigo-500" />
-            )}
-          </button>
-        </div>
+        {/* Sağ: Search + Notifications */}
+        {isAdmin && (
+          <div className="flex items-center gap-3">
+            <div className="relative hidden md:block">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <input 
+                type="text" 
+                placeholder="Ara..." 
+                className="w-48 pl-10 pr-4 py-1.5 rounded-lg text-sm bg-white/5 border border-white/10 text-white placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500/50"
+              />
+              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] px-1.5 py-0.5 rounded font-mono bg-white/5 text-zinc-500">
+                ⌘K
+              </kbd>
+            </div>
+            <NotificationBell />
+          </div>
+        )}
       </header>
 
-      {/* Spacer */}
-      <div style={{ height: `${TOP_BAR_HEIGHT}px` }} />
+      {/* ========== SIDEBAR ========== */}
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        pathname={pathname}
+        isAdmin={isAdmin}
+        isOperasyon={isOperasyon}
+        counts={counts}
+        appUser={appUser}
+        onSignOut={handleSignOut}
+      />
 
-      {/* ========== MAIN LAYOUT ========== */}
-      <div className="flex" style={{ minHeight: `calc(100vh - ${TOP_BAR_HEIGHT}px)` }}>
+      {/* ========== MAIN CONTENT ========== */}
+      <div className="lg:ml-64 pt-12 min-h-screen flex flex-col">
         
-        {/* ========== SIDEBAR ========== */}
-        <aside 
-          className="hidden lg:flex lg:flex-col fixed left-0 z-50 transition-colors duration-300"
-          style={{ 
-            top: `${TOP_BAR_HEIGHT}px`,
-            height: `calc(100vh - ${TOP_BAR_HEIGHT}px)`,
-            width: '256px',
-            background: styles.sidebarBg,
-            borderRight: `1px solid ${styles.sidebarBorder}`
-          }}
-        >
-          <div className="flex flex-col flex-grow">
-            
-            {/* Logo Section */}
-            <div 
-              className="p-5 transition-colors duration-300"
-              style={{ borderBottom: `1px solid ${styles.sidebarBorder}` }}
-            >
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div 
-                    className="h-11 w-11 rounded-xl flex items-center justify-center transition-colors duration-300"
-                    style={{
-                      background: styles.logoBg,
-                      border: `1px solid ${styles.logoBorder}`
-                    }}
-                  >
-                    <AjansBeeLogoSVG className="w-7 h-7" isDark={isDark} />
-                  </div>
-                  <div 
-                    className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500"
-                    style={{
-                      border: `2px solid ${styles.statusDotBorder}`,
-                      animation: 'pulse-glow 2s ease-in-out infinite'
-                    }}
-                  />
-                </div>
-                <div>
-                  <h1 className="font-bold text-base transition-colors duration-300" style={{ color: styles.textPrimary }}>Ajans Bee</h1>
-                  <p className="text-[10px] font-mono tracking-widest uppercase" style={{ color: styles.textMuted }}>AI Platform</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Navigation */}
-            <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-              
-              {/* Admin menüsü */}
-              {isAdmin && (
-                <>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2" style={{ color: styles.textMuted }}>Ana Menü</p>
-                  
-                  {/* Dashboard */}
-                  <Link
-                    href="/dashboard"
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
-                    style={{
-                      background: isActive('/dashboard') ? styles.menuActiveBg : 'transparent',
-                      borderLeft: isActive('/dashboard') ? '3px solid #6366f1' : '3px solid transparent',
-                      color: isActive('/dashboard') ? styles.textPrimary : styles.textSecondary
-                    }}
-                  >
-                    <LayoutDashboard className={`w-5 h-5 ${isActive('/dashboard') ? 'text-indigo-500' : ''}`} />
-                    <span className="text-sm font-medium">Dashboard</span>
-                  </Link>
-
-                  {/* Markalar */}
-                  <Link
-                    href="/musteriler"
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
-                    style={{
-                      background: isActive('/musteriler') || isActive('/customers') ? styles.menuActiveBg : 'transparent',
-                      borderLeft: isActive('/musteriler') || isActive('/customers') ? '3px solid #6366f1' : '3px solid transparent',
-                      color: isActive('/musteriler') || isActive('/customers') ? styles.textPrimary : styles.textSecondary
-                    }}
-                  >
-                    <Building2 className="w-5 h-5" />
-                    <span className="text-sm font-medium">Markalar</span>
-                    {counts.customers > 0 && (
-                      <span className="ml-auto text-[11px] bg-violet-500/20 text-violet-400 px-2 py-0.5 rounded-full font-mono">{counts.customers}</span>
-                    )}
-                  </Link>
-
-                  {/* Teknik Hizmetler - Admin */}
-                  <Link
-                    href="/teknik-hizmetler"
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
-                    style={{
-                      background: isActive('/teknik-hizmetler') ? styles.menuActiveBg : 'transparent',
-                      borderLeft: isActive('/teknik-hizmetler') ? '3px solid #6366f1' : '3px solid transparent',
-                      color: isActive('/teknik-hizmetler') ? styles.textPrimary : styles.textSecondary
-                    }}
-                  >
-                    <Server className="w-5 h-5" />
-                    <span className="text-sm font-medium">Teknik Hizmetler</span>
-                    {counts.services > 0 && (
-                      <span className="ml-auto text-[11px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-mono">{counts.services}</span>
-                    )}
-                  </Link>
-
-                  <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 mt-5" style={{ color: styles.textMuted }}>Araçlar</p>
-                  
-                  {/* İçerik Üret */}
-                  <Link
-                    href="/icerik-uret"
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
-                    style={{
-                      background: isActive('/icerik-uret') ? styles.menuActiveBg : 'transparent',
-                      borderLeft: isActive('/icerik-uret') ? '3px solid #6366f1' : '3px solid transparent',
-                      color: isActive('/icerik-uret') ? styles.textPrimary : styles.textSecondary
-                    }}
-                  >
-                    <Sparkles className="w-5 h-5" />
-                    <span className="text-sm font-medium">İçerik Üret</span>
-                    <span 
-                      className="ml-auto text-[10px] text-fuchsia-400 px-2 py-0.5 rounded-full font-mono"
-                      style={{
-                        background: 'rgba(217, 70, 239, 0.2)',
-                        border: '1px solid rgba(217, 70, 239, 0.2)'
-                      }}
-                    >
-                      AI
-                    </span>
-                  </Link>
-                </>
-              )}
-
-              {/* Operasyon için Teknik Hizmetler */}
-              {isOperasyon && (
-                <>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2" style={{ color: styles.textMuted }}>Araçlar</p>
-                  
-                  <Link
-                    href="/teknik-hizmetler"
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
-                    style={{
-                      background: isActive('/teknik-hizmetler') ? styles.menuActiveBg : 'transparent',
-                      borderLeft: isActive('/teknik-hizmetler') ? '3px solid #6366f1' : '3px solid transparent',
-                      color: isActive('/teknik-hizmetler') ? styles.textPrimary : styles.textSecondary
-                    }}
-                  >
-                    <Server className="w-5 h-5" />
-                    <span className="text-sm font-medium">Teknik Hizmetler</span>
-                    {counts.services > 0 && (
-                      <span className="ml-auto text-[11px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-mono">{counts.services}</span>
-                    )}
-                  </Link>
-                </>
-              )}
-
-              <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 mt-5" style={{ color: styles.textMuted }}>Personel</p>
-              
-              {/* Günlük İşler */}
-              <Link
-                href="/gunluk-isler"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
-                style={{
-                  background: isActive('/gunluk-isler') ? styles.menuActiveBg : 'transparent',
-                  borderLeft: isActive('/gunluk-isler') ? '3px solid #6366f1' : '3px solid transparent',
-                  color: isActive('/gunluk-isler') ? styles.textPrimary : styles.textSecondary
-                }}
-              >
-                <ClipboardList className="w-5 h-5" />
-                <span className="text-sm font-medium">Günlük İşler</span>
-              </Link>
-
-              {/* Giriş/Çıkış */}
-              <Link
-                href="/giris-cikis"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
-                style={{
-                  background: isActive('/giris-cikis') ? styles.menuActiveBg : 'transparent',
-                  borderLeft: isActive('/giris-cikis') ? '3px solid #6366f1' : '3px solid transparent',
-                  color: isActive('/giris-cikis') ? styles.textPrimary : styles.textSecondary
-                }}
-              >
-                <Clock className="w-5 h-5" />
-                <span className="text-sm font-medium">Giriş/Çıkış</span>
-              </Link>
-
-              {/* Ayarlar - admin için ayrı bölüm */}
-              {isAdmin && (
-                <>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 mt-5" style={{ color: styles.textMuted }}>Sistem</p>
-                  
-                  <Link
-                    href="/ayarlar"
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
-                    style={{
-                      background: isActive('/ayarlar') ? styles.menuActiveBg : 'transparent',
-                      borderLeft: isActive('/ayarlar') ? '3px solid #6366f1' : '3px solid transparent',
-                      color: isActive('/ayarlar') ? styles.textPrimary : styles.textSecondary
-                    }}
-                  >
-                    <Settings className="w-5 h-5" />
-                    <span className="text-sm font-medium">Ayarlar</span>
-                  </Link>
-                </>
-              )}
-            </nav>
-
-            {/* User Section - Güzel Tasarım */}
-            <div 
-              className="p-3 transition-colors duration-300"
-              style={{ borderTop: `1px solid ${styles.sidebarBorder}` }}
-            >
-              <div 
-                className="rounded-xl p-3 transition-colors duration-300"
-                style={{
-                  background: styles.userCardBg,
-                  backdropFilter: 'blur(20px)',
-                  border: `1px solid ${styles.userCardBorder}`
-                }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">
-                      {appUser.email?.charAt(0).toUpperCase() || 'A'}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate transition-colors duration-300" style={{ color: styles.textPrimary }}>
-                      {appUser.full_name || getUserName()}
-                    </p>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium bg-${roleBadge.color}-500/20 text-${roleBadge.color}-400`}>
-                      {roleBadge.label}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={handleSignOut}
-                  className="group w-full mt-3 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
-                  style={{
-                    background: isDark ? 'rgba(244, 63, 94, 0.1)' : 'rgba(244, 63, 94, 0.08)',
-                    border: `1px solid ${isDark ? 'rgba(244, 63, 94, 0.2)' : 'rgba(244, 63, 94, 0.15)'}`
-                  }}
-                >
-                  <LogOut className="w-4 h-4 text-rose-400 transition-transform group-hover:-translate-x-0.5" />
-                  <span className="text-rose-400">Çıkış Yap</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        {/* ========== MAIN CONTENT ========== */}
-        <div className="flex-1 flex flex-col min-h-screen" style={{ marginLeft: '256px' }}>
-          
-          {/* Sticky Header - Sadece detay sayfası DEĞİLSE göster */}
-          {!isDetailPage && (
-            <header 
-              className="sticky z-40 flex items-center justify-between px-6 py-4 transition-colors duration-300"
-              style={{
-                top: `${TOP_BAR_HEIGHT}px`,
-                background: styles.glassBg,
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                borderBottom: `1px solid ${styles.glassBorder}`
-              }}
-            >
+        {/* Page Header - Sadece liste sayfalarında göster */}
+        {!isDetailPage && (
+          <header className="sticky top-12 z-30 bg-topnav border-b border-white/5 px-4 sm:px-6 py-4">
+            <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-xl font-bold transition-colors duration-300" style={{ color: styles.textPrimary }}>
+                <h1 className="text-lg sm:text-xl font-bold text-white">
                   Hoş geldin, {getUserName()} 👋
                 </h1>
-                <p className="text-sm mt-0.5" style={{ color: styles.textMuted }}>
+                <p className="text-sm text-zinc-500 mt-0.5 hidden sm:block">
                   {isAdmin ? 'Hemen içerik üretmeye başla' : 'Günlük işlerini kaydet'}
                 </p>
               </div>
-              
-              {isAdmin && (
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: styles.textMuted }} />
-                    <input 
-                      type="text" 
-                      placeholder="Ara..." 
-                      className="w-56 pl-10 pr-4 py-2 rounded-lg text-sm transition-all focus:outline-none"
-                      style={{
-                        background: styles.inputBg,
-                        border: `1px solid ${styles.inputBorder}`,
-                        color: styles.textPrimary
-                      }}
-                    />
-                    <kbd 
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] px-1.5 py-0.5 rounded font-mono"
-                      style={{ background: styles.inputBg, color: styles.textMuted }}
-                    >
-                      ⌘K
-                    </kbd>
-                  </div>
-                  
-                  {/* NotificationBell Component */}
-                  <NotificationBell />
-                </div>
-              )}
-            </header>
-          )}
-          
-          {/* Content */}
-          <div 
-            className="flex-1 p-6 transition-colors duration-300"
-            style={{ background: styles.contentBg }}
-          >
-            {children}
-          </div>
-        </div>
+            </div>
+          </header>
+        )}
+        
+        {/* Content */}
+        <main className="flex-1 p-4 sm:p-6 bg-content">
+          {children}
+        </main>
       </div>
 
-      <style jsx global>{`
-        @keyframes pulse-glow {
-          0%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(16,185,129,0.6); }
-          50% { opacity: 0.6; box-shadow: 0 0 12px rgba(16,185,129,0.8); }
-        }
-      `}</style>
+      {/* ========== MOBILE BOTTOM NAV ========== */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-topnav border-t border-white/10 px-2 py-2 safe-area-pb">
+        <div className="flex items-center justify-around">
+          {isAdmin && (
+            <>
+              <Link href="/dashboard" className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg ${isTabActive('/dashboard') ? 'text-indigo-400' : 'text-zinc-500'}`}>
+                <LayoutDashboard className="w-5 h-5" />
+                <span className="text-[10px] font-medium">Ana Sayfa</span>
+              </Link>
+              <Link href="/musteriler" className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg ${isTabActive('/musteriler') ? 'text-indigo-400' : 'text-zinc-500'}`}>
+                <Building2 className="w-5 h-5" />
+                <span className="text-[10px] font-medium">Markalar</span>
+              </Link>
+              <Link href="/icerik-uret" className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg ${isTabActive('/icerik-uret') ? 'text-fuchsia-400' : 'text-zinc-500'}`}>
+                <Sparkles className="w-5 h-5" />
+                <span className="text-[10px] font-medium">Üret</span>
+              </Link>
+            </>
+          )}
+          <Link href="/gunluk-isler" className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg ${isTabActive('/gunluk-isler') ? 'text-indigo-400' : 'text-zinc-500'}`}>
+            <ClipboardList className="w-5 h-5" />
+            <span className="text-[10px] font-medium">İşler</span>
+          </Link>
+          <Link href="/giris-cikis" className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg ${isTabActive('/giris-cikis') ? 'text-indigo-400' : 'text-zinc-500'}`}>
+            <Clock className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Giriş/Çıkış</span>
+          </Link>
+        </div>
+      </nav>
+      
+      {/* Bottom nav için boşluk */}
+      <div className="lg:hidden h-16" />
     </div>
   )
 }
