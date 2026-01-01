@@ -1,0 +1,391 @@
+# 🐝 BEETA - Ajans Bee Platform Bilgi Bankası
+
+> Bu dosya Beeta chatbot'un bilgi kaynağıdır. Personel sorularına bu içeriğe dayanarak cevap verir.
+
+---
+
+# 📋 GÖREVLER (Günlük İşler)
+
+## Bu Sayfa Ne İşe Yarar?
+
+Görevler modülü, yaptığın tüm işleri kayıt altına almanı sağlar. Her iş için:
+- Ne kadar süre harcadığını
+- Hangi kategoride olduğunu
+- Hangi marka için yapıldığını
+- Kaç kez revize edildiğini
+
+takip edebilirsin.
+
+## Yeni İş Başlatma
+
+1. "İş Ekle" butonuna tıkla (sağ üst köşe)
+2. Marka seç (opsiyonel - genel iş için boş bırak)
+3. Kategori seç (Tasarım, Video, İçerik vb.)
+4. Açıklama yaz (Ne yapıyorsun?)
+5. "Başlat" butonuna tıkla
+
+Sayaç otomatik olarak başlar!
+
+## Sayaç Kontrolü
+
+### Bekletme (Pause)
+Ara verdiğinde veya başka işe geçtiğinde:
+1. Karta tıkla → detaylar açılır
+2. "Beklet" butonuna tıkla
+3. Sayaç durur, süre kaydedilir
+
+### Devam Ettirme
+Ara verdikten sonra devam etmek için:
+1. Beklemedeki karta tıkla
+2. "Devam Et" butonuna tıkla
+3. Sayaç kaldığı yerden devam eder
+
+### Tamamlama
+İşi bitirdiğinde:
+1. Karta tıkla
+2. "Bitti" butonuna tıkla
+3. Toplam süre kaydedilir
+
+## Revize Sistemi
+
+### Revize Ne Zaman Kullanılır?
+- Müşteri değişiklik istediğinde
+- İş tamamlandıktan sonra düzeltme gerektiğinde
+- Geri bildirim sonrası güncelleme yapıldığında
+
+### Revize Başlatma
+1. Tamamlanmış bir karta tıkla
+2. "Revize Başlat" butonuna tıkla
+3. Revize notunu yaz (opsiyonel ama önerilir)
+4. "Revize Başlat" butonuna tıkla
+
+Her revize sayaçta R1, R2... şeklinde görünür
+
+### Yanlış Kapatma Düzeltme (Yenile)
+İşi yanlışlıkla "Bitti" dediysen:
+1. Karta tıkla
+2. "Yenile" butonuna tıkla
+3. Sayaç kaldığı yerden devam eder
+4. Revize sayısı ARTMAZ
+
+**Revize ve Yenile arasındaki fark:**
+- Revize: Müşteri geri bildirimi sonrası yeni çalışma (sayılır)
+- Yenile: Yanlışlıkla kapatılan işi devam ettirme (sayılmaz)
+
+## Filtreleme ve Arama
+
+- Arama Kutusu: İş açıklamasında arama yapar
+- Marka Filtresi: Belirli bir markanın işlerini gösterir
+- Kategori Filtresi: Sadece seçili kategorideki işleri gösterir
+- Tarih okları: ile gün değiştir, "Bugün" butonu bugüne döner
+
+## Durum Renkleri
+- Yeşil (Devam Ediyor): Sayaç çalışıyor
+- Sarı (Beklemede): Duraklatılmış
+- Yeşil tik (Tamamlandı): İş bitti
+
+## Sık Sorulan Sorular - Görevler
+
+S: Sayaç çalışırken tarayıcıyı kapatsam ne olur?
+C: Sayaç sunucuda çalışır, veriler kaybolmaz. Tekrar açtığında kaldığı yerden devam eder.
+
+S: Yanlış kategori seçtim, değiştirebilir miyim?
+C: Evet. Kartın sağ üstündeki düzenle ikonuna tıkla.
+
+S: Dünkü işe kayıt ekleyebilir miyim?
+C: Tarih okları ile güne git, oradan iş ekleyebilirsin.
+
+S: Bir işi silebilir miyim?
+C: Evet. Kartın sağ üstündeki sil ikonuna tıkla. Bu işlem geri alınamaz!
+
+---
+
+# ⏰ MESAİ (Giriş Çıkış)
+
+## Bu Sayfa Ne İşe Yarar?
+
+Mesai modülü, mesai saatlerini takip etmeni sağlar:
+- İşe geliş saatini
+- İşten çıkış saatini
+- Toplam çalışma süresini
+- Aylık mesai özetini
+
+## Giriş Yapma (İşe Geldiğinde)
+
+1. "Giriş Yap" butonuna tıkla
+2. Konum izni isterse "İzin Ver" de
+3. Giriş saatin kaydedildi!
+
+## Çıkış Yapma (İşten Ayrılırken)
+
+1. "Çıkış Yap" butonuna tıkla
+2. Çıkış saatin kaydedildi!
+3. Toplam çalışma süren hesaplanır
+
+## Standart Çalışma Saatleri
+
+- Mesai Başlangıç: 09:00
+- Öğle Arası: 12:00 - 13:00
+- Mesai Bitiş: 18:00
+- Günlük Çalışma: 8 saat
+
+## Tolerans Süreleri
+
+- Geç Kalma Toleransı: 15 dakika
+- Erken Çıkış Toleransı: 15 dakika
+
+09:15'e kadar giriş yapılırsa "zamanında" sayılır.
+
+## Giriş Durumları
+
+- Yeşil (Zamanında): 09:00 - 09:15 arası giriş
+- Sarı (Geç): 09:15 sonrası giriş
+- Kırmızı (Çok Geç): 10:00 sonrası giriş
+
+## Çıkış Durumları
+
+- Yeşil (Normal): 18:00 ve sonrası çıkış
+- Sarı (Erken): 17:45 - 18:00 arası çıkış
+- Kırmızı (Çok Erken): 17:45 öncesi çıkış
+
+## Takvim Görünümü
+
+- Yeşil gün = Tam mesai
+- Sarı gün = Eksik/geç
+- Boş gün = Kayıt yok
+- Kırmızı gün = Tatil/izin
+
+## Tatil ve İzin Günleri
+
+Resmi tatil günlerinde giriş/çıkış yapman gerekmez. Takvimde otomatik işaretlenir.
+
+İzin günleri yönetici tarafından sisteme girilir:
+- Yıllık izin
+- Hastalık izni
+- Mazeret izni
+
+## Hibrit Çalışma
+
+Salı ve Perşembe günleri evden çalışılabilir. Hibrit günlerde de giriş/çıkış yapılmalı.
+
+## Önemli Kurallar
+
+Yapılması Gerekenler:
+- Her gün giriş ve çıkış yap
+- Giriş yapmayı unutursan hemen yöneticine bildir
+- Erken çıkacaksan önceden izin al
+
+Yapılmaması Gerekenler:
+- Başkası adına giriş/çıkış yapma
+- Ofise gelmeden giriş yapma
+- Çıkış yapmadan ofisten ayrılma
+
+## Düzeltme Talepleri
+
+Giriş/çıkışı unuttuysan veya hatalı kayıt varsa:
+1. Yöneticine bildir
+2. Doğru saati söyle
+3. Yönetici manuel düzeltme yapar
+
+Not: Personel kendi kaydını düzenleyemez, sadece yönetici düzeltebilir.
+
+## Sık Sorulan Sorular - Mesai
+
+S: Giriş yapmayı unuttum, ne yapmalıyım?
+C: Hemen yöneticine bildir. Yönetici manuel giriş kaydı oluşturabilir.
+
+S: Telefondan giriş yapabilir miyim?
+C: Evet, mobil tarayıcıdan platform'a giriş yapıp kullanabilirsin.
+
+S: Evden çalışırken giriş yapmam gerekiyor mu?
+C: Evet, uzaktan çalışma günlerinde de giriş/çıkış yapmalısın.
+
+S: Öğle arasında çıkış yapmalı mıyım?
+C: Hayır, öğle arası otomatik hesaplanır. Sadece sabah giriş, akşam çıkış yeterli.
+
+S: Hafta sonu çalışırsam kayıt yapmalı mıyım?
+C: Evet, fazla mesai için hafta sonu da giriş/çıkış yapmalısın.
+
+---
+
+# 📁 DOSYALAR
+
+## Bu Sayfa Ne İşe Yarar?
+
+Müşterilerimize ait marka dosyalarını (logolar, ürün görselleri, örnek postlar) tek bir yerden yönetmemizi sağlar.
+
+## 2 Farklı Erişim Yolu
+
+- Genel Dosyalar (/dosyalar) → Tüm markaların dosyaları bir arada
+- Marka İçi Dosyalar (Marka sayfası → Dosyalar tab) → Sadece o markanın dosyaları
+
+## Dosya Yükleme Adımları
+
+1. Dosyayı sürükle bırak veya alana tıkla
+2. Modal pencere açılır
+3. Dosya tipini seç: Logo, Ürün Görseli, veya Örnek Post
+4. Logo seçtiysen logo tipini seç: Ana Logo (Renkli), Siyah Versiyon, Beyaz Versiyon, Sadece İkon
+5. "Yükle" butonuna tıkla
+
+## Desteklenen Formatlar
+
+- PNG: Şeffaf arka plan için ideal (logolar)
+- JPG/JPEG: Fotoğraflar için
+- SVG: Vektör logolar (en iyi kalite)
+- WebP: Modern, küçük boyut
+- GIF: Hareketli görseller
+
+Maksimum boyut: 10MB
+
+## Filtreler
+
+- Tümü: Tüm dosyalar
+- Logolar: Sadece logo dosyaları
+- Ürün Görselleri: Sadece ürün fotoğrafları
+- Örnek Postlar: Sadece sosyal medya postları
+
+## Dosya Kategorileri
+
+### 1. Logolar
+- Ana Logo (Renkli): Genel kullanım, web sitesi, sosyal medya
+- Siyah Versiyon: Açık renkli arka planlarda
+- Beyaz Versiyon: Koyu arka planlarda, fotoğraf üstünde
+- Sadece İkon: Favicon, profil fotoğrafı, küçük alanlar
+
+### 2. Ürün Görselleri
+Ürün fotoğrafları, mekan fotoğrafları, ekip fotoğrafları, hizmet görselleri
+
+### 3. Örnek Postlar
+Instagram postları, Facebook paylaşımları, Story tasarımları, rakip/ilham postları
+
+## Ana Logo Belirleme
+
+Her markanın bir Ana Logosu olmalı. Bu logo içerik üretiminde varsayılan olarak kullanılır.
+
+1. Logo kartının altındaki "Ana Logo Yap" butonuna tıkla
+2. Yeni logo ana logo olur
+
+Not: Her markada sadece 1 ana logo olabilir.
+
+## Dosya Silme
+
+1. Kartın üzerine gel
+2. Sil butonuna tıkla
+3. Onay ver
+
+DİKKAT: Silinen dosya geri getirilemez!
+
+## Sık Sorulan Sorular - Dosyalar
+
+S: Hangi boyutta logo yüklemeliyim?
+C: En az 500x500 piksel, tercihen SVG veya yüksek çözünürlüklü PNG.
+
+S: Dosya yüklenmiyor, ne yapmalıyım?
+C: Kontrol et: Dosya 10MB'dan küçük mü? Format destekleniyor mu? İnternet bağlantın var mı?
+
+S: Yanlış kategoriye yükledim, değiştirebilir miyim?
+C: Şimdilik değiştirilemez. Sil ve doğru kategoriye tekrar yükle.
+
+---
+
+# 🛠️ TEKNİK HİZMETLER
+
+## Bu Sayfa Ne İşe Yarar?
+
+Müşterilerimize sunduğumuz teknik servisleri (hosting, domain, e-posta vb.) tek bir yerden yönetmemizi sağlar.
+
+- Hangi müşterinin hangi servisi var?
+- Ne zaman yenileniyor?
+- Aylık/yıllık maliyetler ne kadar?
+
+## İstatistik Kartları
+
+- Toplam Servis: Tüm aktif servislerin sayısı
+- Aktif: Şu an çalışan servisler
+- Yakında Bitiyor: 30 gün içinde yenilenecekler
+- Aylık Maliyet: Toplam aylık gider
+
+İpucu: "Yakında Bitiyor" kartına dikkat et! Müşteriye önceden haber vermemiz gerekir.
+
+## Servis Tipi Filtreleri
+
+- Tümü: Tüm servisler
+- Hosting: Web sitesi barındırma
+- Domain: Alan adları (.com, .com.tr vb.)
+- E-posta: Kurumsal e-posta servisleri
+- SSL: Güvenlik sertifikaları
+- DNS: Alan adı yönlendirmeleri
+
+## Durum Rozetleri
+
+- Aktif (Yeşil): Servis çalışıyor
+- Yakında Bitiyor (Sarı): 30 gün içinde yenilenmeli
+- Süresi Doldu (Kırmızı): ACİL! Yenilenmeli
+- İptal Edildi (Gri): Artık aktif değil
+
+## Sağlayıcılar
+
+- Hostinger: Hosting, Domain
+- Google: Workspace (e-posta)
+- Cloudflare: DNS, SSL
+- GoDaddy: Domain
+- Yandex: E-posta (ücretsiz)
+- natro: Hosting, Domain (.tr)
+- Turhost: Hosting
+- İsimtescil: Domain (.tr)
+
+## Servis Süresi Dolarsa Ne Olur?
+
+- Hosting: Site erişilemez olur
+- Domain: Başkası alabilir (tehlikeli!)
+- E-posta: Mailler gelmez
+- SSL: Site "Güvenli Değil" uyarısı verir
+
+## Haftalık Kontrol Listesi
+
+Her Pazartesi şunları kontrol et:
+1. "Yakında Bitiyor" kartına bak
+2. 30 gün içinde bitecek servisleri listele
+3. Müşterilere hatırlatma e-postası gönder
+4. Yenileme onayı al
+5. Sağlayıcıdan yenile
+6. Sistemi güncelle
+
+---
+
+# ⚙️ AYARLAR
+
+## Bu Sayfa Ne İçin?
+
+Admin ve yönetici için sistem ayarları. Personel bu sayfayı göremez.
+
+## Tab'lar
+
+### 1. Resmi Tatiller
+Resmi tatil günlerini ekle, düzenle veya sil. Tekrarlayan tatiller her yıl otomatik geçerli olur.
+
+### 2. Çalışma Takvimi
+- Çalışma günlerini seç (Pzt-Cum)
+- Mesai saatlerini belirle (09:00 - 18:00)
+- Öğle arası saatlerini belirle
+- Hibrit günleri seç (evden çalışma günleri)
+
+### 3. Toleranslar
+- Geç Kalma Toleransı: Mesai başlangıcından sonra bu süre içinde giriş yapan personel "geç" olarak işaretlenmez
+- Erken Çıkış Toleransı: Mesai bitiş saatinden bu süre kadar önce çıkış yapan personel "erken çıkış" olarak işaretlenmez
+- Hoşgörü Süresi: Geç kalma/erken çıkış hesaplanmadan önce verilen ek süre
+
+---
+
+# 🆘 GENEL DESTEK
+
+Herhangi bir sorun yaşarsan:
+1. Sayfayı yenile (F5)
+2. Çıkış yap, tekrar giriş yap
+3. Farklı tarayıcı dene
+4. Hâlâ sorun varsa Ahmet'e bildir
+
+---
+
+Ajans Bee Platform | Beeta Bilgi Bankası v1.0
+Son Güncelleme: 1 Ocak 2026
