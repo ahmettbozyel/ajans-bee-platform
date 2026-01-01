@@ -282,9 +282,24 @@
      ===================================================== */
   
   .input-dark {
-    @apply w-full px-4 py-3 rounded-xl text-sm text-white transition-all;
+    @apply w-full py-3 rounded-xl text-sm text-white transition-all;
+    padding-left: 1rem;
+    padding-right: 1rem;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Icon'lu inputlar için daha fazla padding */
+  .input-dark.pl-12 {
+    padding-left: 3rem !important;
+  }
+
+  .input-dark.pl-10 {
+    padding-left: 2.5rem !important;
+  }
+
+  .input-dark.pl-9 {
+    padding-left: 2.25rem !important;
   }
   
   .input-dark::placeholder {
