@@ -36,7 +36,7 @@ Bu haftaki çalışma özetini grafikle gösterir.
 
 # 📋 GÖREVLER (Günlük İşler)
 
-Link: [Görevler](https://app.beeswebsite.com/gorevler)
+Link: [Günlük İşler](https://app.beeswebsite.com/gunluk-isler)
 
 ## Bu Sayfa Ne İşe Yarar?
 
@@ -134,7 +134,7 @@ C: Evet. Kartın sağ üstündeki sil ikonuna tıkla. Bu işlem geri alınamaz!
 
 # ⏰ MESAİ (Giriş Çıkış)
 
-Link: [Mesai](https://app.beeswebsite.com/mesai)
+Link: [Giriş Çıkış](https://app.beeswebsite.com/giris-cikis)
 
 ## Bu Sayfa Ne İşe Yarar?
 
@@ -310,12 +310,12 @@ Herhangi bir sorun yaşarsan:
 ## Platform Linkleri
 
 - [Dashboard](https://app.beeswebsite.com/dashboard) - Ana sayfa
-- [Görevler](https://app.beeswebsite.com/gorevler) - Günlük işler
-- [Mesai](https://app.beeswebsite.com/mesai) - Giriş çıkış
+- [Günlük İşler](https://app.beeswebsite.com/gunluk-isler) - Görevler
+- [Giriş Çıkış](https://app.beeswebsite.com/giris-cikis) - Mesai takibi
 - [Geçmiş](https://app.beeswebsite.com/gecmis) - Görev geçmişi
 - [Ayarlar](https://app.beeswebsite.com/ayarlar) - Profil ayarları
 
 ---
 
-Ajans Bee Platform | BeeBot Bilgi Bankası v2.0
+Ajans Bee Platform | BeeBot Bilgi Bankası v2.1
 Son Güncelleme: 2 Ocak 2026
