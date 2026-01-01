@@ -47,18 +47,21 @@ const navTabs = [
 // Erişim kontrolü
 const ALLOWED_PAGES: Record<string, string[]> = {
   admin: ['*'],
-  operasyon: ['/gunluk-isler', '/giris-cikis', '/teknik-hizmetler', '/ayarlar'],
-  personel: ['/gunluk-isler', '/giris-cikis']
+  yonetici: ['/gunluk-isler', '/giris-cikis', '/teknik-hizmetler', '/ayarlar'],
+  operasyon: ['/gunluk-isler', '/giris-cikis', '/teknik-hizmetler'],
+  personel: ['/gunluk-isler', '/giris-cikis'],
+  stajer: ['/gunluk-isler', '/giris-cikis']
 }
 
 // ==========================================
 // SIDEBAR COMPONENT
 // ==========================================
-function Sidebar({ 
-  isOpen, 
+function Sidebar({
+  isOpen,
   onClose,
   pathname,
   isAdmin,
+  isYonetici,
   isOperasyon,
   counts,
   appUser,
@@ -68,6 +71,7 @@ function Sidebar({
   onClose: () => void
   pathname: string
   isAdmin: boolean
+  isYonetici: boolean
   isOperasyon: boolean
   counts: { customers: number; services: number }
   appUser: any
@@ -89,7 +93,9 @@ function Sidebar({
 
   const getRoleBadge = () => {
     if (isAdmin) return { label: 'Admin', class: 'badge-emerald' }
+    if (appUser?.role === 'yonetici') return { label: 'Yönetici', class: 'badge-amber' }
     if (isOperasyon) return { label: 'Operasyon', class: 'badge-violet' }
+    if (appUser?.role === 'stajer') return { label: 'Stajyer', class: 'badge-cyan' }
     return { label: 'Personel', class: 'badge-neutral' }
   }
 
@@ -186,11 +192,26 @@ function Sidebar({
               </>
             )}
 
+            {/* Yönetici Menü */}
+            {isYonetici && (
+              <>
+                <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 text-zinc-500">Araçlar</p>
+
+                <Link href="/teknik-hizmetler" className={`menu-item ${isActive('/teknik-hizmetler') ? 'menu-active text-white' : 'text-zinc-400'}`}>
+                  <Server className="w-5 h-5" />
+                  <span className="text-sm font-medium">Teknik Hizmetler</span>
+                  {counts.services > 0 && (
+                    <span className="ml-auto text-[11px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-mono">{counts.services}</span>
+                  )}
+                </Link>
+              </>
+            )}
+
             {/* Operasyon Menü */}
             {isOperasyon && (
               <>
                 <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 text-zinc-500">Araçlar</p>
-                
+
                 <Link href="/teknik-hizmetler" className={`menu-item ${isActive('/teknik-hizmetler') ? 'menu-active text-white' : 'text-zinc-400'}`}>
                   <Server className="w-5 h-5" />
                   <span className="text-sm font-medium">Teknik Hizmetler</span>
@@ -214,11 +235,11 @@ function Sidebar({
               <span className="text-sm font-medium">Giriş/Çıkış</span>
             </Link>
 
-            {/* Admin Sistem Menüsü */}
-            {isAdmin && (
+            {/* Admin/Yönetici Sistem Menüsü */}
+            {(isAdmin || isYonetici) && (
               <>
                 <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 mt-5 text-zinc-500">Sistem</p>
-                
+
                 <Link href="/ayarlar" className={`menu-item ${isActive('/ayarlar') ? 'menu-active text-white' : 'text-zinc-400'}`}>
                   <Settings className="w-5 h-5" />
                   <span className="text-sm font-medium">Ayarlar</span>
@@ -303,7 +324,7 @@ export default function DashboardLayout({
     
     async function fetchData() {
       try {
-        if (isAdmin || appUser?.role === 'operasyon') {
+        if (isAdmin || appUser?.role === 'yonetici' || appUser?.role === 'operasyon') {
           const [customersRes, servicesRes] = await Promise.all([
             supabase.from('customers').select('id', { count: 'exact', head: true }),
             supabase.from('technical_services').select('id', { count: 'exact', head: true })
@@ -345,6 +366,7 @@ export default function DashboardLayout({
     return 'Kullanıcı'
   }
 
+  const isYonetici = appUser?.role === 'yonetici'
   const isOperasyon = appUser?.role === 'operasyon'
 
   // Loading state
@@ -428,6 +450,7 @@ export default function DashboardLayout({
         onClose={() => setSidebarOpen(false)}
         pathname={pathname}
         isAdmin={isAdmin}
+        isYonetici={isYonetici}
         isOperasyon={isOperasyon}
         counts={counts}
         appUser={appUser}
