@@ -382,9 +382,19 @@ export default function DashboardLayout({
   }
 
   if (!appUser) return null
-  
+
   const userRole = appUser.role || 'personel'
-  if (!hasAccess(userRole, pathname)) return null
+  // Erişim yoksa loading göster (useEffect redirect yapacak)
+  if (!hasAccess(userRole, pathname)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-body">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+          <p className="text-sm text-zinc-500">Yönlendiriliyor...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-body">

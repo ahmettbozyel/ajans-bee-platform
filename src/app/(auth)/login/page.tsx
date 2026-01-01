@@ -37,13 +37,23 @@ export default function LoginPage() {
       })
 
       if (error) {
-        setError(error.message === 'Invalid login credentials' 
-          ? 'E-posta veya şifre hatalı' 
+        setError(error.message === 'Invalid login credentials'
+          ? 'E-posta veya şifre hatalı'
           : error.message)
         return
       }
 
-      router.push('/dashboard')
+      // Kullanıcının rolüne göre yönlendir
+      const { data: userData } = await supabase
+        .from('users')
+        .select('role')
+        .eq('email', email)
+        .single()
+
+      const role = (userData as { role: string } | null)?.role || 'personel'
+      const defaultRoute = role === 'admin' ? '/dashboard' : '/gunluk-isler'
+
+      router.push(defaultRoute)
       router.refresh()
     } catch {
       setError('Bir hata oluştu. Lütfen tekrar deneyin.')
