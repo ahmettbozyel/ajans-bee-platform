@@ -9,13 +9,16 @@ import {
   Flame
 } from 'lucide-react'
 import { Attendance } from '@/lib/auth-types'
-import { formatTime, formatShortDate, calculateDuration, formatMinutes, isHybridDay } from '../utils'
+import { HybridOverride, isHybridDayWithSettings } from '@/lib/use-company-settings'
+import { formatTime, formatShortDate, calculateDuration, formatMinutes } from '../utils'
 
 interface HistoryRowProps {
   record: Attendance
+  hybridDays: string[]
+  hybridOverrides: HybridOverride[]
 }
 
-export function HistoryRow({ record }: HistoryRowProps) {
+export function HistoryRow({ record, hybridDays, hybridOverrides }: HistoryRowProps) {
   const isLeave = record.record_type === 'leave'
   const isSick = record.record_type === 'sick'
   const isRemote = record.record_type === 'remote'
@@ -23,7 +26,7 @@ export function HistoryRow({ record }: HistoryRowProps) {
   const isSpecialRecord = isLeave || isSick || isRemote || isHoliday
   const hasLate = !isSpecialRecord && (record.late_minutes ?? 0) > 0
   const hasOvertime = !isSpecialRecord && (record.overtime_minutes ?? 0) > 0
-  const recordIsHybrid = isHybridDay(new Date(record.date))
+  const recordIsHybrid = isHybridDayWithSettings(new Date(record.date), hybridDays, hybridOverrides)
   const duration = record.check_in && record.check_out ? calculateDuration(record.check_in, record.check_out) : null
 
   let badgeStyle = { bg: 'rgba(16,185,129,0.2)', color: '#34d399', border: '1px solid rgba(16,185,129,0.3)' }

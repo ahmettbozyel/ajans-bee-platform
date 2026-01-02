@@ -1,35 +1,94 @@
 'use client'
 
-import { useState } from 'react'
-import { Settings, DollarSign, Users, Calendar, Clock, Sliders } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Settings, DollarSign, Users, Calendar, Clock, Sliders, User, Layers } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { ServiceProvidersTab } from './components/service-providers-tab'
 import { UsersTab } from './components/users-tab'
 import { HolidaysTab } from './components/holidays-tab'
 import { WorkCalendarTab } from './components/work-calendar-tab'
 import { TolerancesTab } from './components/tolerances-tab'
+import { ProfileTab } from './components/profile-tab'
+import { SectorsTab } from './components/sectors-tab'
 
-type TabType = 'providers' | 'users' | 'holidays' | 'calendar' | 'tolerances'
+type TabType = 'profile' | 'providers' | 'users' | 'holidays' | 'calendar' | 'tolerances' | 'sectors'
 
-const ALL_TABS = [
-  { id: 'providers' as TabType, label: 'Sağlayıcı Fiyatları', icon: DollarSign, adminOnly: false },
-  { id: 'users' as TabType, label: 'Kullanıcılar', icon: Users, adminOnly: true },
-  { id: 'holidays' as TabType, label: 'Resmi Tatiller', icon: Calendar, adminOnly: true },
-  { id: 'calendar' as TabType, label: 'Çalışma Takvimi', icon: Clock, adminOnly: true },
-  { id: 'tolerances' as TabType, label: 'Toleranslar', icon: Sliders, adminOnly: true },
+interface TabConfig {
+  id: TabType
+  label: string
+  icon: typeof Settings
+  roles: ('admin' | 'yonetici' | 'operasyon' | 'personel' | 'stajer')[]
+}
+
+// Rol bazlı sekme erişimi
+const ALL_TABS: TabConfig[] = [
+  {
+    id: 'profile',
+    label: 'Profil',
+    icon: User,
+    roles: ['admin', 'yonetici', 'operasyon', 'personel', 'stajer']
+  },
+  {
+    id: 'users',
+    label: 'Kullanıcılar',
+    icon: Users,
+    roles: ['admin', 'yonetici']
+  },
+  {
+    id: 'calendar',
+    label: 'Çalışma Takvimi',
+    icon: Clock,
+    roles: ['admin', 'yonetici']
+  },
+  {
+    id: 'tolerances',
+    label: 'Toleranslar',
+    icon: Sliders,
+    roles: ['admin', 'yonetici']
+  },
+  {
+    id: 'holidays',
+    label: 'Tatiller',
+    icon: Calendar,
+    roles: ['admin', 'yonetici']
+  },
+  {
+    id: 'providers',
+    label: 'Sağlayıcı Fiyatları',
+    icon: DollarSign,
+    roles: ['admin', 'yonetici', 'operasyon']
+  },
+  {
+    id: 'sectors',
+    label: 'Sektörler',
+    icon: Layers,
+    roles: ['admin', 'yonetici']
+  },
 ]
 
 export default function AyarlarPage() {
-  const { isAdmin, isYonetici, appUser } = useAuth()
-  const [activeTab, setActiveTab] = useState<TabType>('providers')
+  const { appUser } = useAuth()
+  const [activeTab, setActiveTab] = useState<TabType | null>(null)
 
-  // Admin veya Yönetici kontrolü
-  const canManage = isAdmin || isYonetici || appUser?.role === 'yonetici'
+  // Kullanıcının erişebildiği sekmeler
+  const visibleTabs = ALL_TABS.filter(tab =>
+    appUser?.role && tab.roles.includes(appUser.role)
+  )
 
-  // Görünecek tablar
-  const visibleTabs = canManage
-    ? ALL_TABS
-    : ALL_TABS.filter(tab => !tab.adminOnly)
+  // İlk yüklemede varsayılan sekmeyi ayarla
+  useEffect(() => {
+    if (visibleTabs.length > 0 && !activeTab) {
+      setActiveTab(visibleTabs[0].id)
+    }
+  }, [visibleTabs, activeTab])
+
+  if (!appUser || !activeTab) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -39,11 +98,9 @@ export default function AyarlarPage() {
           <Settings className="w-5 h-5 text-indigo-400" />
         </div>
         <div>
-          <h1 className="text-xl font-semibold text-white">
-            {canManage ? 'Ayarlar' : 'Sağlayıcı Fiyatları'}
-          </h1>
+          <h1 className="text-xl font-semibold text-white">Ayarlar</h1>
           <p className="text-sm text-zinc-500">
-            {canManage ? 'Sistem ayarlarını ve fiyatları yönetin' : 'Hosting, domain ve SSL fiyatlarını görüntüleyin'}
+            {visibleTabs.length > 1 ? 'Hesap ve sistem ayarlarını yönetin' : 'Hesap ayarlarınızı yönetin'}
           </p>
         </div>
       </div>
@@ -69,11 +126,13 @@ export default function AyarlarPage() {
       )}
 
       {/* Tab Content */}
+      {activeTab === 'profile' && <ProfileTab />}
+      {activeTab === 'users' && <UsersTab />}
+      {activeTab === 'calendar' && <WorkCalendarTab />}
+      {activeTab === 'tolerances' && <TolerancesTab />}
+      {activeTab === 'holidays' && <HolidaysTab />}
       {activeTab === 'providers' && <ServiceProvidersTab />}
-      {activeTab === 'users' && canManage && <UsersTab />}
-      {activeTab === 'holidays' && canManage && <HolidaysTab />}
-      {activeTab === 'calendar' && canManage && <WorkCalendarTab />}
-      {activeTab === 'tolerances' && canManage && <TolerancesTab />}
+      {activeTab === 'sectors' && <SectorsTab />}
     </div>
   )
 }

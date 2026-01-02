@@ -40,8 +40,8 @@ export async function updateSession(request: NextRequest) {
     '/customers',
     '/teknik-hizmetler',
     '/ayarlar',
-    '/gunluk-isler',
-    '/giris-cikis'
+    '/gorevler',
+    '/mesai'
   ]
   
   const isProtectedRoute = protectedPaths.some(path => 

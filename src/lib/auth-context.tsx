@@ -29,29 +29,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [appUser, setAppUser] = useState<AppUser | null>(null)
   const [loading, setLoading] = useState(true)
   const initialized = useRef(false)
-  
-  const supabase = useMemo(() => 
+
+  const supabase = useMemo(() =>
     createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    ), 
+    ),
   [])
 
   const fetchAppUser = useCallback(async (userId: string): Promise<AppUser | null> => {
     try {
-      console.log('[Auth] Fetching app user...')
-      
+      console.log('[Auth] Fetching app user for:', userId)
+
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single()
-      
+
       if (error) {
         console.error('[Auth] Users error:', error.message)
         return null
       }
-      
+
       console.log('[Auth] Got user:', data?.email)
       return data as AppUser
     } catch (err: any) {
@@ -73,48 +73,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (initialized.current) return
     initialized.current = true
 
-    const init = async () => {
-      console.log('[Auth] Init start')
-      
-      try {
-        // Get current user
-        const { data: { user }, error } = await supabase.auth.getUser()
-        
-        if (error || !user) {
-          console.log('[Auth] No user')
-          setLoading(false)
-          return
-        }
-        
-        console.log('[Auth] User:', user.email)
-        setAuthUser(user)
-        
-        // Fetch app user data
-        const appUserData = await fetchAppUser(user.id)
+    let isMounted = true
+    let initialLoadDone = false
+
+    const loadUser = async (user: User) => {
+      console.log('[Auth] Loading user:', user.email)
+      setAuthUser(user)
+
+      const appUserData = await fetchAppUser(user.id)
+
+      if (isMounted) {
         setAppUser(appUserData)
-        
+        setLoading(false)
         console.log('[Auth] Done')
-        setLoading(false)
-        
-      } catch (err: any) {
-        console.error('[Auth] Error:', err?.message)
-        setLoading(false)
       }
     }
 
-    // Listen only for sign out
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    // Listen for auth changes - INITIAL_SESSION is the key event
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('[Auth] Event:', event)
-      if (event === 'SIGNED_OUT') {
+
+      if (!isMounted) return
+
+      if (event === 'INITIAL_SESSION') {
+        // This fires when session is loaded from storage - the reliable event
+        initialLoadDone = true
+        if (session?.user) {
+          await loadUser(session.user)
+        } else {
+          console.log('[Auth] No session')
+          setLoading(false)
+        }
+      } else if (event === 'SIGNED_IN' && session?.user && initialLoadDone) {
+        // Only handle SIGNED_IN after initial load (for fresh logins)
+        await loadUser(session.user)
+      } else if (event === 'SIGNED_OUT') {
         setAuthUser(null)
         setAppUser(null)
         setLoading(false)
+      } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+        setAuthUser(session.user)
       }
     })
 
-    init()
+    console.log('[Auth] Init start')
 
-    return () => subscription.unsubscribe()
+    return () => {
+      isMounted = false
+      subscription.unsubscribe()
+    }
   }, [supabase, fetchAppUser])
 
   const signOut = useCallback(async () => {

@@ -31,7 +31,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import type { Customer, SocialMediaData, Competitor, SpecialEvent } from '@/lib/customer-types'
-import { SECTORS, BRAND_VOICES, BUSINESS_TYPES, PRICE_SEGMENTS, calculateBriefCompletion } from '@/lib/customer-types'
+import { BRAND_VOICES, BUSINESS_TYPES, PRICE_SEGMENTS, calculateBriefCompletion } from '@/lib/customer-types'
 
 // =====================================================
 // TYPES
@@ -46,6 +46,14 @@ interface BrandAsset {
   url: string
   category: 'logo' | 'brand-guide' | 'corporate-identity' | 'other'
   created_at: string
+}
+
+interface Sector {
+  id: string
+  name: string
+  slug: string
+  sort_order: number
+  is_active: boolean
 }
 
 interface CustomerViewModeProps {
@@ -88,9 +96,9 @@ function safeArray<T>(value: unknown): T[] {
 // HELPER FUNCTIONS
 // =====================================================
 
-function getSectorLabel(value: unknown): string {
+function getSectorLabel(value: unknown, sectors: Sector[]): string {
   const strValue = safeString(value)
-  return SECTORS.find(s => s.value === strValue)?.label || strValue
+  return sectors.find(s => s.slug === strValue)?.name || strValue
 }
 
 function getBrandVoiceLabel(value: unknown): string {
@@ -457,9 +465,26 @@ function CopyableText({ text, className }: CopyableTextProps) {
 export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: CustomerViewModeProps) {
   const supabase = createClient()
   const [assets, setAssets] = useState<BrandAsset[]>([])
+  const [sectors, setSectors] = useState<Sector[]>([])
   const [loadingAssets, setLoadingAssets] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [uploadCategory, setUploadCategory] = useState<string>('logo')
+
+  // Fetch sectors
+  useEffect(() => {
+    async function fetchSectors() {
+      const { data } = await (supabase as any)
+        .from('sectors')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+
+      if (data) {
+        setSectors(data)
+      }
+    }
+    fetchSectors()
+  }, [supabase])
 
   // Fetch brand assets
   useEffect(() => {
@@ -674,7 +699,7 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
                 <div className="flex flex-wrap items-center gap-2 mt-2">
                   {customer.sector && (
                     <Badge variant="secondary">
-                      {getSectorLabel(customer.sector)}
+                      {getSectorLabel(customer.sector, sectors)}
                       {customer.sub_sector && ` - ${safeString(customer.sub_sector)}`}
                     </Badge>
                   )}

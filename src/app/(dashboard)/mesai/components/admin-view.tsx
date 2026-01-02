@@ -8,11 +8,14 @@ import {
   Calendar,
   Users,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  AlertTriangle,
+  Home
 } from 'lucide-react'
 import { AppUser, Attendance } from '@/lib/auth-types'
+import { Holiday, HybridOverride, isHybridDayWithSettings } from '@/lib/use-company-settings'
+import { createClient } from '@/lib/supabase/client'
 import { AttendanceWithUser, MonthlyStats, WeeklyTrendItem, UserWithStats } from '../types'
-import { isHybridDay } from '../utils'
 import {
   TimeHeader,
   StatsCards,
@@ -40,6 +43,11 @@ interface AdminViewProps {
   goToPrevDay: () => void
   goToNextDay: () => void
   goToToday: () => void
+  todayHoliday?: Holiday | null
+  isTodayWorkDay?: boolean
+  hybridDays: string[]
+  hybridOverrides: HybridOverride[]
+  onRefetchSettings: () => Promise<void>
 }
 
 export function AdminView({
@@ -57,12 +65,46 @@ export function AdminView({
   onRefresh,
   goToPrevDay,
   goToNextDay,
-  goToToday
+  goToToday,
+  todayHoliday,
+  isTodayWorkDay = true,
+  hybridDays,
+  hybridOverrides,
+  onRefetchSettings
 }: AdminViewProps) {
   const [showManualModal, setShowManualModal] = useState(false)
+  const [hybridLoading, setHybridLoading] = useState(false)
+  const supabase = createClient()
 
   const isToday = selectedDate === new Date().toISOString().split('T')[0]
-  const todayIsHybrid = isHybridDay(new Date(selectedDate))
+  const todayIsHybrid = isHybridDayWithSettings(new Date(selectedDate), hybridDays, hybridOverrides)
+
+  // Check if current date has an override
+  const currentOverride = hybridOverrides.find(o => o.date === selectedDate)
+
+  // Toggle hybrid for selected date
+  const toggleHybridOverride = async () => {
+    setHybridLoading(true)
+    try {
+      if (currentOverride) {
+        // Remove override
+        await (supabase as any).from('hybrid_overrides').delete().eq('id', currentOverride.id)
+      } else {
+        // Add override (opposite of default)
+        const defaultIsHybrid = isHybridDayWithSettings(new Date(selectedDate), hybridDays, [])
+        await (supabase as any).from('hybrid_overrides').insert({
+          date: selectedDate,
+          is_hybrid: !defaultIsHybrid,
+          note: !defaultIsHybrid ? 'Manuel olarak hibrit yapıldı' : 'Manuel olarak ofis günü yapıldı'
+        })
+      }
+      await onRefetchSettings()
+    } catch (error) {
+      console.error('Hybrid override error:', error)
+    } finally {
+      setHybridLoading(false)
+    }
+  }
   const selectedDateObj = new Date(selectedDate)
   const dayName = selectedDateObj.toLocaleDateString('tr-TR', { weekday: 'long' })
   const formattedDate = selectedDateObj.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -100,7 +142,7 @@ export function AdminView({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Giriş / Çıkış Takibi</h2>
+          <h2 className="text-2xl font-bold text-white">Mesai Takibi</h2>
           <p className="text-sm text-zinc-500 mt-1">Personel mesai takibi ve analizler</p>
         </div>
         <button
@@ -135,6 +177,33 @@ export function AdminView({
               />
             </div>
             <button
+              onClick={toggleHybridOverride}
+              disabled={hybridLoading}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium shadow-lg transition-all ${
+                todayIsHybrid
+                  ? 'text-violet-300'
+                  : 'text-zinc-300'
+              }`}
+              style={{
+                background: todayIsHybrid
+                  ? 'linear-gradient(90deg, rgba(139,92,246,0.3) 0%, rgba(124,58,237,0.3) 100%)'
+                  : 'rgba(255,255,255,0.05)',
+                border: todayIsHybrid
+                  ? '1px solid rgba(139,92,246,0.5)'
+                  : '1px solid rgba(255,255,255,0.1)',
+                boxShadow: todayIsHybrid ? '0 5px 15px -5px rgba(139,92,246,0.4)' : 'none'
+              }}
+              title={currentOverride ? 'Override aktif - tıklayarak kaldır' : 'Bu günü hibrit/ofis yap'}
+            >
+              {hybridLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Home className="w-4 h-4" />
+              )}
+              {todayIsHybrid ? 'Hibrit' : 'Ofis'}
+              {currentOverride && <span className="text-xs opacity-70">(özel)</span>}
+            </button>
+            <button
               onClick={() => setShowManualModal(true)}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-medium shadow-lg transition-all"
               style={{ background: 'linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%)', boxShadow: '0 10px 25px -5px rgba(99,102,241,0.4)' }}
@@ -144,6 +213,23 @@ export function AdminView({
           </div>
         </div>
       </div>
+
+      {/* Tatil veya Çalışma Dışı Gün Uyarısı */}
+      {(todayHoliday || !isTodayWorkDay) && (
+        <div className="glass-card rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-amber-500/20">
+            <AlertTriangle className="w-5 h-5 text-amber-400" />
+          </div>
+          <div>
+            <p className="text-amber-400 font-medium">
+              {todayHoliday ? `Bugün Resmi Tatil: ${todayHoliday.name}` : 'Bugün çalışma günü değil'}
+            </p>
+            <p className="text-xs text-amber-400/70">
+              {todayHoliday ? 'Tatil günlerinde giriş/çıkış kaydı opsiyoneldir.' : 'Hafta sonu veya tanımlı çalışma günü dışında.'}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <StatsCards
@@ -187,7 +273,13 @@ export function AdminView({
                 <AttendanceRow key={record.id} record={record} isHybridDay={todayIsHybrid} />
               ))}
               {usersWithoutCheckIn.map((user) => (
-                <EmptyAttendanceRow key={user.id} userName={user.full_name || 'Bilinmeyen'} userInitial={user.full_name?.charAt(0) || '?'} />
+                <EmptyAttendanceRow
+                  key={user.id}
+                  userName={user.full_name || 'Bilinmeyen'}
+                  userInitial={user.full_name?.charAt(0) || '?'}
+                  isHoliday={!!todayHoliday}
+                  isWeekend={!isTodayWorkDay}
+                />
               ))}
               {todayRecords.length === 0 && usersWithoutCheckIn.length === 0 && (
                 <div className="p-8 text-center text-zinc-500">Kayıt bulunamadı</div>

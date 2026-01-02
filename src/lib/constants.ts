@@ -1,19 +1,3 @@
-// Sektör seçenekleri
-export const SECTORS = [
-  { value: 'gida', label: 'Gıda' },
-  { value: 'mobilya', label: 'Mobilya' },
-  { value: 'tekstil', label: 'Tekstil' },
-  { value: 'uretim', label: 'Üretim' },
-  { value: 'teknoloji', label: 'Teknoloji' },
-  { value: 'saglik', label: 'Sağlık' },
-  { value: 'egitim', label: 'Eğitim' },
-  { value: 'turizm', label: 'Turizm' },
-  { value: 'insaat', label: 'İnşaat' },
-  { value: 'otomotiv', label: 'Otomotiv' },
-  { value: 'eticaret', label: 'E-ticaret' },
-  { value: 'diger', label: 'Diğer' },
-] as const
-
 // Marka sesi seçenekleri
 export const BRAND_VOICES = [
   { 
@@ -54,12 +38,6 @@ export const CONTENT_TYPES = [
   { value: 'reel', label: 'Reel' },
   { value: 'carousel', label: 'Carousel' },
 ] as const
-
-// Sector label helper
-export function getSectorLabel(value: string): string {
-  const sector = SECTORS.find(s => s.value === value)
-  return sector?.label || value
-}
 
 // Brand voice label helper
 export function getBrandVoiceLabel(value: string): string {

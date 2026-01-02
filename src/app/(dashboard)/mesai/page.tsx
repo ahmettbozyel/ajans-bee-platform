@@ -1,19 +1,24 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Loader2, AlertTriangle } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase/client'
 import { Attendance, AppUser } from '@/lib/auth-types'
 import { notifyAdmins } from '@/lib/notifications'
+import {
+  useCompanySettings,
+  isHoliday,
+  isWorkDay,
+  isHybridDayWithSettings,
+  calculateLateMinutesWithSettings,
+  calculateOvertimeMinutesWithSettings,
+  calculateEarlyLeaveMinutesWithSettings
+} from '@/lib/use-company-settings'
 import * as XLSX from 'xlsx'
 
 import { AttendanceWithUser, MonthlyStats, WeeklyTrendItem, PendingCheckIn, PendingCheckOut } from './types'
 import {
-  calculateLateMinutes,
-  calculateOvertimeMinutes,
-  calculateEarlyLeaveMinutes,
-  isHybridDay,
   getLocationType,
   getLocation
 } from './utils'
@@ -21,6 +26,7 @@ import { AdminView, StaffView } from './components'
 
 export default function GirisCikisPage() {
   const { appUser, isAdmin, isYonetici, isStajer } = useAuth()
+  const { workDays, workHours, tolerances, holidays, hybridDays, hybridOverrides, loading: settingsLoading, refetch: refetchSettings } = useCompanySettings()
   const [todayRecords, setTodayRecords] = useState<AttendanceWithUser[]>([])
   const [myHistory, setMyHistory] = useState<Attendance[]>([])
   const [allMonthlyRecords, setAllMonthlyRecords] = useState<Attendance[]>([])
@@ -44,6 +50,11 @@ export default function GirisCikisPage() {
   const [weeklyTrend, setWeeklyTrend] = useState<WeeklyTrendItem[]>([])
 
   const supabase = createClient()
+
+  // Check if today is a holiday or not a work day
+  const todayDate = new Date()
+  const todayHoliday = isHoliday(todayDate, holidays)
+  const isTodayWorkDay = isWorkDay(todayDate, workDays)
 
   // Clock timer
   useEffect(() => {
@@ -102,7 +113,7 @@ export default function GirisCikisPage() {
         }
       } else {
         // Staff view (personel, stajer, operasyon)
-        const { data: todayData } = await supabase.from('attendance').select('*').eq('user_id', appUser.id).eq('date', selectedDate).single()
+        const { data: todayData } = await supabase.from('attendance').select('*').eq('user_id', appUser.id).eq('date', selectedDate).maybeSingle()
         setTodayRecords(todayData ? [todayData as Attendance] : [])
 
         const thirtyDaysAgo = new Date()
@@ -133,58 +144,169 @@ export default function GirisCikisPage() {
     finally { setLoading(false) }
   }
 
+  // Helper function to check if a date is a holiday
+  const checkIsHoliday = (date: Date): string | null => {
+    const holiday = isHoliday(date, holidays)
+    return holiday ? holiday.name : null
+  }
+
+  // Helper function to check if a date is a work day
+  const checkIsWorkDay = (date: Date): boolean => {
+    return isWorkDay(date, workDays)
+  }
+
   // Excel export handler
   const handleExportExcel = async () => {
-    if (!isAdmin) return
+    if (!isAdmin && !isYonetici) return
     setExportLoading(true)
     try {
       const [year, month] = selectedMonth.split('-').map(Number)
       const startDate = `${year}-${String(month).padStart(2, '0')}-01`
-      const endDate = new Date(year, month, 0).toISOString().split('T')[0]
-      const { data: records, error } = await supabase.from('attendance').select('*, user:users(full_name, email, role)').gte('date', startDate).lte('date', endDate).order('date', { ascending: true }).order('user_id', { ascending: true })
-      if (error) throw error
+      const daysInMonth = new Date(year, month, 0).getDate()
+      const endDate = `${year}-${String(month).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`
 
-      const filteredRecords = (records as any[])?.filter(r => r.user?.role !== 'admin' && r.user?.role !== 'yonetici') || []
-      if (filteredRecords.length === 0) { alert('Bu ay için kayıt bulunamadı.'); setExportLoading(false); return }
+      // Fetch records and users
+      const [recordsRes, usersRes] = await Promise.all([
+        supabase.from('attendance').select('*, user:users(full_name, email, role)').gte('date', startDate).lte('date', endDate).order('date', { ascending: true }),
+        supabase.from('users').select('*').eq('is_active', true).neq('role', 'admin').neq('role', 'yonetici').order('full_name')
+      ])
 
-      const mainData = filteredRecords.map((record: any) => {
-        const date = new Date(record.date)
-        const dayName = date.toLocaleDateString('tr-TR', { weekday: 'long' })
-        const formattedDate = date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
-        const checkIn = record.check_in ? new Date(record.check_in).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '-'
-        const checkOut = record.check_out ? new Date(record.check_out).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '-'
-        let duration = '-'
-        if (record.check_in && record.check_out) {
-          const diff = new Date(record.check_out).getTime() - new Date(record.check_in).getTime()
-          duration = `${Math.floor(diff / 3600000)}s ${Math.floor((diff % 3600000) / 60000)}d`
+      if (recordsRes.error) throw recordsRes.error
+      const records = (recordsRes.data as any[])?.filter(r => r.user?.role !== 'admin' && r.user?.role !== 'yonetici') || []
+      const allUsers = (usersRes.data as AppUser[]) || []
+
+      // Create a map of records by date and user
+      const recordMap: { [key: string]: any } = {}
+      records.forEach(r => {
+        recordMap[`${r.date}_${r.user_id}`] = r
+      })
+
+      // Generate all days in the month
+      const allDays: Date[] = []
+      for (let d = 1; d <= daysInMonth; d++) {
+        allDays.push(new Date(year, month - 1, d))
+      }
+
+      // Generate main data - include all users for all work days + holidays
+      const mainData: any[] = []
+
+      allUsers.forEach(user => {
+        allDays.forEach(date => {
+          const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+          const record = recordMap[`${dateStr}_${user.id}`]
+          const holidayName = checkIsHoliday(date)
+          const isWorkDayDate = checkIsWorkDay(date)
+          const dayName = date.toLocaleDateString('tr-TR', { weekday: 'long' })
+          const formattedDate = date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
+
+          // Skip future dates
+          if (date > new Date()) return
+
+          if (record) {
+            // User has a record for this day
+            const checkIn = record.check_in ? new Date(record.check_in).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '-'
+            const checkOut = record.check_out ? new Date(record.check_out).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '-'
+            let duration = '-'
+            if (record.check_in && record.check_out) {
+              const diff = new Date(record.check_out).getTime() - new Date(record.check_in).getTime()
+              duration = `${Math.floor(diff / 3600000)}s ${Math.floor((diff % 3600000) / 60000)}d`
+            }
+            const locationType = record.check_in_location_type === 'office' ? 'Ofis' : record.check_in_location_type === 'home' ? 'Evden' : record.check_in_location_type === 'other' ? 'Dışarı' : '-'
+            const recordTypeLabels: Record<string, string> = { normal: 'Normal', leave: 'İzin', sick: 'Rapor', remote: 'Evden Çalışma', holiday: 'Tatil' }
+            let status = record.record_type && record.record_type !== 'normal' ? recordTypeLabels[record.record_type] || '-' : record.status === 'late' ? 'Geç' : record.status === 'early_leave' ? 'Erken Çıkış' : record.status === 'normal' ? 'Normal' : '-'
+
+            // If it's a holiday, append holiday info
+            if (holidayName && record.record_type === 'normal') {
+              status = `${status} (Tatil: ${holidayName})`
+            }
+
+            mainData.push({
+              'Personel': user.full_name || '-',
+              'Tarih': formattedDate,
+              'Gün': dayName,
+              'Tatil': holidayName || (isWorkDayDate ? '' : 'Hafta Sonu'),
+              'Giriş': checkIn,
+              'Çıkış': checkOut,
+              'Geç (dk)': record.late_minutes || 0,
+              'Mesai (dk)': record.overtime_minutes || 0,
+              'Erken Çıkış (dk)': record.early_leave_minutes || 0,
+              'Toplam Süre': duration,
+              'Konum': locationType,
+              'Durum': status,
+              'Geç Sebebi': record.late_reason || '',
+              'Mesai Sebebi': record.overtime_reason || '',
+              'Admin Notu': record.admin_notes || ''
+            })
+          } else {
+            // No record - check if it's a holiday or weekend
+            const isHolidayOrWeekend = holidayName || !isWorkDayDate
+
+            mainData.push({
+              'Personel': user.full_name || '-',
+              'Tarih': formattedDate,
+              'Gün': dayName,
+              'Tatil': holidayName || (isWorkDayDate ? '' : 'Hafta Sonu'),
+              'Giriş': '-',
+              'Çıkış': '-',
+              'Geç (dk)': 0,
+              'Mesai (dk)': 0,
+              'Erken Çıkış (dk)': 0,
+              'Toplam Süre': '-',
+              'Konum': '-',
+              'Durum': isHolidayOrWeekend ? 'Tatil' : 'Gelmedi',
+              'Geç Sebebi': '',
+              'Mesai Sebebi': '',
+              'Admin Notu': ''
+            })
+          }
+        })
+      })
+
+      // Summary calculation
+      const summary: { [key: string]: { late: number; overtime: number; earlyLeave: number; workDays: number; leave: number; sick: number; remote: number; holiday: number; absent: number } } = {}
+
+      allUsers.forEach(user => {
+        summary[user.full_name || 'Bilinmeyen'] = { late: 0, overtime: 0, earlyLeave: 0, workDays: 0, leave: 0, sick: 0, remote: 0, holiday: 0, absent: 0 }
+      })
+
+      mainData.forEach((row: any) => {
+        const name = row['Personel']
+        if (!summary[name]) return
+
+        if (row['Durum'] === 'Tatil' || row['Tatil']) {
+          summary[name].holiday += 1
+        } else if (row['Durum'] === 'Gelmedi') {
+          summary[name].absent += 1
+        } else {
+          summary[name].workDays += 1
+          summary[name].late += row['Geç (dk)'] || 0
+          summary[name].overtime += row['Mesai (dk)'] || 0
+          summary[name].earlyLeave += row['Erken Çıkış (dk)'] || 0
+          if (row['Durum']?.includes('İzin')) summary[name].leave += 1
+          if (row['Durum']?.includes('Rapor')) summary[name].sick += 1
+          if (row['Durum']?.includes('Evden')) summary[name].remote += 1
         }
-        const locationType = record.check_in_location_type === 'office' ? 'Ofis' : record.check_in_location_type === 'home' ? 'Evden' : record.check_in_location_type === 'other' ? 'Dışarı' : '-'
-        const recordTypeLabels: Record<string, string> = { normal: 'Normal', leave: 'İzin', sick: 'Rapor', remote: 'Evden Çalışma', holiday: 'Tatil' }
-        const status = record.record_type && record.record_type !== 'normal' ? recordTypeLabels[record.record_type] || '-' : record.status === 'late' ? 'Geç' : record.status === 'early_leave' ? 'Erken Çıkış' : record.status === 'normal' ? 'Normal' : '-'
-        return { 'Personel': record.user?.full_name || '-', 'Tarih': formattedDate, 'Gün': dayName, 'Giriş': checkIn, 'Çıkış': checkOut, 'Geç (dk)': record.late_minutes || 0, 'Mesai (dk)': record.overtime_minutes || 0, 'Erken Çıkış (dk)': record.early_leave_minutes || 0, 'Toplam Süre': duration, 'Konum': locationType, 'Durum': status, 'Geç Sebebi': record.late_reason || '', 'Mesai Sebebi': record.overtime_reason || '', 'Admin Notu': record.admin_notes || '' }
       })
 
-      const summary: { [key: string]: { late: number; overtime: number; earlyLeave: number; days: number; leave: number; sick: number; remote: number } } = {}
-      filteredRecords.forEach((record: any) => {
-        const name = record.user?.full_name || 'Bilinmeyen'
-        if (!summary[name]) summary[name] = { late: 0, overtime: 0, earlyLeave: 0, days: 0, leave: 0, sick: 0, remote: 0 }
-        summary[name].late += record.late_minutes || 0
-        summary[name].overtime += record.overtime_minutes || 0
-        summary[name].earlyLeave += record.early_leave_minutes || 0
-        summary[name].days += 1
-        if (record.record_type === 'leave') summary[name].leave += 1
-        if (record.record_type === 'sick') summary[name].sick += 1
-        if (record.record_type === 'remote') summary[name].remote += 1
-      })
-
-      const summaryData = Object.entries(summary).map(([name, data]) => ({ 'Personel': name, 'Toplam Gün': data.days, 'İzin Günü': data.leave, 'Rapor Günü': data.sick, 'Evden Çalışma': data.remote, 'Toplam Geç (dk)': data.late, 'Toplam Mesai (dk)': data.overtime, 'Toplam Erken Çıkış (dk)': data.earlyLeave }))
+      const summaryData = Object.entries(summary).map(([name, data]) => ({
+        'Personel': name,
+        'Çalışma Günü': data.workDays,
+        'Tatil Günü': data.holiday,
+        'Gelmedi': data.absent,
+        'İzin Günü': data.leave,
+        'Rapor Günü': data.sick,
+        'Evden Çalışma': data.remote,
+        'Toplam Geç (dk)': data.late,
+        'Toplam Mesai (dk)': data.overtime,
+        'Toplam Erken Çıkış (dk)': data.earlyLeave
+      }))
 
       const wb = XLSX.utils.book_new()
       const wsMain = XLSX.utils.json_to_sheet(mainData)
-      wsMain['!cols'] = [{ wch: 20 }, { wch: 18 }, { wch: 12 }, { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 15 }, { wch: 30 }, { wch: 30 }, { wch: 30 }]
+      wsMain['!cols'] = [{ wch: 20 }, { wch: 18 }, { wch: 12 }, { wch: 15 }, { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 20 }, { wch: 30 }, { wch: 30 }, { wch: 30 }]
       XLSX.utils.book_append_sheet(wb, wsMain, 'Detay')
       const wsSummary = XLSX.utils.json_to_sheet(summaryData)
-      wsSummary['!cols'] = [{ wch: 20 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }]
+      wsSummary['!cols'] = [{ wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }]
       XLSX.utils.book_append_sheet(wb, wsSummary, 'Özet')
 
       const monthNames = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık']
@@ -205,8 +327,8 @@ export default function GirisCikisPage() {
       const now = new Date()
       // Stajer için konum kontrolü yok
       const location = isStajer ? null : await getLocation()
-      // Stajer için geç kalma kontrolü yok
-      const lateMinutes = isStajer ? 0 : calculateLateMinutes(now)
+      // Stajer, tatil günü veya çalışma dışı günlerde geç kalma hesaplanmaz
+      const lateMinutes = (isStajer || todayHoliday || !isTodayWorkDay) ? 0 : calculateLateMinutesWithSettings(now, workHours, tolerances)
       if (lateMinutes > 0) { setPendingCheckIn({ now, location, lateMinutes }); setShowLateModal(true); setActionLoading(false); return }
       await saveCheckIn(now, location, 0, '')
     } catch (error) { console.error('Check-in error:', error); setActionLoading(false) }
@@ -214,7 +336,7 @@ export default function GirisCikisPage() {
 
   const saveCheckIn = async (now: Date, location: { lat: number; lng: number } | null, lateMinutes: number, reason: string) => {
     const today = now.toISOString().split('T')[0]
-    const todayIsHybrid = isHybridDay(now)
+    const todayIsHybrid = isHybridDayWithSettings(now, hybridDays, hybridOverrides)
     let locationType: 'office' | 'home' | 'other' | 'unknown'
     if (location) {
       const isInOffice = getLocationType(location.lat, location.lng) === 'office'
@@ -241,16 +363,16 @@ export default function GirisCikisPage() {
       const now = new Date()
       // Stajer için konum kontrolü yok
       const location = isStajer ? null : await getLocation()
-      // Stajer için mesai var (overtime calculation stays)
-      const overtimeMinutes = calculateOvertimeMinutes(now)
-      const earlyLeaveMinutes = calculateEarlyLeaveMinutes(now)
+      // Tatil veya çalışma dışı günlerde mesai/erken çıkış hesaplanmaz
+      const overtimeMinutes = (todayHoliday || !isTodayWorkDay) ? 0 : calculateOvertimeMinutesWithSettings(now, workHours)
+      const earlyLeaveMinutes = (todayHoliday || !isTodayWorkDay) ? 0 : calculateEarlyLeaveMinutesWithSettings(now, workHours, tolerances)
       if (overtimeMinutes > 0) { setPendingCheckOut({ now, location, overtimeMinutes, earlyLeaveMinutes }); setShowOvertimeModal(true); setActionLoading(false); return }
       await saveCheckOut(now, location, 0, earlyLeaveMinutes, '')
     } catch (error) { console.error('Check-out error:', error); setActionLoading(false) }
   }
 
   const saveCheckOut = async (now: Date, location: { lat: number; lng: number } | null, overtimeMinutes: number, earlyLeaveMinutes: number, reason: string) => {
-    const todayIsHybrid = isHybridDay(now)
+    const todayIsHybrid = isHybridDayWithSettings(now, hybridDays, hybridOverrides)
     let locationType: 'office' | 'home' | 'other' | 'unknown'
     if (location) {
       const isInOffice = getLocationType(location.lat, location.lng) === 'office'
@@ -278,7 +400,7 @@ export default function GirisCikisPage() {
   const goToToday = () => setSelectedDate(new Date().toISOString().split('T')[0])
 
   // Loading state
-  if (loading) {
+  if (loading || settingsLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
@@ -305,43 +427,72 @@ export default function GirisCikisPage() {
         goToPrevDay={goToPrevDay}
         goToNextDay={goToNextDay}
         goToToday={goToToday}
+        todayHoliday={todayHoliday}
+        isTodayWorkDay={isTodayWorkDay}
+        hybridDays={hybridDays}
+        hybridOverrides={hybridOverrides}
+        onRefetchSettings={refetchSettings}
       />
     )
   }
 
   return (
-    <StaffView
-      currentTime={currentTime}
-      selectedDate={selectedDate}
-      myRecord={myRecord}
-      myHistory={myHistory}
-      users={users}
-      monthlyStats={monthlyStats}
-      actionLoading={actionLoading}
-      hasCheckedIn={hasCheckedIn}
-      hasCheckedOut={hasCheckedOut}
-      showLateModal={showLateModal}
-      setShowLateModal={setShowLateModal}
-      lateReason={lateReason}
-      setLateReason={setLateReason}
-      pendingCheckIn={pendingCheckIn}
-      setPendingCheckIn={setPendingCheckIn}
-      showOvertimeModal={showOvertimeModal}
-      setShowOvertimeModal={setShowOvertimeModal}
-      overtimeReason={overtimeReason}
-      setOvertimeReason={setOvertimeReason}
-      pendingCheckOut={pendingCheckOut}
-      setPendingCheckOut={setPendingCheckOut}
-      onCheckIn={handleCheckIn}
-      onCheckOut={handleCheckOut}
-      onSaveLateCheckIn={() => {
-        if (!lateReason.trim() || !pendingCheckIn) return
-        saveCheckIn(pendingCheckIn.now, pendingCheckIn.location, pendingCheckIn.lateMinutes, lateReason.trim())
-      }}
-      onSaveOvertimeCheckOut={() => {
-        if (!overtimeReason.trim() || !pendingCheckOut) return
-        saveCheckOut(pendingCheckOut.now, pendingCheckOut.location, pendingCheckOut.overtimeMinutes, pendingCheckOut.earlyLeaveMinutes, overtimeReason.trim())
-      }}
-    />
+    <div className="space-y-4">
+      {/* Tatil veya Çalışma Dışı Gün Uyarısı */}
+      {(todayHoliday || !isTodayWorkDay) && (
+        <div className="glass-card rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-amber-500/20">
+            <AlertTriangle className="w-5 h-5 text-amber-400" />
+          </div>
+          <div>
+            <p className="text-amber-400 font-medium">
+              {todayHoliday ? `Bugün Resmi Tatil: ${todayHoliday.name}` : 'Bugün çalışma günü değil'}
+            </p>
+            <p className="text-xs text-amber-400/70">
+              {todayHoliday ? 'Tatil günlerinde giriş/çıkış kaydı opsiyoneldir.' : 'Hafta sonu veya tanımlı çalışma günü dışında.'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      <StaffView
+        currentTime={currentTime}
+        selectedDate={selectedDate}
+        myRecord={myRecord}
+        myHistory={myHistory}
+        users={users}
+        monthlyStats={monthlyStats}
+        actionLoading={actionLoading}
+        hasCheckedIn={hasCheckedIn}
+        hasCheckedOut={hasCheckedOut}
+        showLateModal={showLateModal}
+        setShowLateModal={setShowLateModal}
+        lateReason={lateReason}
+        setLateReason={setLateReason}
+        pendingCheckIn={pendingCheckIn}
+        setPendingCheckIn={setPendingCheckIn}
+        showOvertimeModal={showOvertimeModal}
+        setShowOvertimeModal={setShowOvertimeModal}
+        overtimeReason={overtimeReason}
+        setOvertimeReason={setOvertimeReason}
+        pendingCheckOut={pendingCheckOut}
+        setPendingCheckOut={setPendingCheckOut}
+        onCheckIn={handleCheckIn}
+        onCheckOut={handleCheckOut}
+        onSaveLateCheckIn={() => {
+          if (!lateReason.trim() || !pendingCheckIn) return
+          saveCheckIn(pendingCheckIn.now, pendingCheckIn.location, pendingCheckIn.lateMinutes, lateReason.trim())
+        }}
+        onSaveOvertimeCheckOut={() => {
+          if (!overtimeReason.trim() || !pendingCheckOut) return
+          saveCheckOut(pendingCheckOut.now, pendingCheckOut.location, pendingCheckOut.overtimeMinutes, pendingCheckOut.earlyLeaveMinutes, overtimeReason.trim())
+        }}
+        workHours={workHours}
+        tolerances={tolerances}
+        hybridDays={hybridDays}
+        hybridOverrides={hybridOverrides}
+        isHoliday={!!todayHoliday}
+      />
+    </div>
   )
 }

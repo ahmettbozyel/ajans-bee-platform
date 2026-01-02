@@ -1,4 +1,4 @@
-import { OFFICE_LOCATION, WORK_HOURS, HYBRID_DAYS } from './constants'
+import { OFFICE_LOCATION, WORK_HOURS } from './constants'
 
 // Distance calculation using Haversine formula
 export function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -37,11 +37,6 @@ export function calculateEarlyLeaveMinutes(checkOutTime: Date): number {
   const workEnd = new Date(checkOutTime)
   workEnd.setHours(endHour, endMinute, 0, 0)
   return Math.max(0, Math.floor((workEnd.getTime() - checkOutTime.getTime()) / 60000))
-}
-
-// Check if date is a hybrid day (Tuesday or Thursday)
-export function isHybridDay(date: Date = new Date()): boolean {
-  return HYBRID_DAYS.includes(date.getDay())
 }
 
 // Format time from ISO string

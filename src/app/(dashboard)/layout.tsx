@@ -22,6 +22,7 @@ import {
   FolderOpen,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { BeeBotChat } from '@/components/BeeBot'
 
 // ==========================================
 // AJANS BEE LOGO SVG
@@ -47,10 +48,10 @@ const navTabs = [
 // Erişim kontrolü
 const ALLOWED_PAGES: Record<string, string[]> = {
   admin: ['*'],
-  yonetici: ['/gunluk-isler', '/giris-cikis', '/teknik-hizmetler', '/ayarlar'],
-  operasyon: ['/gunluk-isler', '/giris-cikis', '/teknik-hizmetler'],
-  personel: ['/gunluk-isler', '/giris-cikis'],
-  stajer: ['/gunluk-isler', '/giris-cikis']
+  yonetici: ['/dashboard', '/gorevler', '/mesai', '/teknik-hizmetler', '/ayarlar'],
+  operasyon: ['/dashboard', '/gorevler', '/mesai', '/teknik-hizmetler', '/ayarlar'],
+  personel: ['/dashboard', '/gorevler', '/mesai', '/ayarlar'],
+  stajer: ['/dashboard', '/gorevler', '/mesai', '/ayarlar']
 }
 
 // ==========================================
@@ -112,18 +113,18 @@ function Sidebar({
       )}
       
       {/* Sidebar */}
-      <aside 
+      <aside
         className={`
           fixed top-0 left-0 z-50 h-screen w-64 bg-sidebar border-r border-white/5
           transform transition-transform duration-300 ease-in-out
-          lg:translate-x-0 lg:top-12
+          lg:translate-x-0 lg:top-12 lg:h-[calc(100vh-48px)]
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
       >
         <div className="flex flex-col h-full">
           
           {/* Logo Section */}
-          <div className="p-5 section-divider">
+          <div className="p-5 border-b border-white/5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative">
@@ -195,7 +196,14 @@ function Sidebar({
             {/* Yönetici Menü */}
             {isYonetici && (
               <>
-                <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 text-zinc-500">Araçlar</p>
+                <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 text-zinc-500">Ana Menü</p>
+
+                <Link href="/dashboard" className={`menu-item ${isActive('/dashboard') ? 'menu-active text-white' : 'text-zinc-400'}`}>
+                  <LayoutDashboard className={`w-5 h-5 ${isActive('/dashboard') ? 'text-indigo-400' : ''}`} />
+                  <span className="text-sm font-medium">Dashboard</span>
+                </Link>
+
+                <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 mt-5 text-zinc-500">Araçlar</p>
 
                 <Link href="/teknik-hizmetler" className={`menu-item ${isActive('/teknik-hizmetler') ? 'menu-active text-white' : 'text-zinc-400'}`}>
                   <Server className="w-5 h-5" />
@@ -210,7 +218,14 @@ function Sidebar({
             {/* Operasyon Menü */}
             {isOperasyon && (
               <>
-                <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 text-zinc-500">Araçlar</p>
+                <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 text-zinc-500">Ana Menü</p>
+
+                <Link href="/dashboard" className={`menu-item ${isActive('/dashboard') ? 'menu-active text-white' : 'text-zinc-400'}`}>
+                  <LayoutDashboard className={`w-5 h-5 ${isActive('/dashboard') ? 'text-indigo-400' : ''}`} />
+                  <span className="text-sm font-medium">Dashboard</span>
+                </Link>
+
+                <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 mt-5 text-zinc-500">Araçlar</p>
 
                 <Link href="/teknik-hizmetler" className={`menu-item ${isActive('/teknik-hizmetler') ? 'menu-active text-white' : 'text-zinc-400'}`}>
                   <Server className="w-5 h-5" />
@@ -222,34 +237,44 @@ function Sidebar({
               </>
             )}
 
-            {/* Personel Menü (herkes için) */}
-            <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 mt-5 text-zinc-500">Personel</p>
-            
-            <Link href="/gunluk-isler" className={`menu-item ${isActive('/gunluk-isler') ? 'menu-active text-white' : 'text-zinc-400'}`}>
-              <ClipboardList className="w-5 h-5" />
-              <span className="text-sm font-medium">Günlük İşler</span>
-            </Link>
-
-            <Link href="/giris-cikis" className={`menu-item ${isActive('/giris-cikis') ? 'menu-active text-white' : 'text-zinc-400'}`}>
-              <Clock className="w-5 h-5" />
-              <span className="text-sm font-medium">Giriş/Çıkış</span>
-            </Link>
-
-            {/* Admin/Yönetici Sistem Menüsü */}
-            {(isAdmin || isYonetici) && (
+            {/* Personel/Stajyer Menü */}
+            {!isAdmin && !isOperasyon && !isYonetici && (
               <>
-                <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 mt-5 text-zinc-500">Sistem</p>
+                <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 text-zinc-500">Ana Menü</p>
 
-                <Link href="/ayarlar" className={`menu-item ${isActive('/ayarlar') ? 'menu-active text-white' : 'text-zinc-400'}`}>
-                  <Settings className="w-5 h-5" />
-                  <span className="text-sm font-medium">Ayarlar</span>
+                <Link href="/dashboard" className={`menu-item ${isActive('/dashboard') ? 'menu-active text-white' : 'text-zinc-400'}`}>
+                  <LayoutDashboard className={`w-5 h-5 ${isActive('/dashboard') ? 'text-indigo-400' : ''}`} />
+                  <span className="text-sm font-medium">Dashboard</span>
                 </Link>
               </>
             )}
+
+            {/* Personel Menü (herkes için) */}
+            <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 mt-5 text-zinc-500">Personel</p>
+
+            <Link href="/gorevler" className={`menu-item ${isActive('/gorevler') ? 'menu-active text-white' : 'text-zinc-400'}`}>
+              <ClipboardList className="w-5 h-5" />
+              <span className="text-sm font-medium">Görevler</span>
+            </Link>
+
+            <Link href="/mesai" className={`menu-item ${isActive('/mesai') ? 'menu-active text-white' : 'text-zinc-400'}`}>
+              <Clock className="w-5 h-5" />
+              <span className="text-sm font-medium">Mesai</span>
+            </Link>
+
+            {/* Ayarlar - Herkes görebilir (Profil için) */}
+            <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 mt-5 text-zinc-500">
+              {(isAdmin || isYonetici) ? 'Sistem' : 'Hesap'}
+            </p>
+
+            <Link href="/ayarlar" className={`menu-item ${isActive('/ayarlar') ? 'menu-active text-white' : 'text-zinc-400'}`}>
+              <Settings className="w-5 h-5" />
+              <span className="text-sm font-medium">Ayarlar</span>
+            </Link>
           </nav>
 
           {/* User Section */}
-          <div className="p-3 section-divider border-t">
+          <div className="flex-shrink-0 p-3 border-t border-white/5">
             <div className="user-card rounded-xl p-3">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
@@ -318,7 +343,7 @@ export default function DashboardLayout({
     
     const userRole = appUser.role || 'personel'
     if (!hasAccess(userRole, pathname)) {
-      router.push('/gunluk-isler')
+      router.push('/dashboard')
       return
     }
     
@@ -511,19 +536,28 @@ export default function DashboardLayout({
               </Link>
             </>
           )}
-          <Link href="/gunluk-isler" className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg ${isTabActive('/gunluk-isler') ? 'text-indigo-400' : 'text-zinc-500'}`}>
+          {!isAdmin && (
+            <Link href="/dashboard" className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg ${isTabActive('/dashboard') ? 'text-indigo-400' : 'text-zinc-500'}`}>
+              <LayoutDashboard className="w-5 h-5" />
+              <span className="text-[10px] font-medium">Dashboard</span>
+            </Link>
+          )}
+          <Link href="/gorevler" className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg ${isTabActive('/gorevler') ? 'text-indigo-400' : 'text-zinc-500'}`}>
             <ClipboardList className="w-5 h-5" />
-            <span className="text-[10px] font-medium">İşler</span>
+            <span className="text-[10px] font-medium">Görevler</span>
           </Link>
-          <Link href="/giris-cikis" className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg ${isTabActive('/giris-cikis') ? 'text-indigo-400' : 'text-zinc-500'}`}>
+          <Link href="/mesai" className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg ${isTabActive('/mesai') ? 'text-indigo-400' : 'text-zinc-500'}`}>
             <Clock className="w-5 h-5" />
-            <span className="text-[10px] font-medium">Giriş/Çıkış</span>
+            <span className="text-[10px] font-medium">Mesai</span>
           </Link>
         </div>
       </nav>
       
       {/* Bottom nav için boşluk */}
       <div className="lg:hidden h-16" />
+
+      {/* BeeBot Chatbot */}
+      <BeeBotChat />
     </div>
   )
 }

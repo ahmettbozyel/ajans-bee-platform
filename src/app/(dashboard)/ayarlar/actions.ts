@@ -1,8 +1,10 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createServerClient } from '@/lib/supabase/server'
 import { UserRole } from '@/lib/auth-types'
 
+// Admin client for privileged operations
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -14,6 +16,35 @@ const supabaseAdmin = createClient(
   }
 )
 
+// Authorization helper - ensures caller is admin
+async function requireAdmin(): Promise<{ userId: string }> {
+  const supabase = await createServerClient()
+
+  // Get current user from session
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    throw new Error('Oturum açmanız gerekiyor')
+  }
+
+  // Check if user has admin role
+  const { data: appUser, error: userError } = await (supabase as any)
+    .from('users')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (userError || !appUser) {
+    throw new Error('Kullanıcı bilgileri alınamadı')
+  }
+
+  if (appUser.role !== 'admin') {
+    throw new Error('Bu işlem için admin yetkisi gerekiyor')
+  }
+
+  return { userId: user.id }
+}
+
 export async function createUser(data: {
   email: string
   password: string
@@ -21,6 +52,9 @@ export async function createUser(data: {
   role: UserRole
 }) {
   try {
+    // Authorization check
+    await requireAdmin()
+
     // 1. Auth'da kullanıcı oluştur (trigger otomatik public.users'a ekleyecek)
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
@@ -63,6 +97,9 @@ export async function updateUser(
   }
 ) {
   try {
+    // Authorization check
+    await requireAdmin()
+
     const { error } = await supabaseAdmin
       .from('users')
       .update({
@@ -83,6 +120,9 @@ export async function updateUser(
 
 export async function deleteUser(userId: string) {
   try {
+    // Authorization check
+    await requireAdmin()
+
     // 1. Public tablodan sil
     const { error: deleteError } = await supabaseAdmin
       .from('users')

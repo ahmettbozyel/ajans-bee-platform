@@ -16,12 +16,15 @@ import { CustomerBriefForm } from '@/components/customers/customer-brief-form'
 import { CustomerFilesTab } from '@/components/customers/customer-files-tab'
 import { CustomerPerformanceTab } from '@/components/customers/customer-performance-tab'
 import type { Customer, CustomerFormData } from '@/lib/customer-types'
-import { SECTORS, BRAND_VOICES, calculateBriefCompletion, CUSTOMER_TYPES } from '@/lib/customer-types'
+import { BRAND_VOICES, calculateBriefCompletion, CUSTOMER_TYPES } from '@/lib/customer-types'
 import { cn } from '@/lib/utils'
 
-// Helper functions
-function getSectorLabel(value: string): string {
-  return SECTORS.find(s => s.value === value)?.label || value
+interface Sector {
+  id: string
+  name: string
+  slug: string
+  sort_order: number
+  is_active: boolean
 }
 
 function getBrandVoiceLabel(value: string): string {
@@ -101,13 +104,32 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
   const supabase = createClient()
 
   const [customer, setCustomer] = useState<Customer | null>(null)
+  const [sectors, setSectors] = useState<Sector[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fileCount, setFileCount] = useState(0)
-  
+
   // Tab state - Default: Dashboard
   const [activeTab, setActiveTab] = useState('dashboard')
+
+  // Sektör label'ı getir
+  function getSectorLabel(value: string): string {
+    return sectors.find(s => s.slug === value)?.name || value
+  }
+
+  // Sektörleri çek
+  const fetchSectors = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from('sectors')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+
+    if (data) {
+      setSectors(data)
+    }
+  }, [supabase])
 
   // Fetch customer
   const fetchCustomer = useCallback(async () => {
@@ -143,7 +165,8 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
 
   useEffect(() => {
     fetchCustomer()
-  }, [fetchCustomer])
+    fetchSectors()
+  }, [fetchCustomer, fetchSectors])
 
   // Save customer
   async function handleSaveCustomer(formData: CustomerFormData) {

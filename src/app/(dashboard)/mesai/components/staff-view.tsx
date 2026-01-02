@@ -2,8 +2,9 @@
 
 import { History } from 'lucide-react'
 import { Attendance, AppUser } from '@/lib/auth-types'
+import { WorkHours, Tolerances, HybridOverride, isHybridDayWithSettings } from '@/lib/use-company-settings'
 import { MonthlyStats, PendingCheckIn, PendingCheckOut, UserWithStats } from '../types'
-import { isHybridDay, formatMinutes } from '../utils'
+import { formatMinutes } from '../utils'
 import {
   TimeHeader,
   HistoryRow,
@@ -40,6 +41,11 @@ interface StaffViewProps {
   onCheckOut: () => void
   onSaveLateCheckIn: () => void
   onSaveOvertimeCheckOut: () => void
+  workHours?: WorkHours
+  tolerances?: Tolerances
+  hybridDays: string[]
+  hybridOverrides: HybridOverride[]
+  isHoliday?: boolean
 }
 
 export function StaffView({
@@ -67,9 +73,15 @@ export function StaffView({
   onCheckIn,
   onCheckOut,
   onSaveLateCheckIn,
-  onSaveOvertimeCheckOut
+  onSaveOvertimeCheckOut,
+  workHours,
+  tolerances,
+  hybridDays,
+  hybridOverrides,
+  isHoliday = false
 }: StaffViewProps) {
-  const todayIsHybrid = isHybridDay(new Date(selectedDate))
+  // Tatil günlerinde hibrit badge'i gösterme
+  const todayIsHybrid = !isHoliday && isHybridDayWithSettings(new Date(selectedDate), hybridDays, hybridOverrides)
   const selectedDateObj = new Date(selectedDate)
   const dayName = selectedDateObj.toLocaleDateString('tr-TR', { weekday: 'long' })
   const formattedDate = selectedDateObj.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -103,12 +115,12 @@ export function StaffView({
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-white">Giriş / Çıkış Takibi</h2>
+        <h2 className="text-2xl font-bold text-white">Mesai Takibi</h2>
         <p className="text-sm text-zinc-500 mt-1">Mesai kayıtlarım</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-2 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
           {/* Time Display */}
           <TimeHeader
             currentTime={currentTime}
@@ -129,7 +141,7 @@ export function StaffView({
             </div>
             <div className="divide-y divide-white/5">
               {myHistory.length > 0 ? myHistory.slice(0, 10).map((record) => (
-                <HistoryRow key={record.id} record={record} />
+                <HistoryRow key={record.id} record={record} hybridDays={hybridDays} hybridOverrides={hybridOverrides} />
               )) : (
                 <div className="p-8 text-center text-zinc-500">
                   <History className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -140,8 +152,8 @@ export function StaffView({
           </div>
         </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
+        {/* Sidebar - Mobile'da önce göster */}
+        <div className="space-y-6 order-first lg:order-none relative z-10">
           <MyStatusCard
             myRecord={myRecord}
             actionLoading={actionLoading}

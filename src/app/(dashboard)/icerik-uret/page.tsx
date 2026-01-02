@@ -25,7 +25,15 @@ import {
   Loader2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { getSectorLabel, getBrandVoiceLabel, PLATFORMS } from '@/lib/constants'
+import { getBrandVoiceLabel, PLATFORMS } from '@/lib/constants'
+
+interface Sector {
+  id: string
+  name: string
+  slug: string
+  sort_order: number
+  is_active: boolean
+}
 import { addToRecentCustomers, getLastCustomerId } from '@/lib/local-storage'
 import type { Customer } from '@/lib/types'
 
@@ -59,9 +67,15 @@ export default function IcerikUretPage() {
   const initialCustomerId = searchParams.get('customer')
   
   const [customers, setCustomers] = useState<Customer[]>([])
+  const [sectors, setSectors] = useState<Sector[]>([])
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [customerSearchOpen, setCustomerSearchOpen] = useState(false)
   const [loading, setLoading] = useState(true)
+
+  // Sektör label'ı getir
+  function getSectorLabel(value: string): string {
+    return sectors.find(s => s.slug === value)?.name || value
+  }
   
   // URL scraping state
   const [url, setUrl] = useState('')
@@ -83,6 +97,22 @@ export default function IcerikUretPage() {
   const [selectedPlatform, setSelectedPlatform] = useState('instagram')
 
   const supabase = createClient()
+
+  // Fetch sectors
+  useEffect(() => {
+    async function fetchSectors() {
+      const { data } = await (supabase as any)
+        .from('sectors')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+
+      if (data) {
+        setSectors(data)
+      }
+    }
+    fetchSectors()
+  }, [supabase])
 
   // Fetch customers
   useEffect(() => {

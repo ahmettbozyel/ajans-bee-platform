@@ -594,105 +594,10 @@ export const BRIEF_SECTIONS = {
 } as const;
 
 // =====================================================
-// Sabit Değerler - GENİŞLETİLMİŞ SEKTÖR LİSTESİ
+// Sabit Değerler
 // =====================================================
-
-export const SECTORS = [
-  // Perakende & Ticaret
-  { value: 'e-ticaret', label: 'E-Ticaret' },
-  { value: 'perakende', label: 'Perakende' },
-  { value: 'toptan', label: 'Toptan Ticaret' },
-  
-  // Gıda & İçecek
-  { value: 'gida', label: 'Gıda & İçecek' },
-  { value: 'restoran', label: 'Restoran & Kafe' },
-  { value: 'catering', label: 'Catering & Organizasyon' },
-  
-  // Moda & Güzellik
-  { value: 'tekstil', label: 'Tekstil & Moda' },
-  { value: 'kozmetik', label: 'Kozmetik & Güzellik' },
-  { value: 'kuyumculuk', label: 'Kuyumculuk & Aksesuar' },
-  { value: 'ayakkabi', label: 'Ayakkabı & Çanta' },
-  
-  // Sağlık
-  { value: 'saglik', label: 'Sağlık & Medikal' },
-  { value: 'eczane', label: 'Eczane' },
-  { value: 'dis', label: 'Diş Hekimliği' },
-  { value: 'estetik', label: 'Estetik & Plastik Cerrahi' },
-  { value: 'psikoloji', label: 'Psikoloji & Terapi' },
-  { value: 'veteriner', label: 'Veterinerlik' },
-  { value: 'spor-fitness', label: 'Spor & Fitness' },
-  
-  // Teknoloji & Yazılım
-  { value: 'teknoloji', label: 'Teknoloji' },
-  { value: 'yazilim', label: 'Yazılım & SaaS' },
-  { value: 'ajans', label: 'Dijital Ajans' },
-  { value: 'danismanlik-it', label: 'IT Danışmanlık' },
-  
-  // Eğitim
-  { value: 'egitim', label: 'Eğitim' },
-  { value: 'kurs', label: 'Kurs & Eğitim Merkezi' },
-  { value: 'universite', label: 'Üniversite & Okul' },
-  { value: 'cocuk', label: 'Çocuk Eğitimi' },
-  
-  // Finans & Hukuk
-  { value: 'finans', label: 'Finans & Bankacılık' },
-  { value: 'sigorta', label: 'Sigorta' },
-  { value: 'muhasebe', label: 'Muhasebe & Mali Müşavirlik' },
-  { value: 'hukuk', label: 'Hukuk & Avukatlık' },
-  
-  // Gayrimenkul & İnşaat
-  { value: 'gayrimenkul', label: 'Gayrimenkul' },
-  { value: 'insaat', label: 'İnşaat' },
-  { value: 'mimarlik', label: 'Mimarlık & İç Tasarım' },
-  { value: 'dekorasyon', label: 'Dekorasyon & Mobilya' },
-  
-  // Turizm & Konaklama
-  { value: 'turizm', label: 'Turizm & Seyahat' },
-  { value: 'otel', label: 'Otel & Konaklama' },
-  { value: 'transfer', label: 'Transfer & Araç Kiralama' },
-  
-  // Otomotiv & Ulaşım
-  { value: 'otomotiv', label: 'Otomotiv' },
-  { value: 'oto-servis', label: 'Oto Servis & Yedek Parça' },
-  { value: 'lojistik', label: 'Lojistik & Kargo' },
-  
-  // Enerji & Çevre
-  { value: 'enerji', label: 'Enerji' },
-  { value: 'yenilenebilir', label: 'Yenilenebilir Enerji' },
-  { value: 'cevre', label: 'Çevre & Geri Dönüşüm' },
-  
-  // Üretim & Sanayi
-  { value: 'uretim', label: 'Üretim & Sanayi' },
-  { value: 'makine', label: 'Makine & Ekipman' },
-  { value: 'kimya', label: 'Kimya & Plastik' },
-  { value: 'ambalaj', label: 'Ambalaj' },
-  
-  // Tarım & Hayvancılık
-  { value: 'tarim', label: 'Tarım' },
-  { value: 'hayvancilik', label: 'Hayvancılık' },
-  { value: 'organik', label: 'Organik Ürünler' },
-  
-  // Medya & Eğlence
-  { value: 'medya', label: 'Medya & Yayıncılık' },
-  { value: 'eglence', label: 'Eğlence & Etkinlik' },
-  { value: 'muzik', label: 'Müzik & Sanat' },
-  { value: 'oyun', label: 'Oyun & E-Spor' },
-  
-  // Hizmet
-  { value: 'danismanlik', label: 'Danışmanlık' },
-  { value: 'temizlik', label: 'Temizlik Hizmetleri' },
-  { value: 'guvenlik', label: 'Güvenlik' },
-  { value: 'hr', label: 'İnsan Kaynakları' },
-  { value: 'fotograf', label: 'Fotoğraf & Video' },
-  
-  // STK & Kamu
-  { value: 'stk', label: 'STK & Vakıf' },
-  { value: 'kamu', label: 'Kamu & Belediye' },
-  
-  // Diğer
-  { value: 'diger', label: 'Diğer' }
-] as const;
+// NOT: SECTORS artık veritabanından yönetiliyor (Ayarlar > Sektörler)
+// Sektör verisi için: supabase.from('sectors').select('*').eq('is_active', true).order('sort_order')
 
 // Marka Sesi - UI Kit v1.0 HTML ile UYUMLU
 // emoji field'ı Brief formunda OptionCard için kullanılıyor

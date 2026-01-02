@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Clock, Loader2, Check } from 'lucide-react'
+import { Clock, Loader2, Check, Home } from 'lucide-react'
 
 interface WorkHours {
   start: string
@@ -29,6 +29,7 @@ export function WorkCalendarTab() {
     lunch_start: '12:00',
     lunch_end: '13:00'
   })
+  const [hybridDays, setHybridDays] = useState<string[]>(['wednesday'])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -38,24 +39,22 @@ export function WorkCalendarTab() {
   const fetchSettings = useCallback(async () => {
     setLoading(true)
     try {
-      const { data: daysData } = await (supabase as any)
-        .from('company_settings')
-        .select('value')
-        .eq('key', 'work_days')
-        .single()
+      const [daysRes, hoursRes, hybridRes] = await Promise.all([
+        (supabase as any).from('company_settings').select('value').eq('key', 'work_days').single(),
+        (supabase as any).from('company_settings').select('value').eq('key', 'work_hours').single(),
+        (supabase as any).from('company_settings').select('value').eq('key', 'hybrid_days').single()
+      ])
 
-      const { data: hoursData } = await (supabase as any)
-        .from('company_settings')
-        .select('value')
-        .eq('key', 'work_hours')
-        .single()
-
-      if (daysData?.value) {
-        setWorkDays(daysData.value as string[])
+      if (daysRes.data?.value) {
+        setWorkDays(daysRes.data.value as string[])
       }
 
-      if (hoursData?.value) {
-        setWorkHours(hoursData.value as WorkHours)
+      if (hoursRes.data?.value) {
+        setWorkHours(hoursRes.data.value as WorkHours)
+      }
+
+      if (hybridRes.data?.value) {
+        setHybridDays(hybridRes.data.value as string[])
       }
     } catch (error) {
       console.error('Fetch error:', error)
@@ -82,10 +81,19 @@ export function WorkCalendarTab() {
     setSaved(false)
   }
 
+  const toggleHybridDay = (dayKey: string) => {
+    setHybridDays(prev =>
+      prev.includes(dayKey)
+        ? prev.filter(d => d !== dayKey)
+        : [...prev, dayKey]
+    )
+    setSaved(false)
+  }
+
   const handleSave = async () => {
     setSaving(true)
     try {
-      await Promise.all([
+      const [daysResult, hoursResult, hybridResult] = await Promise.all([
         (supabase as any)
           .from('company_settings')
           .update({ value: workDays, updated_at: new Date().toISOString() })
@@ -93,10 +101,20 @@ export function WorkCalendarTab() {
         (supabase as any)
           .from('company_settings')
           .update({ value: workHours, updated_at: new Date().toISOString() })
-          .eq('key', 'work_hours')
+          .eq('key', 'work_hours'),
+        (supabase as any)
+          .from('company_settings')
+          .upsert({ key: 'hybrid_days', value: hybridDays, updated_at: new Date().toISOString() }, { onConflict: 'key' })
       ])
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+
+      if (daysResult.error) console.error('Days save error:', daysResult.error)
+      if (hoursResult.error) console.error('Hours save error:', hoursResult.error)
+      if (hybridResult.error) console.error('Hybrid save error:', hybridResult.error)
+
+      if (!daysResult.error && !hoursResult.error && !hybridResult.error) {
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2000)
+      }
     } catch (error) {
       console.error('Save error:', error)
     } finally {
@@ -151,6 +169,49 @@ export function WorkCalendarTab() {
               </button>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Hibrit Çalışma Günleri */}
+      <div className="glass-card rounded-2xl border border-white/10 glow-violet">
+        <div className="px-6 py-4 border-b border-white/10 flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-violet-500/10 border border-violet-500/20">
+            <Home className="w-5 h-5 text-violet-400" />
+          </div>
+          <div>
+            <h3 className="text-white font-semibold">Varsayılan Hibrit Günler</h3>
+            <p className="text-xs text-zinc-500">Evden çalışma günleri (birden fazla seçebilirsiniz)</p>
+          </div>
+        </div>
+
+        <div className="p-6">
+          <div className="grid grid-cols-7 gap-2">
+            {DAYS.filter(d => workDays.includes(d.key)).map((day) => (
+              <button
+                key={day.key}
+                onClick={() => toggleHybridDay(day.key)}
+                className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl border transition-all ${
+                  hybridDays.includes(day.key)
+                    ? 'bg-violet-500/20 border-violet-500/30 text-violet-400'
+                    : 'bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10'
+                }`}
+              >
+                <span className="text-xs font-medium">{day.short}</span>
+                <div className={`w-5 h-5 rounded-lg flex items-center justify-center transition-all ${
+                  hybridDays.includes(day.key)
+                    ? 'bg-violet-500'
+                    : 'bg-white/5 border border-white/10'
+                }`}>
+                  {hybridDays.includes(day.key) && (
+                    <Home className="w-3 h-3 text-white" />
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-zinc-500 mt-4">
+            Seçilen günler varsayılan hibrit günlerdir. Haftalık istisnalar için Mesai sayfasındaki &quot;Hibrit/Ofis&quot; butonunu kullanın.
+          </p>
         </div>
       </div>
 

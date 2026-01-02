@@ -5,6 +5,9 @@
 // Roller
 export type UserRole = 'admin' | 'yonetici' | 'operasyon' | 'personel' | 'stajer'
 
+// Kan grubu tipleri
+export type BloodType = 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | '0+' | '0-'
+
 // Kullanıcı tipi (public.users tablosu)
 export interface AppUser {
   id: string
@@ -14,25 +17,33 @@ export interface AppUser {
   is_active: boolean
   created_at: string
   updated_at: string
+  // Profil alanları
+  phone?: string | null
+  address?: string | null
+  blood_type?: BloodType | null
+  emergency_contact_name?: string | null
+  emergency_contact_phone?: string | null
+  health_notes?: string | null
+  avatar_url?: string | null
 }
 
 // Modül erişimleri
-export type ModuleSlug = 
+export type ModuleSlug =
   | 'dashboard'
   | 'markalar'
   | 'teknik-hizmetler'
   | 'icerik-uret'
-  | 'gunluk-isler'
-  | 'giris-cikis'
+  | 'gorevler'
+  | 'mesai'
   | 'ayarlar'
 
 // Rol bazlı erişim matrisi
 export const ROLE_ACCESS: Record<UserRole, ModuleSlug[]> = {
-  admin: ['dashboard', 'markalar', 'teknik-hizmetler', 'icerik-uret', 'gunluk-isler', 'giris-cikis', 'ayarlar'],
-  yonetici: ['teknik-hizmetler', 'gunluk-isler', 'giris-cikis', 'ayarlar'],
-  operasyon: ['gunluk-isler', 'giris-cikis', 'teknik-hizmetler'],
-  personel: ['gunluk-isler', 'giris-cikis'],
-  stajer: ['gunluk-isler', 'giris-cikis']
+  admin: ['dashboard', 'markalar', 'teknik-hizmetler', 'icerik-uret', 'gorevler', 'mesai', 'ayarlar'],
+  yonetici: ['teknik-hizmetler', 'gorevler', 'mesai', 'ayarlar'],
+  operasyon: ['gorevler', 'mesai', 'teknik-hizmetler'],
+  personel: ['gorevler', 'mesai'],
+  stajer: ['gorevler', 'mesai']
 }
 
 // Erişim kontrol fonksiyonları
@@ -51,8 +62,8 @@ export function canEdit(role: UserRole, module: ModuleSlug): boolean {
   // Operasyon teknik hizmetleri düzenleyebilir
   if (role === 'operasyon' && module === 'teknik-hizmetler') return true
 
-  // Herkes kendi günlük işlerini düzenleyebilir
-  if (module === 'gunluk-isler' || module === 'giris-cikis') return true
+  // Herkes kendi görevlerini düzenleyebilir
+  if (module === 'gorevler' || module === 'mesai') return true
 
   return false
 }
@@ -62,15 +73,15 @@ export function getDefaultRoute(role: UserRole): string {
     case 'admin':
       return '/dashboard'
     case 'yonetici':
-      return '/gunluk-isler'
+      return '/gorevler'
     case 'operasyon':
-      return '/gunluk-isler'
+      return '/gorevler'
     case 'personel':
-      return '/gunluk-isler'
+      return '/gorevler'
     case 'stajer':
-      return '/gunluk-isler'
+      return '/gorevler'
     default:
-      return '/gunluk-isler'
+      return '/gorevler'
   }
 }
 
@@ -137,7 +148,7 @@ export type AttendanceStatus = 'normal' | 'late' | 'early_leave' | 'absent' | 'l
 export type LocationType = 'office' | 'home' | 'other' | 'unknown'
 export type RecordType = 'normal' | 'leave' | 'sick' | 'remote' | 'holiday'
 
-// Giriş/Çıkış
+// Mesai
 export interface Attendance {
   id: string
   user_id: string

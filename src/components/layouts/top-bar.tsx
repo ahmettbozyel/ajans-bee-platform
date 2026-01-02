@@ -17,8 +17,8 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/gorseller': { title: 'Görseller', subtitle: 'AI ile görsel oluştur' },
   '/gecmis': { title: 'Geçmiş', subtitle: 'Önceki içerikler' },
   '/ayarlar': { title: 'Ayarlar', subtitle: 'Hesap ve uygulama ayarları' },
-  '/gunluk-isler': { title: 'Günlük İşler', subtitle: 'Günlük görev takibi' },
-  '/giris-cikis': { title: 'Giriş / Çıkış', subtitle: 'Mesai takibi' },
+  '/gorevler': { title: 'Görevler', subtitle: 'Günlük görev takibi' },
+  '/mesai': { title: 'Mesai', subtitle: 'Mesai takibi' },
 }
 
 // Üst Navigation Tabs

@@ -128,16 +128,20 @@ export function AttendanceRow({ record, isHybridDay }: AttendanceRowProps) {
 interface EmptyAttendanceRowProps {
   userName: string
   userInitial: string
+  isHoliday?: boolean
+  isWeekend?: boolean
 }
 
-export function EmptyAttendanceRow({ userName, userInitial }: EmptyAttendanceRowProps) {
+export function EmptyAttendanceRow({ userName, userInitial, isHoliday, isWeekend }: EmptyAttendanceRowProps) {
+  const showHolidayBadge = isHoliday || isWeekend
+
   return (
     <div className="flex items-center gap-4 px-5 py-4">
-      <div className="h-11 w-11 rounded-xl bg-zinc-700 flex items-center justify-center">
-        <span className="text-zinc-400 text-sm font-bold">{userInitial}</span>
+      <div className={`h-11 w-11 rounded-xl ${showHolidayBadge ? 'bg-amber-500/20' : 'bg-zinc-700'} flex items-center justify-center`}>
+        <span className={`text-sm font-bold ${showHolidayBadge ? 'text-amber-400' : 'text-zinc-400'}`}>{userInitial}</span>
       </div>
       <div className="flex-1">
-        <p className="font-semibold text-zinc-400">{userName}</p>
+        <p className={`font-semibold ${showHolidayBadge ? 'text-zinc-300' : 'text-zinc-400'}`}>{userName}</p>
         <div className="flex items-center gap-2 mt-1">
           <span className="text-zinc-600 text-sm font-mono">→ --:--</span>
           <span className="text-zinc-700">···</span>
@@ -145,9 +149,15 @@ export function EmptyAttendanceRow({ userName, userInitial }: EmptyAttendanceRow
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full" style={{ background: 'rgba(244,63,94,0.2)', color: '#fb7185', border: '1px solid rgba(244,63,94,0.3)' }}>
-          <Clock className="w-3 h-3" />Henüz gelmedi
-        </span>
+        {showHolidayBadge ? (
+          <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full" style={{ background: 'rgba(245,158,11,0.2)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.3)' }}>
+            <CalendarOff className="w-3 h-3" />Tatil
+          </span>
+        ) : (
+          <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full" style={{ background: 'rgba(244,63,94,0.2)', color: '#fb7185', border: '1px solid rgba(244,63,94,0.3)' }}>
+            <Clock className="w-3 h-3" />Henüz gelmedi
+          </span>
+        )}
       </div>
       <div className="text-right min-w-[80px]">
         <span className="text-sm text-zinc-500">--</span>
