@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 // GET - List customers (brands)
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
-    
+
     // Auth kontrolü
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -14,15 +15,24 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams
     const minimal = searchParams.get('minimal') === 'true'
-    
+    const includeInactive = searchParams.get('all') === 'true'
+
     const selectFields = minimal ? 'id, name, brand_name' : '*'
-    
-    // RLS politikası authenticated kullanıcılara izin veriyor
-    const { data, error } = await supabase
+
+    // Admin client kullan (RLS bypass)
+    const adminClient = createAdminClient()
+
+    let query = adminClient
       .from('customers')
       .select(selectFields)
-      .eq('status', 'active')
       .order('name', { ascending: true })
+
+    // Sadece aktif olanları getir (all=true değilse)
+    if (!includeInactive) {
+      query = query.eq('status', 'active')
+    }
+
+    const { data, error } = await query
 
     if (error) {
       console.error('Supabase error:', error)

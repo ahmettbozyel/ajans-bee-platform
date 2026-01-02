@@ -14,11 +14,15 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Plus, Search, Pencil, Trash2, Building2, Eye, EyeOff, Sparkles, PauseCircle, Loader2, ChevronsUpDown, Check } from 'lucide-react'
 import { getRecentCustomers, addToRecentCustomers, type RecentCustomer } from '@/lib/local-storage'
 import type { Customer } from '@/lib/customer-types'
-import { SECTORS, calculateBriefCompletion, getCustomerTypeLabel } from '@/lib/customer-types'
+import { calculateBriefCompletion, getCustomerTypeLabel } from '@/lib/customer-types'
 import { cn } from '@/lib/utils'
 
-function getSectorLabel(value: string): string {
-  return SECTORS.find(s => s.value === value)?.label || value
+interface Sector {
+  id: string
+  name: string
+  slug: string
+  sort_order: number
+  is_active: boolean
 }
 
 // Progress bar rengi (dark mode only)
@@ -50,6 +54,7 @@ const initialNewBrandForm = {
 export default function MusterilerPage() {
   const router = useRouter()
   const [customers, setCustomers] = useState<Customer[]>([])
+  const [sectors, setSectors] = useState<Sector[]>([])
   const [recentCustomers, setRecentCustomers] = useState<RecentCustomer[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
@@ -63,20 +68,37 @@ export default function MusterilerPage() {
 
   const supabase = createClient()
 
+  // Sektör label'ı getir
+  function getSectorLabel(value: string): string {
+    return sectors.find(s => s.slug === value)?.name || value
+  }
+
+  // Sektörleri çek
+  async function fetchSectors() {
+    const { data } = await (supabase as any)
+      .from('sectors')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+
+    if (data) {
+      setSectors(data)
+    }
+  }
+
   useEffect(() => {
     fetchCustomers()
+    fetchSectors()
     setRecentCustomers(getRecentCustomers())
   }, [])
 
   async function fetchCustomers() {
     setLoading(true)
     try {
-      const { data, error } = await supabase
-        .from('customers')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
+      // API üzerinden çek (RLS bypass)
+      const res = await fetch('/api/customers?all=true')
+      if (!res.ok) throw new Error('Failed to fetch customers')
+      const data = await res.json()
       setCustomers(data || [])
     } catch (error) {
       console.error('Error fetching customers:', error)
@@ -203,6 +225,27 @@ export default function MusterilerPage() {
       fetchCustomers()
     } catch (error) {
       console.error('Error deleting customer:', error)
+    }
+  }
+
+  async function handleToggleStatus(customer: Customer, e: React.MouseEvent) {
+    e.stopPropagation()
+    const newStatus = customer.status === 'inactive' ? 'active' : 'inactive'
+
+    try {
+      const { error } = await supabase
+        .from('customers')
+        .update({ status: newStatus })
+        .eq('id', customer.id)
+
+      if (error) throw error
+
+      // Update local state
+      setCustomers(prev => prev.map(c =>
+        c.id === customer.id ? { ...c, status: newStatus } : c
+      ))
+    } catch (error) {
+      console.error('Error toggling status:', error)
     }
   }
 
@@ -353,6 +396,20 @@ export default function MusterilerPage() {
                   
                   {/* Actions - Hover */}
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* Toggle Active/Inactive */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={`h-8 w-8 rounded-lg ${
+                        isInactive
+                          ? 'text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10'
+                          : 'text-amber-500 hover:text-amber-400 hover:bg-amber-500/10'
+                      }`}
+                      onClick={(e) => handleToggleStatus(customer, e)}
+                      title={isInactive ? 'Aktif Yap' : 'Pasif Yap'}
+                    >
+                      {isInactive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -539,14 +596,14 @@ export default function MusterilerPage() {
                         Sektör bulunamadı.
                       </CommandEmpty>
                       <CommandGroup style={{ backgroundColor: '#18181b' }}>
-                        {SECTORS.map((sector) => (
+                        {sectors.map((sector) => (
                           <CommandItem
-                            key={sector.value}
-                            value={sector.label}
+                            key={sector.id}
+                            value={sector.name}
                             onSelect={() => {
-                              setNewBrandForm(prev => ({ 
-                                ...prev, 
-                                sector: prev.sector === sector.value ? '' : sector.value 
+                              setNewBrandForm(prev => ({
+                                ...prev,
+                                sector: prev.sector === sector.slug ? '' : sector.slug
                               }))
                               setSectorPopoverOpen(false)
                             }}
@@ -555,13 +612,13 @@ export default function MusterilerPage() {
                             <Check
                               className={cn(
                                 "mr-2 h-4 w-4 text-indigo-400",
-                                newBrandForm.sector === sector.value ? "opacity-100" : "opacity-0"
+                                newBrandForm.sector === sector.slug ? "opacity-100" : "opacity-0"
                               )}
                             />
                             <span className={cn(
-                              newBrandForm.sector === sector.value && "text-indigo-400 font-medium"
+                              newBrandForm.sector === sector.slug && "text-indigo-400 font-medium"
                             )}>
-                              {sector.label}
+                              {sector.name}
                             </span>
                           </CommandItem>
                         ))}
