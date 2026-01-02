@@ -660,7 +660,7 @@ export default function DashboardPage() {
                   <Moon className="w-6 h-6 text-indigo-400" />
                 )}
                 <h1 className="text-2xl font-bold text-white">
-                  {greeting}, {appUser?.full_name?.split(' ')[0] || 'Kullanıcı'}!
+                  {greeting}, {appUser?.full_name?.split(' ')[0] || 'Kullanıcı'}! 👋
                 </h1>
               </div>
               <p className="text-zinc-400">
