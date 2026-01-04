@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
+import { checkAIRateLimit } from '@/lib/rate-limit'
 
 // Brief Generator API - Basit versiyon
 // Kullanıcı bilgi girer, Claude brief formatlar
@@ -65,6 +67,14 @@ interface BriefInput {
 }
 
 export async function POST(request: NextRequest) {
+  // Auth kontrolü
+  const auth = await requireAuth()
+  if (!auth.success) return auth.response
+
+  // Rate limit kontrolü
+  const rateLimit = checkAIRateLimit(auth.user.id)
+  if (!rateLimit.success) return rateLimit.response
+
   try {
     const body: BriefInput = await request.json()
 

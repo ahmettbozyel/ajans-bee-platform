@@ -5,6 +5,8 @@ node_modules/
 .vercel
 
 # Environment variables
+.env
+.env.*
 .env*.local
 
 # Next.js build output

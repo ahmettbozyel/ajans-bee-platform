@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAuth } from '@/lib/api-auth'
 import { z } from 'zod'
 
 // Zod schema for validation
@@ -12,8 +13,12 @@ const serviceProviderSchema = z.object({
   notes: z.string().optional().nullable()
 })
 
-// GET - List all service providers (public - no auth needed)
+// GET - List all service providers
 export async function GET() {
+  // Auth kontrolü
+  const auth = await requireAuth()
+  if (!auth.success) return auth.response
+
   try {
     const adminClient = createAdminClient()
     const { data, error } = await adminClient
@@ -23,22 +28,24 @@ export async function GET() {
       .order('name')
 
     if (error) {
-      console.error('GET /api/service-providers error:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     return NextResponse.json(data)
-  } catch (error) {
-    console.error('GET /api/service-providers error:', error)
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 // POST - Create new service provider
 export async function POST(request: NextRequest) {
+  // Auth kontrolü
+  const auth = await requireAuth()
+  if (!auth.success) return auth.response
+
   try {
     const body = await request.json()
-    
+
     // Validation
     const parsed = serviceProviderSchema.safeParse(body)
     if (!parsed.success) {
@@ -57,8 +64,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(data, { status: 201 })
-  } catch (error) {
-    console.error('POST /api/service-providers error:', error)
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

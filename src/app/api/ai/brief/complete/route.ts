@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
+import { checkAIRateLimit } from '@/lib/rate-limit'
 
 // Response type
 interface BriefCompletionResult {
@@ -12,6 +14,14 @@ interface BriefCompletionResult {
 }
 
 export async function POST(req: NextRequest) {
+  // Auth kontrolü
+  const auth = await requireAuth()
+  if (!auth.success) return auth.response
+
+  // Rate limit kontrolü
+  const rateLimit = checkAIRateLimit(auth.user.id)
+  if (!rateLimit.success) return rateLimit.response
+
   try {
     const { filledFields, emptyFields, websiteUrl } = await req.json()
 
@@ -68,7 +78,7 @@ Aşağıdaki JSON formatında yanıt ver:
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5-20250514',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 2000,
         messages: [
           { role: 'user', content: userPrompt }
@@ -81,7 +91,7 @@ Aşağıdaki JSON formatında yanıt ver:
       const errorData = await response.json()
       console.error('Anthropic API error:', errorData)
       return NextResponse.json(
-        { error: 'AI servisi hatası' },
+        { error: `AI servisi hatası: ${errorData?.error?.message || JSON.stringify(errorData)}` },
         { status: 500 }
       )
     }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAuth } from '@/lib/api-auth'
 import { z } from 'zod'
 
 // Zod schema for validation
@@ -21,10 +22,14 @@ export async function GET(
   request: NextRequest,
   context: RouteContext
 ) {
+  // Auth kontrolü
+  const auth = await requireAuth()
+  if (!auth.success) return auth.response
+
   try {
     const { id } = await context.params
     const adminClient = createAdminClient()
-    
+
     const { data, error } = await adminClient
       .from('service_providers')
       .select('*')
@@ -39,8 +44,7 @@ export async function GET(
     }
 
     return NextResponse.json(data)
-  } catch (error) {
-    console.error('GET /api/service-providers/[id] error:', error)
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -50,10 +54,14 @@ export async function PATCH(
   request: NextRequest,
   context: RouteContext
 ) {
+  // Auth kontrolü
+  const auth = await requireAuth()
+  if (!auth.success) return auth.response
+
   try {
     const { id } = await context.params
     const body = await request.json()
-    
+
     // Validation
     const parsed = serviceProviderUpdateSchema.safeParse(body)
     if (!parsed.success) {
@@ -81,8 +89,7 @@ export async function PATCH(
     }
 
     return NextResponse.json(data)
-  } catch (error) {
-    console.error('PATCH /api/service-providers/[id] error:', error)
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -92,10 +99,14 @@ export async function DELETE(
   request: NextRequest,
   context: RouteContext
 ) {
+  // Auth kontrolü
+  const auth = await requireAuth()
+  if (!auth.success) return auth.response
+
   try {
     const { id } = await context.params
     const adminClient = createAdminClient()
-    
+
     // Önce bu sağlayıcıya bağlı servis var mı kontrol et
     const { count } = await adminClient
       .from('technical_services')
@@ -119,8 +130,7 @@ export async function DELETE(
     }
 
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('DELETE /api/service-providers/[id] error:', error)
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

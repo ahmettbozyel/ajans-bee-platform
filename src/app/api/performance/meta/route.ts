@@ -1,6 +1,6 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireAuth } from '@/lib/api-auth'
 
 // Admin client - RLS bypass (lazy initialization)
 function getSupabaseAdmin() {
@@ -10,7 +10,7 @@ function getSupabaseAdmin() {
   )
 }
 
-const N8N_WEBHOOK_URL = 'https://n8n.beeswebsite.com/webhook/meta-performance'
+const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL || 'https://n8n.beeswebsite.com/webhook/meta-performance'
 
 interface MetaAdsResponse {
   data: Array<{
@@ -38,10 +38,14 @@ interface MetaInsightsResponse {
 
 // POST - Fetch Meta data and save to DB
 export async function POST(request: NextRequest) {
+  // Auth kontrolü
+  const auth = await requireAuth()
+  if (!auth.success) return auth.response
+
   try {
     const body = await request.json()
-    const { 
-      customer_id, 
+    const {
+      customer_id,
       ad_account_id,
       fb_page_id,
       ig_account_id,
@@ -272,10 +276,15 @@ export async function POST(request: NextRequest) {
 
 // GET - Fetch saved performance data from DB
 export async function GET(request: NextRequest) {
+  // Auth kontrolü
+  const auth = await requireAuth()
+  if (!auth.success) return auth.response
+
   try {
     const { searchParams } = new URL(request.url)
     const customer_id = searchParams.get('customer_id')
     const platform = searchParams.get('platform') // 'meta', 'facebook', 'instagram', 'all'
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const period = searchParams.get('period') // 'last_30d', 'last_month', etc.
 
     if (!customer_id) {

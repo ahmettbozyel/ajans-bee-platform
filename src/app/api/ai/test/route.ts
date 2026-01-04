@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-auth'
+import { checkAIRateLimit } from '@/lib/rate-limit'
 
 export async function GET() {
+  // Auth kontrolü
+  const auth = await requireAuth()
+  if (!auth.success) return auth.response
+
+  // Rate limit kontrolü
+  const rateLimit = checkAIRateLimit(auth.user.id)
+  if (!rateLimit.success) return rateLimit.response
+
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
