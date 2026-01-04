@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -101,14 +100,14 @@ export default function IcerikUretPage() {
   // Fetch sectors
   useEffect(() => {
     async function fetchSectors() {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from('sectors')
         .select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true })
 
       if (data) {
-        setSectors(data)
+        setSectors(data as Sector[])
       }
     }
     fetchSectors()
@@ -318,7 +317,7 @@ export default function IcerikUretPage() {
                       {getSectorLabel(selectedCustomer.sector || '')}
                     </Badge>
                     <Badge variant="outline">
-                      {getBrandVoiceLabel(selectedCustomer.tone_of_voice || '')}
+                      {getBrandVoiceLabel((selectedCustomer as { tone_of_voice?: string }).tone_of_voice || selectedCustomer.brand_voice || '')}
                     </Badge>
                   </div>
                   {selectedCustomer.target_audience && (

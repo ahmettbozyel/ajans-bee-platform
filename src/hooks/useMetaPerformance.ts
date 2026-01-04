@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -98,7 +97,8 @@ export function useMetaPerformance(customerId: string): UseMetaPerformanceReturn
       }
 
       // Load ads data
-      const { data: ads } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: ads } = await (supabase as any)
         .from('performance_ads')
         .select('*')
         .eq('customer_id', customerId)
@@ -112,7 +112,8 @@ export function useMetaPerformance(customerId: string): UseMetaPerformanceReturn
       }
 
       // Load social data
-      const { data: social } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: social } = await (supabase as any)
         .from('performance_social')
         .select('*')
         .eq('customer_id', customerId)
@@ -122,12 +123,12 @@ export function useMetaPerformance(customerId: string): UseMetaPerformanceReturn
         setSocialData(social)
       }
 
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setIsLoading(false)
     }
-  }, [customerId, supabase])
+  }, [customerId])
 
   // Fetch fresh data from Meta API via n8n
   const fetchFromAPI = useCallback(async () => {
@@ -172,10 +173,11 @@ export function useMetaPerformance(customerId: string): UseMetaPerformanceReturn
       }
 
       if (result.data?.facebook || result.data?.instagram) {
-        const newSocial = []
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const newSocial: any[] = []
         if (result.data.facebook) newSocial.push(result.data.facebook)
         if (result.data.instagram) newSocial.push(result.data.instagram)
-        setSocialData(prev => [...newSocial, ...prev.filter(s => 
+        setSocialData(prev => [...newSocial, ...prev.filter(s =>
           !newSocial.find(n => n.platform === s.platform)
         )])
       }
@@ -187,8 +189,8 @@ export function useMetaPerformance(customerId: string): UseMetaPerformanceReturn
         console.warn('Partial errors:', result.data.errors)
       }
 
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setIsFetching(false)
     }

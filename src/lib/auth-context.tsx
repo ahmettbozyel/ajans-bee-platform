@@ -39,8 +39,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchAppUser = useCallback(async (userId: string): Promise<AppUser | null> => {
     try {
-      console.log('[Auth] Fetching app user for:', userId)
-
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -48,14 +46,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single()
 
       if (error) {
-        console.error('[Auth] Users error:', error.message)
         return null
       }
 
-      console.log('[Auth] Got user:', data?.email)
       return data as AppUser
-    } catch (err: any) {
-      console.error('[Auth] Exception:', err?.message)
+    } catch {
       return null
     }
   }, [supabase])
@@ -77,7 +72,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let initialLoadDone = false
 
     const loadUser = async (user: User) => {
-      console.log('[Auth] Loading user:', user.email)
       setAuthUser(user)
 
       const appUserData = await fetchAppUser(user.id)
@@ -85,14 +79,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (isMounted) {
         setAppUser(appUserData)
         setLoading(false)
-        console.log('[Auth] Done')
       }
     }
 
     // Listen for auth changes - INITIAL_SESSION is the key event
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[Auth] Event:', event)
-
       if (!isMounted) return
 
       if (event === 'INITIAL_SESSION') {
@@ -101,7 +92,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           await loadUser(session.user)
         } else {
-          console.log('[Auth] No session')
           setLoading(false)
         }
       } else if (event === 'SIGNED_IN' && session?.user && initialLoadDone) {
@@ -115,8 +105,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthUser(session.user)
       }
     })
-
-    console.log('[Auth] Init start')
 
     return () => {
       isMounted = false

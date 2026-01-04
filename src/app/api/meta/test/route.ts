@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
@@ -18,11 +17,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { meta_page_id, meta_ig_id, meta_ad_account_id } = body
 
-    console.log('=== META TEST DEBUG ===')
-    console.log('meta_page_id:', meta_page_id)
-    console.log('meta_ig_id:', meta_ig_id)
-    console.log('meta_ad_account_id:', meta_ad_account_id)
-
     // En az bir ID olmalı
     if (!meta_page_id && !meta_ig_id && !meta_ad_account_id) {
       return NextResponse.json({
@@ -40,8 +34,6 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString()
     }
 
-    console.log('n8n test isteği gönderiliyor:', testPayload)
-
     const startTime = Date.now()
 
     const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
@@ -54,10 +46,6 @@ export async function POST(request: NextRequest) {
 
     const responseTime = Date.now() - startTime
     const n8nData = await n8nResponse.json().catch(() => null)
-
-    console.log('n8n response status:', n8nResponse.status)
-    console.log('n8n response time:', responseTime, 'ms')
-    console.log('n8n response data:', n8nData)
 
     if (!n8nResponse.ok) {
       return NextResponse.json({

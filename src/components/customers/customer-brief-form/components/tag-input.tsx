@@ -29,12 +29,13 @@ export function TagInput({
   const [inputValue, setInputValue] = useState('')
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && inputValue.trim()) {
+    if (e.key === 'Enter') {
       e.preventDefault()
-      if (!value.includes(inputValue.trim())) {
+      e.stopPropagation()
+      if (inputValue.trim() && !value.includes(inputValue.trim())) {
         onChange([...value, inputValue.trim()])
+        setInputValue('')
       }
-      setInputValue('')
     }
   }
 

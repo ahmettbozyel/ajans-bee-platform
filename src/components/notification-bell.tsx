@@ -26,7 +26,6 @@ export function NotificationBell() {
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      console.log('[NotificationBell] Auth user:', user?.id, user?.email)
       if (user) {
         setUserId(user.id)
       }
@@ -37,26 +36,30 @@ export function NotificationBell() {
   // Bildirimleri çek
   const fetchNotifications = async () => {
     if (!userId) {
-      console.log('[NotificationBell] No userId, skipping fetch')
       return
     }
-    
-    console.log('[NotificationBell] Fetching notifications for:', userId)
-    
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('notifications')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(20)
-    
-    console.log('[NotificationBell] Result:', { data, error })
-    
-    if (!error && data) {
-      setNotifications(data as Notification[])
+
+    try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      setUnreadCount(data.filter((n: any) => !n.is_read).length)
+      const { data, error } = await (supabase as any)
+        .from('notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(20)
+
+      if (error) {
+        console.error('Bildirimler yüklenirken hata:', error)
+        return
+      }
+
+      if (data) {
+        setNotifications(data as Notification[])
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setUnreadCount(data.filter((n: any) => !n.is_read).length)
+      }
+    } catch (error) {
+      console.error('Bildirimler yüklenirken beklenmeyen hata:', error)
     }
   }
 
@@ -84,33 +87,42 @@ export function NotificationBell() {
 
   // Tek bildirimi okundu işaretle
   const markAsRead = async (id: string) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any)
-      .from('notifications')
-      .update({ is_read: true })
-      .eq('id', id)
-    
-    setNotifications(prev => 
-      prev.map(n => n.id === id ? { ...n, is_read: true } : n)
-    )
-    setUnreadCount(prev => Math.max(0, prev - 1))
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', id)
+
+      setNotifications(prev =>
+        prev.map(n => n.id === id ? { ...n, is_read: true } : n)
+      )
+      setUnreadCount(prev => Math.max(0, prev - 1))
+    } catch (error) {
+      console.error('Bildirim okundu işaretlenirken hata:', error)
+    }
   }
 
   // Tümünü okundu işaretle
   const markAllAsRead = async () => {
     if (!userId) return
     setLoading(true)
-    
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any)
-      .from('notifications')
-      .update({ is_read: true })
-      .eq('user_id', userId)
-      .eq('is_read', false)
-    
-    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
-    setUnreadCount(0)
-    setLoading(false)
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', userId)
+        .eq('is_read', false)
+
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
+      setUnreadCount(0)
+    } catch (error) {
+      console.error('Bildirimler okundu işaretlenirken hata:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
   // İkon ve renk belirle
@@ -164,7 +176,6 @@ export function NotificationBell() {
   }
 
   const handleBellClick = () => {
-    console.log('[NotificationBell] Bell clicked, isOpen:', isOpen, '-> ', !isOpen)
     setIsOpen(!isOpen)
   }
 

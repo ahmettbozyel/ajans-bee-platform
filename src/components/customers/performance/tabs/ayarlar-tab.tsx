@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState } from 'react'
@@ -65,9 +64,6 @@ export function AyarlarTab({ customer, onUpdate }: AyarlarTabProps) {
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 800))
 
-    console.log('=== META TEST CONNECTION (MOCK) ===')
-    console.log('Testing with:', { metaPageId, metaIgId, metaAdAccountId })
-
     // En az bir ID girilmiş mi kontrol et
     if (!metaPageId && !metaIgId && !metaAdAccountId) {
       setSaveMessage({
@@ -91,10 +87,8 @@ export function AyarlarTab({ customer, onUpdate }: AyarlarTabProps) {
     setSaveMessage(null)
 
     try {
-      console.log('=== META SYNC ===')
-      console.log('Saving Meta IDs to DB...')
-
-      const { error: dbError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: dbError } = await (supabase as any)
         .from('customers')
         .update({
           meta_page_id: metaPageId || null,
@@ -106,11 +100,8 @@ export function AyarlarTab({ customer, onUpdate }: AyarlarTabProps) {
         .eq('id', customer.id)
 
       if (dbError) {
-        console.error('DB save error:', dbError)
         throw new Error(`DB kayıt hatası: ${dbError.message}`)
       }
-
-      console.log('Meta IDs saved to DB successfully')
 
       // TODO: n8n düzeltilince buraya gerçek sync eklenecek
       // if (metaAdAccountId) {
@@ -123,9 +114,8 @@ export function AyarlarTab({ customer, onUpdate }: AyarlarTabProps) {
       if (onUpdate) onUpdate()
 
       setTimeout(() => setSaveMessage(null), 5000)
-    } catch (err: any) {
-      console.error('Sync error:', err)
-      setSaveMessage({ type: 'error', text: err?.message || 'Senkronizasyon hatası' })
+    } catch (err) {
+      setSaveMessage({ type: 'error', text: err instanceof Error ? err.message : 'Senkronizasyon hatası' })
     } finally {
       setIsSyncing(false)
     }
@@ -137,7 +127,8 @@ export function AyarlarTab({ customer, onUpdate }: AyarlarTabProps) {
     setSaveMessage(null)
 
     try {
-      const { error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
         .from('customers')
         .update({
           meta_page_id: metaPageId || null,
@@ -160,8 +151,7 @@ export function AyarlarTab({ customer, onUpdate }: AyarlarTabProps) {
 
       // 3 saniye sonra mesajı kaldır
       setTimeout(() => setSaveMessage(null), 3000)
-    } catch (err) {
-      console.error('Error saving settings:', err)
+    } catch {
       setSaveMessage({ type: 'error', text: 'Kaydetme sırasında bir hata oluştu.' })
     } finally {
       setIsSaving(false)

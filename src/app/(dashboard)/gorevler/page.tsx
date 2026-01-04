@@ -987,6 +987,7 @@ export default function GunlukIslerPage() {
       }
     } catch (error) {
       console.error('Fetch error:', error)
+      alert('Görevler yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.')
     } finally {
       setLoading(false)
     }
@@ -1041,61 +1042,77 @@ export default function GunlukIslerPage() {
       fetchData()
     } catch (error) {
       console.error('Save error:', error)
+      alert('Görev kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.')
     } finally {
       setSaving(false)
     }
   }
 
   const handlePause = async (task: DailyTask) => {
-    const now = new Date()
-    const startTime = new Date(task.start_time).getTime()
-    const elapsed = Math.floor((now.getTime() - startTime) / 1000)
-    
-    await (supabase as any)
-      .from('daily_tasks')
-      .update({
-        status: 'paused',
-        paused_at: now.toISOString(),
-        total_duration: (task.total_duration || 0) + elapsed
-      })
-      .eq('id', task.id)
-    
-    fetchData()
+    try {
+      const now = new Date()
+      const startTime = new Date(task.start_time).getTime()
+      const elapsed = Math.floor((now.getTime() - startTime) / 1000)
+
+      await (supabase as any)
+        .from('daily_tasks')
+        .update({
+          status: 'paused',
+          paused_at: now.toISOString(),
+          total_duration: (task.total_duration || 0) + elapsed
+        })
+        .eq('id', task.id)
+
+      fetchData()
+    } catch (error) {
+      console.error('Pause error:', error)
+      alert('Görev duraklatılırken bir hata oluştu.')
+    }
   }
 
   const handleResume = async (task: DailyTask) => {
-    await (supabase as any)
-      .from('daily_tasks')
-      .update({
-        status: 'active',
-        start_time: new Date().toISOString(),
-        paused_at: null
-      })
-      .eq('id', task.id)
-    
-    fetchData()
+    try {
+      await (supabase as any)
+        .from('daily_tasks')
+        .update({
+          status: 'active',
+          start_time: new Date().toISOString(),
+          paused_at: null
+        })
+        .eq('id', task.id)
+
+      fetchData()
+    } catch (error) {
+      console.error('Resume error:', error)
+      alert('Görev devam ettirilirken bir hata oluştu.')
+    }
   }
 
   const handleComplete = async (task: DailyTask) => {
-    const now = new Date()
-    let totalDuration = task.total_duration || 0
-    
-    if (task.status === 'active') {
-      const startTime = new Date(task.start_time).getTime()
-      const elapsed = Math.floor((now.getTime() - startTime) / 1000)
-      totalDuration += elapsed
+    try {
+      const now = new Date()
+      let totalDuration = task.total_duration || 0
+
+      if (task.status === 'active') {
+        const startTime = new Date(task.start_time).getTime()
+        const elapsed = Math.floor((now.getTime() - startTime) / 1000)
+        totalDuration += elapsed
+      }
+
+      await (supabase as any)
+        .from('daily_tasks')
+        .update({
+          status: 'completed',
+          end_time: now.toISOString(),
+          total_duration: totalDuration
+        })
+        .eq('id', task.id)
+
+      fetchData()
+    } catch (error) {
+      console.error('Complete error:', error)
+      alert('Görev tamamlanırken bir hata oluştu.')
     }
-    
-    await (supabase as any)
-      .from('daily_tasks')
-      .update({
-        status: 'completed',
-        end_time: now.toISOString(),
-        total_duration: totalDuration
-      })
-      .eq('id', task.id)
-    
-    fetchData()
   }
 
   // Revize Modal'ı aç
@@ -1107,55 +1124,70 @@ export default function GunlukIslerPage() {
   // Revize başlat (modal'dan)
   const handleStartRevision = async (note: string) => {
     if (!revisionTask) return
-    
-    const now = new Date()
-    
-    // Task'ı güncelle
-    await (supabase as any)
-      .from('daily_tasks')
-      .update({
-        status: 'active',
-        start_time: now.toISOString(),
-        end_time: null,
-        revision_count: revisionTask.revision_count + 1
-      })
-      .eq('id', revisionTask.id)
-    
-    // Revize kaydı oluştur
-    await (supabase as any)
-      .from('task_revisions')
-      .insert({
-        task_id: revisionTask.id,
-        revision_number: revisionTask.revision_count + 1,
-        note: note || null,
-        start_time: now.toISOString(),
-        duration: 0
-      })
-    
-    setShowRevisionModal(false)
-    setRevisionTask(null)
-    fetchData()
+
+    try {
+      const now = new Date()
+
+      // Task'ı güncelle
+      await (supabase as any)
+        .from('daily_tasks')
+        .update({
+          status: 'active',
+          start_time: now.toISOString(),
+          end_time: null,
+          revision_count: revisionTask.revision_count + 1
+        })
+        .eq('id', revisionTask.id)
+
+      // Revize kaydı oluştur
+      await (supabase as any)
+        .from('task_revisions')
+        .insert({
+          task_id: revisionTask.id,
+          revision_number: revisionTask.revision_count + 1,
+          note: note || null,
+          start_time: now.toISOString(),
+          duration: 0
+        })
+
+      setShowRevisionModal(false)
+      setRevisionTask(null)
+      fetchData()
+    } catch (error) {
+      console.error('Start revision error:', error)
+      alert('Revize başlatılırken bir hata oluştu.')
+    }
   }
 
   // Yenile (yanlış kapatma) - Revize olmadan tekrar aç
   const handleReopen = async (task: DailyTask) => {
-    await (supabase as any)
-      .from('daily_tasks')
-      .update({
-        status: 'active',
-        start_time: new Date().toISOString(),
-        end_time: null
-      })
-      .eq('id', task.id)
-    
-    fetchData()
+    try {
+      await (supabase as any)
+        .from('daily_tasks')
+        .update({
+          status: 'active',
+          start_time: new Date().toISOString(),
+          end_time: null
+        })
+        .eq('id', task.id)
+
+      fetchData()
+    } catch (error) {
+      console.error('Reopen error:', error)
+      alert('Görev yeniden açılırken bir hata oluştu.')
+    }
   }
 
   const handleDelete = async (task: DailyTask) => {
     if (!confirm('Bu işi silmek istediğine emin misin?')) return
-    
-    await (supabase as any).from('daily_tasks').delete().eq('id', task.id)
-    fetchData()
+
+    try {
+      await (supabase as any).from('daily_tasks').delete().eq('id', task.id)
+      fetchData()
+    } catch (error) {
+      console.error('Delete error:', error)
+      alert('Görev silinirken bir hata oluştu.')
+    }
   }
 
   const handleEdit = (task: DailyTask) => {

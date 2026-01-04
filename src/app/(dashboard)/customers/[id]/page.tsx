@@ -1,7 +1,6 @@
-// @ts-nocheck
 'use client'
 
-import { useState, useEffect, use, useCallback } from 'react'
+import { useState, useEffect, use, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -98,15 +97,18 @@ interface CustomerDetailPageProps {
   params: Promise<{ id: string }>
 }
 
+// Create supabase client outside component to avoid re-creation
+const supabase = createClient()
+
 export default function CustomerDetailPage({ params }: CustomerDetailPageProps) {
   const { id } = use(params)
   const router = useRouter()
-  const supabase = createClient()
 
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [sectors, setSectors] = useState<Sector[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const savingRef = useRef(false)
   const [error, setError] = useState<string | null>(null)
   const [fileCount, setFileCount] = useState(0)
 
@@ -120,16 +122,16 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
 
   // Sektörleri çek
   const fetchSectors = useCallback(async () => {
-    const { data } = await (supabase as any)
+    const { data } = await supabase
       .from('sectors')
       .select('*')
       .eq('is_active', true)
       .order('sort_order', { ascending: true })
 
     if (data) {
-      setSectors(data)
+      setSectors(data as Sector[])
     }
-  }, [supabase])
+  }, [])
 
   // Fetch customer
   const fetchCustomer = useCallback(async () => {
@@ -155,13 +157,12 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
         .eq('customer_id', id)
       
       setFileCount(count || 0)
-    } catch (err) {
-      console.error('Error fetching customer:', err)
+    } catch {
       setError('Marka yüklenirken bir hata oluştu')
     } finally {
       setLoading(false)
     }
-  }, [id, supabase])
+  }, [id])
 
   useEffect(() => {
     fetchCustomer()
@@ -171,9 +172,19 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
   // Save customer
   async function handleSaveCustomer(formData: CustomerFormData) {
     if (!customer) return
+
+    // Use ref for race condition protection
+    if (savingRef.current) {
+      return
+    }
+
+    savingRef.current = true
     setSaving(true)
 
     try {
+      // Create fresh client for save operation
+      const freshSupabase = createClient()
+
       const customerData = {
         name: formData.name,
         brand_name: formData.brand_name || null,
@@ -196,6 +207,7 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
         target_audience: formData.target_audience || null,
         target_age_range: formData.target_age_range || null,
         target_geography: formData.target_geography || null,
+        target_gender: formData.target_gender || [],
         product_categories: formData.product_categories || [],
         top_products: formData.top_products || [],
         price_segment: formData.price_segment || null,
@@ -216,20 +228,23 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
         updated_at: new Date().toISOString()
       }
 
-      const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (freshSupabase as any)
         .from('customers')
         .update(customerData)
         .eq('id', customer.id)
         .select()
         .single()
 
-      if (error) throw error
-      
+      if (error) {
+        throw error
+      }
+
       setCustomer(data)
     } catch (err) {
-      console.error('Error saving customer:', err)
       throw err
     } finally {
+      savingRef.current = false
       setSaving(false)
     }
   }

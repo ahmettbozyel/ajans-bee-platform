@@ -140,7 +140,10 @@ export default function GirisCikisPage() {
           setMonthlyStats(stats)
         }
       }
-    } catch (error) { console.error('Fetch error:', error) }
+    } catch (error) {
+      console.error('Fetch error:', error)
+      alert('Veriler yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.')
+    }
     finally { setLoading(false) }
   }
 
@@ -331,7 +334,11 @@ export default function GirisCikisPage() {
       const lateMinutes = (isStajer || todayHoliday || !isTodayWorkDay) ? 0 : calculateLateMinutesWithSettings(now, workHours, tolerances)
       if (lateMinutes > 0) { setPendingCheckIn({ now, location, lateMinutes }); setShowLateModal(true); setActionLoading(false); return }
       await saveCheckIn(now, location, 0, '')
-    } catch (error) { console.error('Check-in error:', error); setActionLoading(false) }
+    } catch (error) {
+      console.error('Check-in error:', error)
+      alert('Giriş kaydı oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.')
+      setActionLoading(false)
+    }
   }
 
   const saveCheckIn = async (now: Date, location: { lat: number; lng: number } | null, lateMinutes: number, reason: string) => {
@@ -368,7 +375,11 @@ export default function GirisCikisPage() {
       const earlyLeaveMinutes = (todayHoliday || !isTodayWorkDay) ? 0 : calculateEarlyLeaveMinutesWithSettings(now, workHours, tolerances)
       if (overtimeMinutes > 0) { setPendingCheckOut({ now, location, overtimeMinutes, earlyLeaveMinutes }); setShowOvertimeModal(true); setActionLoading(false); return }
       await saveCheckOut(now, location, 0, earlyLeaveMinutes, '')
-    } catch (error) { console.error('Check-out error:', error); setActionLoading(false) }
+    } catch (error) {
+      console.error('Check-out error:', error)
+      alert('Çıkış kaydı oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.')
+      setActionLoading(false)
+    }
   }
 
   const saveCheckOut = async (now: Date, location: { lat: number; lng: number } | null, overtimeMinutes: number, earlyLeaveMinutes: number, reason: string) => {

@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -473,14 +472,14 @@ export function CustomerViewMode({ customer, onEdit, onAIRefresh, onDelete }: Cu
   // Fetch sectors
   useEffect(() => {
     async function fetchSectors() {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from('sectors')
         .select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true })
 
       if (data) {
-        setSectors(data)
+        setSectors(data as Sector[])
       }
     }
     fetchSectors()

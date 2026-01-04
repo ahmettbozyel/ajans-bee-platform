@@ -316,6 +316,7 @@ export interface Customer {
   target_audience?: string | null;
   target_age_range?: string | null;
   target_geography?: string | null;
+  target_gender?: string[] | null;
 
   // Ürün bilgileri
   product_categories?: string[] | null;
@@ -423,7 +424,7 @@ export const BRIEF_SECTIONS_NEW = {
     id: 'hedef-kitle',
     label: 'Hedef Kitle',
     icon: 'Users',
-    fields: ['target_audience', 'target_age_range', 'target_geography'],
+    fields: ['target_audience', 'target_age_range', 'target_geography', 'target_gender'],
     required: []
   },
   urunHizmet: {
@@ -497,7 +498,7 @@ export const BRIEF_SECTIONS = {
     id: 'hedef',
     label: 'Hedef Kitle',
     icon: 'Users',
-    fields: ['target_audience', 'target_age_range', 'target_geography'],
+    fields: ['target_audience', 'target_age_range', 'target_geography', 'target_gender'],
     required: []
   },
   urunBilgileri: {

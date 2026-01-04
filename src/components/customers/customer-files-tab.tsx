@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
@@ -108,9 +107,10 @@ function FileCard({
   // Determine background for logos
   const getLogoBg = () => {
     if (file.category !== 'logo') return 'bg-zinc-800/50'
-    if (file.sub_category === 'monochrome-dark') return 'bg-white'
-    if (file.sub_category === 'monochrome-light') return 'bg-zinc-900'
-    if (file.sub_category === 'icon') return 'bg-gradient-to-br from-indigo-500/20 to-violet-500/20'
+    const subCat = file.sub_category as string | null | undefined
+    if (subCat === 'monochrome-dark') return 'bg-white'
+    if (subCat === 'monochrome-light') return 'bg-zinc-900'
+    if (subCat === 'icon') return 'bg-gradient-to-br from-indigo-500/20 to-violet-500/20'
     return 'bg-zinc-800/50'
   }
   
@@ -182,7 +182,7 @@ function FileCard({
           </p>
           <div className="flex items-center justify-between mt-2">
             <span className={cn("badge", config.badgeClass)}>{getBadgeLabel()}</span>
-            <span className="text-xs text-zinc-500 font-mono">{formatFileSize(file.file_size)}</span>
+            <span className="text-xs text-zinc-500 font-mono">{formatFileSize(file.file_size || 0)}</span>
           </div>
           
           {/* Set as Primary (for logos only) */}
@@ -413,7 +413,8 @@ export function CustomerFilesTab({ customer, onUpdate }: CustomerFilesTabProps) 
           .getPublicUrl(filePath)
         
         // Insert record to database
-        const { error: dbError } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: dbError } = await (supabase as any)
           .from('customer_files')
           .insert({
             user_id: userId,
@@ -435,9 +436,9 @@ export function CustomerFilesTab({ customer, onUpdate }: CustomerFilesTabProps) 
       setPreviewUrls([])
       fetchFiles()
       onUpdate?.()
-    } catch (err: any) {
+    } catch (err) {
       console.error('Upload error:', err)
-      setUploadError(err.message || 'Yükleme sırasında hata oluştu')
+      setUploadError(err instanceof Error ? err.message : 'Yükleme sırasında hata oluştu')
     } finally {
       setIsUploading(false)
     }
@@ -488,14 +489,16 @@ export function CustomerFilesTab({ customer, onUpdate }: CustomerFilesTabProps) 
   const handleSetPrimary = async (fileId: string) => {
     try {
       // Remove primary from all logos
-      await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
         .from('customer_files')
         .update({ is_primary: false })
         .eq('customer_id', customer.id)
         .eq('category', 'logo')
-      
+
       // Set new primary
-      await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
         .from('customer_files')
         .update({ is_primary: true })
         .eq('id', fileId)

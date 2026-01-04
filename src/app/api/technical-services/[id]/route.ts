@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
@@ -88,7 +87,8 @@ export async function PATCH(
       updated_at: new Date().toISOString()
     }
 
-    const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
       .from('technical_services')
       .update(updateData)
       .eq('id', id)

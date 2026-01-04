@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
@@ -10,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { BrandAssetsSection } from '../brand-assets-section'
+import { createClient } from '@/lib/supabase/client'
 import type {
   Customer,
   CustomerFormData,
@@ -76,6 +76,15 @@ interface AIResult {
   }>
 }
 
+// Sector type
+interface Sector {
+  id: string
+  name: string
+  slug: string
+  sort_order: number
+  is_active: boolean
+}
+
 // Main Form Props
 interface CustomerBriefFormProps {
   customer?: Customer | null
@@ -86,6 +95,7 @@ interface CustomerBriefFormProps {
 
 export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: CustomerBriefFormProps) {
   const [openSections, setOpenSections] = useState<string[]>(['marka-kimligi'])
+  const [sectors, setSectors] = useState<Sector[]>([])
   const [aiResearch, setAIResearch] = useState<AIResearchState>({
     isLoading: false, progress: 0, status: 'idle', error: null, filledFields: []
   })
@@ -107,6 +117,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
     email: '', phone: '', location: '', social_media: {},
     brand_description: '', mission: '', vision: '', slogan: '', usp: '',
     target_audience: '', target_age_range: '', target_geography: '',
+    target_gender: [],
     product_categories: [], top_products: [], price_segment: null,
     competitors: [], do_not_do: [], must_emphasize: [], special_events: [],
     brand_values: [], buying_motivations: [],
@@ -119,7 +130,6 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
   })
 
   // Extended form fields for new UI
-  const [targetGender, setTargetGender] = useState<string[]>([])
   const [hashtagPreference, setHashtagPreference] = useState('medium')
   const [emojiPreference, setEmojiPreference] = useState('moderate')
   const [selectedHolidays, setSelectedHolidays] = useState<string[]>([])
@@ -151,6 +161,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
         target_audience: customer.target_audience || '',
         target_age_range: customer.target_age_range || '',
         target_geography: customer.target_geography || '',
+        target_gender: customer.target_gender || [],
         product_categories: customer.product_categories || [],
         top_products: customer.top_products || [],
         price_segment: customer.price_segment || null,
@@ -176,6 +187,23 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
       })
     }
   }, [customer])
+
+  // Sektörleri çek
+  useEffect(() => {
+    async function fetchSectors() {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('sectors')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+
+      if (data) {
+        setSectors(data)
+      }
+    }
+    fetchSectors()
+  }, [])
 
   const toggleSection = (id: string) => {
     setOpenSections(prev => prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id])
@@ -212,7 +240,7 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
         return {
           filled: [
             formData.target_age_range,
-            targetGender.length,
+            formData.target_gender?.length,
             formData.target_audience
           ].filter(Boolean).length,
           total: 3
@@ -567,6 +595,68 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
                 />
               </div>
 
+              {/* ✅ Website - AKTİF */}
+              <div>
+                <Label className="flex items-center gap-2 mb-2 text-zinc-700 dark:text-zinc-300">
+                  Website
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Markanın web sitesi adresi">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+                <Input
+                  value={formData.website_url || ''}
+                  onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
+                  placeholder="https://example.com"
+                  className="input-glow font-mono text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+                />
+              </div>
+
+              {/* ✅ Müşteri Tipi - AKTİF */}
+              <div>
+                <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">Müşteri Tipi</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <OptionCard
+                    label="Retainer"
+                    emoji="🤝"
+                    selected={formData.customer_type === 'retainer'}
+                    onChange={() => setFormData({ ...formData, customer_type: 'retainer' })}
+                    colorClass="cyan"
+                  />
+                  <OptionCard
+                    label="Proje"
+                    emoji="📋"
+                    selected={formData.customer_type === 'project'}
+                    onChange={() => setFormData({ ...formData, customer_type: 'project' })}
+                    colorClass="fuchsia"
+                  />
+                </div>
+              </div>
+
+              {/* ✅ Sektör - AKTİF */}
+              <div>
+                <Label className="flex items-center gap-2 mb-2 text-zinc-700 dark:text-zinc-300">
+                  Sektör
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Markanın faaliyet gösterdiği sektör">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+                <Select
+                  value={formData.sector || ''}
+                  onValueChange={(value) => setFormData({ ...formData, sector: value })}
+                >
+                  <SelectTrigger className="input-glow text-zinc-900 dark:text-white">
+                    <SelectValue placeholder="Sektör seçin..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sectors.map((sector) => (
+                      <SelectItem key={sector.id} value={sector.slug}>
+                        {sector.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* ✅ Slogan - AKTİF */}
               <div>
                 <Label className="flex items-center gap-2 mb-2 text-zinc-700 dark:text-zinc-300">
@@ -722,12 +812,13 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
                     <input
                       type="checkbox"
                       className="peer sr-only"
-                      checked={targetGender.includes('female')}
+                      checked={(formData.target_gender || []).includes('female')}
                       onChange={() => {
-                        if (targetGender.includes('female')) {
-                          setTargetGender(targetGender.filter(g => g !== 'female'))
+                        const current = formData.target_gender || []
+                        if (current.includes('female')) {
+                          setFormData({ ...formData, target_gender: current.filter(g => g !== 'female') })
                         } else {
-                          setTargetGender([...targetGender, 'female'])
+                          setFormData({ ...formData, target_gender: [...current, 'female'] })
                         }
                       }}
                     />
@@ -739,12 +830,13 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
                     <input
                       type="checkbox"
                       className="peer sr-only"
-                      checked={targetGender.includes('male')}
+                      checked={(formData.target_gender || []).includes('male')}
                       onChange={() => {
-                        if (targetGender.includes('male')) {
-                          setTargetGender(targetGender.filter(g => g !== 'male'))
+                        const current = formData.target_gender || []
+                        if (current.includes('male')) {
+                          setFormData({ ...formData, target_gender: current.filter(g => g !== 'male') })
                         } else {
-                          setTargetGender([...targetGender, 'male'])
+                          setFormData({ ...formData, target_gender: [...current, 'male'] })
                         }
                       }}
                     />

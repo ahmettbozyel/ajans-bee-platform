@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
@@ -33,8 +32,6 @@ export async function POST(request: NextRequest) {
       ad_account_id: meta_ad_account_id
     }
 
-    console.log('n8n webhook isteği gönderiliyor:', n8nPayload)
-
     const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
       method: 'POST',
       headers: {
@@ -45,9 +42,6 @@ export async function POST(request: NextRequest) {
 
     const n8nData = await n8nResponse.json().catch(() => null)
 
-    console.log('n8n response status:', n8nResponse.status)
-    console.log('n8n response data:', n8nData)
-
     if (!n8nResponse.ok) {
       return NextResponse.json({
         error: 'n8n webhook hatası',
@@ -57,7 +51,8 @@ export async function POST(request: NextRequest) {
     }
 
     // meta_last_sync güncelle
-    const { error: updateError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: updateError } = await (supabase as any)
       .from('customers')
       .update({
         meta_last_sync: new Date().toISOString(),
@@ -65,9 +60,7 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', customer_id)
 
-    if (updateError) {
-      console.error('meta_last_sync güncelleme hatası:', updateError)
-    }
+    // updateError handled silently - non-critical operation
 
     // TODO: performance_ads tablosuna kaydet (tablo oluşturulunca)
     // if (n8nData?.data) {

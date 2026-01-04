@@ -8,14 +8,17 @@ interface OptionCardProps {
   selected: boolean
   onChange: () => void
   type?: 'radio' | 'checkbox'
-  colorClass?: 'indigo' | 'violet' | 'fuchsia' | 'rose'
+  colorClass?: 'indigo' | 'violet' | 'fuchsia' | 'rose' | 'cyan' | 'amber' | 'emerald'
 }
 
 const borderColor = {
   indigo: 'peer-checked:border-indigo-500 peer-checked:bg-indigo-50 dark:peer-checked:bg-indigo-500/10',
   violet: 'peer-checked:border-violet-500 peer-checked:bg-violet-50 dark:peer-checked:bg-violet-500/10',
   fuchsia: 'peer-checked:border-fuchsia-500 peer-checked:bg-fuchsia-50 dark:peer-checked:bg-fuchsia-500/10',
-  rose: 'peer-checked:border-rose-500 peer-checked:bg-rose-50 dark:peer-checked:bg-rose-500/10'
+  rose: 'peer-checked:border-rose-500 peer-checked:bg-rose-50 dark:peer-checked:bg-rose-500/10',
+  cyan: 'peer-checked:border-cyan-500 peer-checked:bg-cyan-50 dark:peer-checked:bg-cyan-500/10',
+  amber: 'peer-checked:border-amber-500 peer-checked:bg-amber-50 dark:peer-checked:bg-amber-500/10',
+  emerald: 'peer-checked:border-emerald-500 peer-checked:bg-emerald-50 dark:peer-checked:bg-emerald-500/10'
 }
 
 export function OptionCard({

@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -65,6 +64,7 @@ export default function MusterilerPage() {
   const [showInactive, setShowInactive] = useState(false)
   const [newBrandForm, setNewBrandForm] = useState(initialNewBrandForm)
   const [sectorPopoverOpen, setSectorPopoverOpen] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const supabase = createClient()
 
@@ -75,14 +75,14 @@ export default function MusterilerPage() {
 
   // Sektörleri çek
   async function fetchSectors() {
-    const { data } = await (supabase as any)
+    const { data } = await supabase
       .from('sectors')
       .select('*')
       .eq('is_active', true)
       .order('sort_order', { ascending: true })
 
     if (data) {
-      setSectors(data)
+      setSectors(data as Sector[])
     }
   }
 
@@ -94,6 +94,7 @@ export default function MusterilerPage() {
 
   async function fetchCustomers() {
     setLoading(true)
+    setError(null)
     try {
       // API üzerinden çek (RLS bypass)
       const res = await fetch('/api/customers?all=true')
@@ -102,6 +103,7 @@ export default function MusterilerPage() {
       setCustomers(data || [])
     } catch (error) {
       console.error('Error fetching customers:', error)
+      setError('Müşteriler yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.')
     } finally {
       setLoading(false)
     }
@@ -187,7 +189,8 @@ export default function MusterilerPage() {
         integrations: {}
       }
 
-      const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
         .from('customers')
         .insert(customerData)
         .select()
@@ -204,6 +207,7 @@ export default function MusterilerPage() {
       }
     } catch (error) {
       console.error('Error creating brand:', error)
+      alert('Marka oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.')
     } finally {
       setFormLoading(false)
     }
@@ -225,6 +229,7 @@ export default function MusterilerPage() {
       fetchCustomers()
     } catch (error) {
       console.error('Error deleting customer:', error)
+      alert('Marka silinirken bir hata oluştu. Lütfen tekrar deneyin.')
     }
   }
 
@@ -233,7 +238,8 @@ export default function MusterilerPage() {
     const newStatus = customer.status === 'inactive' ? 'active' : 'inactive'
 
     try {
-      const { error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
         .from('customers')
         .update({ status: newStatus })
         .eq('id', customer.id)
@@ -246,6 +252,7 @@ export default function MusterilerPage() {
       ))
     } catch (error) {
       console.error('Error toggling status:', error)
+      alert('Marka durumu güncellenirken bir hata oluştu. Lütfen tekrar deneyin.')
     }
   }
 
@@ -334,6 +341,13 @@ export default function MusterilerPage() {
       <h2 className="text-base font-semibold text-white">
         {showInactive ? 'Tüm Markalar' : 'Aktif Markalar'} ({filteredCustomers.length})
       </h2>
+
+      {/* Error Message */}
+      {error && (
+        <div className="glass-card rounded-2xl p-4 border border-rose-500/30 bg-rose-500/10">
+          <p className="text-rose-400 text-sm">{error}</p>
+        </div>
+      )}
 
       {/* Customer Cards */}
       {loading ? (

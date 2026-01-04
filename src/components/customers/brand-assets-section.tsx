@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useMemo } from 'react'
@@ -202,19 +201,20 @@ export function BrandAssetsSection({
   }
 
   const updateFont = (
-    category: 'corporate' | 'web', 
-    key: string, 
+    category: 'corporate' | 'web',
+    key: string,
     value: string
   ) => {
-    const newFonts = { ...safeFonts }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const newFonts: any = { ...safeFonts }
     if (!newFonts[category]) newFonts[category] = {}
-    newFonts[category]![key as keyof typeof newFonts[typeof category]] = value || undefined
-    
+    newFonts[category][key] = value || undefined
+
     // Clean empty objects
-    if (newFonts[category] && Object.values(newFonts[category]!).every(v => !v)) {
+    if (newFonts[category] && Object.values(newFonts[category]).every((v: unknown) => !v)) {
       delete newFonts[category]
     }
-    
+
     onChange(safeColors, newFonts)
   }
 

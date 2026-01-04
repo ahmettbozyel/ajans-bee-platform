@@ -522,17 +522,15 @@ export default function DashboardPage() {
             if (brandsRes.ok) {
               const brandsData = await brandsRes.json()
               setTotalBrands(brandsData.length || 0)
-              console.log('[Dashboard] Brands:', brandsData.length)
             }
-          } catch (err) {
-            console.error('Brands fetch error:', err)
+          } catch {
+            // Brands fetch failed silently
           }
 
           const { count: servicesCount } = await (supabase as any)
             .from('technical_services')
             .select('*', { count: 'exact', head: true })
 
-          console.log('[Dashboard] Services:', servicesCount)
           setTotalServices(servicesCount || 0)
 
           // Daily stats from view (optional - may not exist yet)
@@ -609,8 +607,8 @@ export default function DashboardPage() {
 
           setExpiringServices(servicesData || [])
         }
-      } catch (error) {
-        console.error('Dashboard fetch error:', error)
+      } catch {
+        // Dashboard fetch error handled silently
       } finally {
         setLoading(false)
       }

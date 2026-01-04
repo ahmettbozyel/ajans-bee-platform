@@ -122,8 +122,8 @@ export async function POST(request: NextRequest) {
         } else {
           results.errors.push(`Ads fetch failed: ${adsResponse.statusText}`)
         }
-      } catch (err: any) {
-        results.errors.push(`Ads error: ${err.message}`)
+      } catch (err) {
+        results.errors.push(`Ads error: ${err instanceof Error ? err.message : 'Unknown error'}`)
       }
     }
 
@@ -185,8 +185,8 @@ export async function POST(request: NextRequest) {
         } else {
           results.errors.push(`Facebook fetch failed: ${fbResponse.statusText}`)
         }
-      } catch (err: any) {
-        results.errors.push(`Facebook error: ${err.message}`)
+      } catch (err) {
+        results.errors.push(`Facebook error: ${err instanceof Error ? err.message : 'Unknown error'}`)
       }
     }
 
@@ -248,8 +248,8 @@ export async function POST(request: NextRequest) {
         } else {
           results.errors.push(`Instagram fetch failed: ${igResponse.statusText}`)
         }
-      } catch (err: any) {
-        results.errors.push(`Instagram error: ${err.message}`)
+      } catch (err) {
+        results.errors.push(`Instagram error: ${err instanceof Error ? err.message : 'Unknown error'}`)
       }
     }
 
@@ -265,10 +265,10 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString()
     })
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Meta Performance API Error:', error)
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
@@ -352,10 +352,10 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString()
     })
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Meta Performance GET Error:', error)
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
