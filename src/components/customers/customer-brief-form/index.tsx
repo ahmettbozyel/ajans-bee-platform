@@ -2,11 +2,13 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Info, Lock } from 'lucide-react'
+import { Info, Lock, Loader2, Sparkles, Check, X, ChevronRight } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { BrandAssetsSection } from '../brand-assets-section'
 import type {
   Customer,
@@ -63,6 +65,17 @@ function DisabledSection({ title, icon, description }: { title: string; icon: st
   )
 }
 
+// AI Result type
+interface AIResult {
+  filled: Record<string, any>
+  suggestions: Array<{
+    field: string
+    current: any
+    suggested: any
+    reason: string
+  }>
+}
+
 // Main Form Props
 interface CustomerBriefFormProps {
   customer?: Customer | null
@@ -76,6 +89,12 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
   const [aiResearch, setAIResearch] = useState<AIResearchState>({
     isLoading: false, progress: 0, status: 'idle', error: null, filledFields: []
   })
+
+  // AI Complete states
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiResult, setAiResult] = useState<AIResult | null>(null)
+  const [showAIModal, setShowAIModal] = useState(false)
+  const [aiError, setAiError] = useState<string | null>(null)
 
   // Section refs for scroll
   const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
@@ -164,12 +183,9 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
 
   // Section'a scroll et ve aç
   const scrollToSection = (sectionId: string) => {
-    // Önce section'ı aç (kapalıysa)
     if (!openSections.includes(sectionId)) {
       setOpenSections(prev => [...prev, sectionId])
     }
-
-    // Biraz bekle ki DOM güncellensin, sonra scroll et
     setTimeout(() => {
       const element = sectionRefs.current[sectionId]
       if (element) {
@@ -182,7 +198,6 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
   const getSectionCompletion = (sectionId: string) => {
     switch (sectionId) {
       case 'marka-kimligi':
-        // FAZ 1: Marka Adı, Slogan, Değerler, Ses, Sosyal Medya
         return {
           filled: [
             formData.name,
@@ -194,7 +209,6 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
           total: 5
         }
       case 'hedef-kitle':
-        // FAZ 1: Yaş, Cinsiyet, Açıklama (Lokasyon disabled)
         return {
           filled: [
             formData.target_age_range,
@@ -204,7 +218,6 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
           total: 3
         }
       case 'urun-hizmet':
-        // FAZ 1: Sadece Ana Ürünler (Fiyat ve Best Seller disabled)
         return {
           filled: [
             formData.top_products?.length
@@ -212,14 +225,12 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
           total: 1
         }
       case 'kurallar':
-        // FAZ 1: Sadece Yasak Kelimeler (Hashtag/Emoji disabled)
         return {
           filled: [
             formData.do_not_do?.length
           ].filter(Boolean).length,
           total: 1
         }
-      // Disabled sections - her zaman 0/0
       case 'rakipler':
       case 'ozel-gunler':
       case 'marka-assets':
@@ -229,40 +240,119 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
     }
   }
 
-  // FAZ 1 için sadece aktif section'ları göster
   const allSectionsProgress = [
-    {
-      label: 'Marka Kimliği',
-      id: 'marka-kimligi',
-      ...getSectionCompletion('marka-kimligi')
-    },
-    {
-      label: 'Hedef Kitle',
-      id: 'hedef-kitle',
-      ...getSectionCompletion('hedef-kitle')
-    },
-    {
-      label: 'Ürün/Hizmet',
-      id: 'urun-hizmet',
-      ...getSectionCompletion('urun-hizmet')
-    },
-    {
-      label: 'İçerik Kuralları',
-      id: 'kurallar',
-      ...getSectionCompletion('kurallar')
-    }
+    { label: 'Marka Kimliği', id: 'marka-kimligi', ...getSectionCompletion('marka-kimligi') },
+    { label: 'Hedef Kitle', id: 'hedef-kitle', ...getSectionCompletion('hedef-kitle') },
+    { label: 'Ürün/Hizmet', id: 'urun-hizmet', ...getSectionCompletion('urun-hizmet') },
+    { label: 'İçerik Kuralları', id: 'kurallar', ...getSectionCompletion('kurallar') }
   ]
 
   const totalFilled = allSectionsProgress.reduce((acc, s) => acc + s.filled, 0)
   const totalFields = allSectionsProgress.reduce((acc, s) => acc + s.total, 0)
   const overallPercentage = totalFields > 0 ? Math.round((totalFilled / totalFields) * 100) : 0
 
+  // ==================== AI COMPLETE HANDLER ====================
+  const handleAIComplete = async () => {
+    if (!formData.name) {
+      setAiError('Marka adı zorunlu')
+      return
+    }
+
+    setAiLoading(true)
+    setAiError(null)
+
+    // Dolu alanları topla
+    const filledFields: Record<string, any> = {}
+    const emptyFields: string[] = []
+
+    // Faz 1 aktif alanlar
+    const fieldsToCheck = [
+      { key: 'name', value: formData.name },
+      { key: 'slogan', value: formData.slogan },
+      { key: 'brand_values', value: formData.brand_values },
+      { key: 'brand_voice', value: formData.brand_voice },
+      { key: 'social_media', value: formData.social_media },
+      { key: 'target_age_range', value: formData.target_age_range },
+      { key: 'target_audience', value: formData.target_audience },
+      { key: 'top_products', value: formData.top_products },
+      { key: 'do_not_do', value: formData.do_not_do },
+    ]
+
+    fieldsToCheck.forEach(({ key, value }) => {
+      const isEmpty = !value || 
+        (Array.isArray(value) && value.length === 0) ||
+        (typeof value === 'object' && Object.keys(value).length === 0)
+      
+      if (isEmpty) {
+        emptyFields.push(key)
+      } else {
+        filledFields[key] = value
+      }
+    })
+
+    try {
+      const res = await fetch('/api/ai/brief/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filledFields,
+          emptyFields,
+          websiteUrl: formData.website_url || undefined
+        })
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'API hatası')
+      }
+
+      const result: AIResult = await res.json()
+      setAiResult(result)
+      setShowAIModal(true)
+
+    } catch (error) {
+      console.error('AI Complete error:', error)
+      setAiError(error instanceof Error ? error.message : 'Bir hata oluştu')
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
+  // AI sonuçlarını forma uygula
+  const applyAIResults = () => {
+    if (!aiResult) return
+
+    // Filled değerleri direkt uygula
+    setFormData(prev => ({
+      ...prev,
+      ...aiResult.filled
+    }))
+
+    setShowAIModal(false)
+    setAiResult(null)
+  }
+
+  // Tek bir öneriyi kabul et
+  const acceptSuggestion = (field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
+
+    // Öneriyi listeden çıkar
+    if (aiResult) {
+      setAiResult({
+        ...aiResult,
+        suggestions: aiResult.suggestions.filter(s => s.field !== field)
+      })
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     await onSave(formData)
   }
 
-  // Handle brand assets change
   const handleBrandAssetsChange = (colors: BrandColors, fonts: BrandFonts) => {
     setFormData(prev => ({
       ...prev,
@@ -271,14 +361,182 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
     }))
   }
 
+  // Field label mapping
+  const fieldLabels: Record<string, string> = {
+    name: 'Marka Adı',
+    slogan: 'Slogan',
+    brand_values: 'Marka Değerleri',
+    brand_voice: 'Marka Sesi',
+    social_media: 'Sosyal Medya',
+    target_age_range: 'Yaş Aralığı',
+    target_audience: 'Hedef Kitle',
+    top_products: 'Ana Ürünler',
+    do_not_do: 'Yasak Kelimeler'
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
 
-      {/* Progress Overview - Sadece Aktif Bölümler */}
+      {/* Progress Overview */}
       <ProgressOverview
         sections={allSectionsProgress}
         onSectionClick={scrollToSection}
       />
+
+      {/* ==================== AI İLE TAMAMLA BUTONU ==================== */}
+      <div className="glass-card rounded-2xl p-4 border border-violet-200 dark:border-violet-500/20 bg-gradient-to-r from-violet-50 dark:from-violet-500/5 to-fuchsia-50 dark:to-fuchsia-500/5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-lg shadow-violet-500/25">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-zinc-900 dark:text-white">AI ile Tamamla</h3>
+              <p className="text-xs text-zinc-500">Boş alanları otomatik doldur, öneriler al</p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            onClick={handleAIComplete}
+            disabled={aiLoading || !formData.name}
+            className="btn-press px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white text-sm font-medium shadow-lg shadow-violet-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {aiLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Analiz ediliyor...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 mr-2" />
+                Tamamla
+              </>
+            )}
+          </Button>
+        </div>
+        {aiError && (
+          <p className="mt-3 text-sm text-rose-600 dark:text-rose-400">{aiError}</p>
+        )}
+      </div>
+
+      {/* ==================== AI SONUÇ MODAL ==================== */}
+      <Dialog open={showAIModal} onOpenChange={setShowAIModal}>
+        <DialogContent 
+          className="sm:max-w-lg border border-zinc-700 rounded-2xl shadow-2xl max-h-[80vh] overflow-y-auto"
+          style={{ backgroundColor: '#18181b' }}
+        >
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20">
+                <Sparkles className="w-5 h-5 text-violet-400" />
+              </div>
+              AI Analiz Sonuçları
+            </DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              Aşağıdaki alanlar AI tarafından dolduruldu veya önerildi.
+            </DialogDescription>
+          </DialogHeader>
+
+          {aiResult && (
+            <div className="space-y-6 py-4">
+              
+              {/* Doldurulan Alanlar */}
+              {Object.keys(aiResult.filled).length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-emerald-400 mb-3 flex items-center gap-2">
+                    <Check className="w-4 h-4" />
+                    Doldurulan Alanlar ({Object.keys(aiResult.filled).length})
+                  </h4>
+                  <div className="space-y-2">
+                    {Object.entries(aiResult.filled).map(([field, value]) => (
+                      <div key={field} className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                        <span className="text-xs font-medium text-emerald-400">{fieldLabels[field] || field}</span>
+                        <p className="text-sm text-zinc-300 mt-1">
+                          {Array.isArray(value) ? value.join(', ') : String(value)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Öneriler */}
+              {aiResult.suggestions.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-amber-400 mb-3 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    İyileştirme Önerileri ({aiResult.suggestions.length})
+                  </h4>
+                  <div className="space-y-3">
+                    {aiResult.suggestions.map((suggestion, idx) => (
+                      <div key={idx} className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <span className="text-xs font-medium text-amber-400">{fieldLabels[suggestion.field] || suggestion.field}</span>
+                            <div className="mt-2 space-y-1">
+                              <p className="text-xs text-zinc-500">
+                                Mevcut: {Array.isArray(suggestion.current) ? suggestion.current.join(', ') : String(suggestion.current || '—')}
+                              </p>
+                              <p className="text-sm text-zinc-300">
+                                Öneri: {Array.isArray(suggestion.suggested) ? suggestion.suggested.join(', ') : String(suggestion.suggested)}
+                              </p>
+                            </div>
+                            <p className="text-xs text-zinc-500 mt-2 italic">{suggestion.reason}</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => acceptSuggestion(suggestion.field, suggestion.suggested)}
+                              className="h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white"
+                            >
+                              <Check className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setAiResult({
+                                  ...aiResult,
+                                  suggestions: aiResult.suggestions.filter((_, i) => i !== idx)
+                                })
+                              }}
+                              className="h-8 px-3 rounded-lg text-zinc-400 hover:text-zinc-300 hover:bg-zinc-800"
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Apply Button */}
+              <div className="flex gap-3 pt-4 border-t border-zinc-700">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowAIModal(false)}
+                  className="flex-1 rounded-xl border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                >
+                  İptal
+                </Button>
+                <Button
+                  type="button"
+                  onClick={applyAIResults}
+                  className="flex-1 btn-press rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg shadow-violet-500/25"
+                >
+                  <Check className="w-4 h-4 mr-2" />
+                  Uygula
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* ==================== SECTION 1: MARKA KİMLİĞİ ==================== */}
       <div
@@ -680,29 +938,23 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
 
       {/* ==================== 🔒 DISABLED SECTIONS ==================== */}
       
-      {/* Rakipler - Tamamen Disabled */}
       <DisabledSection 
         title="Rakip Analizi" 
         icon="🎯" 
         description="Rakip takibi ve karşılaştırmalı analiz"
       />
 
-      {/* Özel Günler - Tamamen Disabled */}
       <DisabledSection 
         title="Özel Günler & Takvim" 
         icon="📅" 
         description="İçerik takvimi ve özel gün planlaması"
       />
 
-      {/* Marka Assets - Tamamen Disabled */}
       <DisabledSection 
         title="Renkler & Fontlar" 
         icon="🎨" 
         description="Marka görsel kimliği"
       />
-
-      {/* Form - hidden submit için */}
-      {/* Kaydet butonu artık sağ sidebar'da, bu form submit için gerekli */}
 
     </form>
   )
