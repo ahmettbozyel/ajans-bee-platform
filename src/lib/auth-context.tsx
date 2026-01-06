@@ -33,20 +33,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log('[Auth] fetchAppUser starting for:', userId)
     const supabase = createClient()
     try {
-      const { data, error } = await supabase
+      // 3 saniye timeout ile fetch
+      const timeoutPromise = new Promise<null>((resolve) => {
+        setTimeout(() => {
+          console.log('[Auth] fetchAppUser timeout!')
+          resolve(null)
+        }, 3000)
+      })
+
+      const fetchPromise = supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single()
+        .then(({ data, error }) => {
+          console.log('[Auth] fetchAppUser result:', data, error?.message)
+          if (error) {
+            console.error('[Auth] fetchAppUser error:', error.message)
+            return null
+          }
+          return data as AppUser
+        })
 
-      console.log('[Auth] fetchAppUser result:', data, error?.message)
-
-      if (error) {
-        console.error('[Auth] fetchAppUser error:', error.message)
-        return null
-      }
-
-      return data as AppUser
+      return await Promise.race([fetchPromise, timeoutPromise])
     } catch (err) {
       console.error('[Auth] fetchAppUser exception:', err)
       return null
