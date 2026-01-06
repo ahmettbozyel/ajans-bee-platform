@@ -111,8 +111,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setLoading(false)
         }
-      } else if (event === 'SIGNED_IN' && session?.user && initialLoadDone) {
-        // Only handle SIGNED_IN after initial load (for fresh logins)
+      } else if (event === 'SIGNED_IN' && session?.user) {
+        // Handle fresh login - clear timeout and load user
+        clearTimeout(timeout)
+        initialLoadDone = true
         await loadUser(session.user)
       } else if (event === 'SIGNED_OUT') {
         setAuthUser(null)
