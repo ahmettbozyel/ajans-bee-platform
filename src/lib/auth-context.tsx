@@ -75,21 +75,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (session?.user) {
           setAuthUser(session.user)
-          // appUser'ı async fetch et ama loading'i hemen kapat
-          fetchAppUser(session.user.id).then(appUserData => {
-            if (isMounted) {
-              setAppUser(appUserData)
-              console.log('[Auth] appUser loaded:', appUserData?.role)
-            }
-          })
+          // appUser yüklenene kadar bekle, sonra loading'i kapat
+          const appUserData = await fetchAppUser(session.user.id)
+          if (isMounted) {
+            setAppUser(appUserData)
+            setLoading(false)
+            console.log('[Auth] appUser loaded:', appUserData?.role)
+          }
         } else {
           setAuthUser(null)
           setAppUser(null)
-        }
-
-        // Loading'i hemen kapat
-        if (isMounted) {
-          setLoading(false)
+          if (isMounted) {
+            setLoading(false)
+          }
         }
       }
     )
