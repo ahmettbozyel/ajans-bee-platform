@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from 'react'
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react'
 import { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { AppUser, UserRole, canAccess, canEdit, getDefaultRoute, ModuleSlug } from './auth-types'
@@ -24,11 +24,13 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Module-level flag to prevent duplicate initialization across renders
+let authInitialized = false
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [authUser, setAuthUser] = useState<User | null>(null)
   const [appUser, setAppUser] = useState<AppUser | null>(null)
   const [loading, setLoading] = useState(true)
-  const initialized = useRef(false)
 
   // Singleton client kullan - tüm app'te aynı instance
   const supabase = createClient()
@@ -42,11 +44,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single()
 
       if (error) {
+        console.error('[Auth] fetchAppUser error:', error.message)
         return null
       }
 
       return data as AppUser
-    } catch {
+    } catch (err) {
+      console.error('[Auth] fetchAppUser exception:', err)
       return null
     }
   }, [supabase])
@@ -61,20 +65,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase, fetchAppUser])
 
   useEffect(() => {
-    if (initialized.current) return
-    initialized.current = true
+    // Check if already initialized (handles strict mode and hot reload)
+    if (authInitialized) {
+      console.log('[Auth] Already initialized, checking current session...')
+      // Still need to check current session state
+      supabase.auth.getSession().then(async ({ data: { session } }) => {
+        if (session?.user) {
+          setAuthUser(session.user)
+          const appUserData = await fetchAppUser(session.user.id)
+          setAppUser(appUserData)
+        }
+        setLoading(false)
+      })
+      return
+    }
+
+    authInitialized = true
+    console.log('[Auth] Initializing auth provider...')
 
     let isMounted = true
     let initialLoadDone = false
 
     const loadUser = async (user: User) => {
+      console.log('[Auth] loadUser called for:', user.email)
       setAuthUser(user)
 
       const appUserData = await fetchAppUser(user.id)
+      console.log('[Auth] appUser fetched:', appUserData?.email, 'role:', appUserData?.role)
 
       if (isMounted) {
         setAppUser(appUserData)
         setLoading(false)
+        console.log('[Auth] Loading set to false')
       }
     }
 
@@ -82,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Bu, bozuk localStorage verileri durumunda sonsuz loading'i önler
     const timeout = setTimeout(() => {
       if (isMounted && !initialLoadDone) {
-        console.warn('Auth timeout - clearing potentially corrupted session data')
+        console.warn('[Auth] Timeout - clearing potentially corrupted session data')
         // Sadece supabase session key'lerini temizle
         if (typeof window !== 'undefined') {
           const keysToRemove: string[] = []
@@ -93,6 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           }
           keysToRemove.forEach(key => localStorage.removeItem(key))
+          console.log('[Auth] Cleared corrupted keys:', keysToRemove)
         }
         setLoading(false)
       }
@@ -100,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Listen for auth changes - INITIAL_SESSION is the key event
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[Auth] Event:', event, 'User:', session?.user?.email)
       if (!isMounted) return
 
       if (event === 'INITIAL_SESSION') {
@@ -109,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           await loadUser(session.user)
         } else {
+          console.log('[Auth] No session found, setting loading to false')
           setLoading(false)
         }
       } else if (event === 'SIGNED_IN' && session?.user) {
@@ -117,10 +142,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         initialLoadDone = true
         await loadUser(session.user)
       } else if (event === 'SIGNED_OUT') {
+        console.log('[Auth] Signed out')
         setAuthUser(null)
         setAppUser(null)
         setLoading(false)
       } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+        console.log('[Auth] Token refreshed')
         setAuthUser(session.user)
       }
     })
