@@ -28,3 +28,29 @@ Bu repodaki UI-KIT.md dosyasini kullan.
 - Coklu dil YOK
 - AI entegrasyonu VAR (Anthropic Claude)
 - Route groups: (auth), (dashboard)
+
+---
+
+## GIT PROTOKOLÜ (2 KİŞİLİK EKİP)
+
+### HER İŞE BAŞLAMADAN ÖNCE:
+```bash
+git pull
+```
+
+### HER İŞ BİTİNCE:
+```bash
+git add .
+git commit -m "açıklayıcı mesaj"
+git push
+```
+
+### CONFLICT DURUMUNDA:
+- Panik yapma
+- Dosyayı manuel düzenleme
+- Ahmet'e veya Claude'a danış
+
+### AYNI ANDA ÇALIŞMA:
+- Farklı dosyalarda çalışmak → OK
+- Aynı dosyada çalışmak → CONFLICT riski
+- Başlamadan önce ekibe haber ver
