@@ -61,76 +61,77 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [fetchAppUser]) // supabase stable
 
-  // Initialize auth - direkt getSession kullan, event beklemeden
+  // Initialize auth - INITIAL_SESSION event'i ile senkronize çalış
   useEffect(() => {
     let isMounted = true
+    let initialSessionHandled = false
     console.log('[Auth] Starting initialization...', new Date().toISOString())
 
-    // Fallback timeout - 3 saniye içinde tamamlanmazsa loading'i kapat
-    const fallbackTimeout = setTimeout(() => {
-      if (isMounted) {
-        console.warn('[Auth] Fallback timeout triggered - forcing loading to false')
-        setLoading(false)
-      }
-    }, 3000)
+    // Auth state change listener - bu INITIAL_SESSION event'ini de yakalar
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[Auth] Event:', event, 'User:', session?.user?.email)
 
-    const initAuth = async () => {
-      try {
-        console.log('[Auth] Calling getSession...')
-        // Direkt session'ı al - event bekleme
-        const { data: { session }, error } = await supabase.auth.getSession()
+      if (!isMounted) return
 
-        console.log('[Auth] getSession result:', session?.user?.email || 'no session', error?.message || 'no error')
-
-        if (!isMounted) return
+      // INITIAL_SESSION: Sayfa ilk yüklendiğinde localStorage'dan session okunduğunda
+      if (event === 'INITIAL_SESSION') {
+        initialSessionHandled = true
 
         if (session?.user) {
           setAuthUser(session.user)
-          console.log('[Auth] Fetching appUser...')
           const appUserData = await fetchAppUser(session.user.id)
-          console.log('[Auth] appUser loaded:', appUserData?.email, 'role:', appUserData?.role)
           if (isMounted) {
             setAppUser(appUserData)
           }
         }
 
         if (isMounted) {
-          clearTimeout(fallbackTimeout)
           setLoading(false)
-          console.log('[Auth] Loading complete')
-        }
-      } catch (err) {
-        console.error('[Auth] Init error:', err)
-        if (isMounted) {
-          clearTimeout(fallbackTimeout)
-          setLoading(false)
+          console.log('[Auth] Initial session handled, loading complete')
         }
       }
-    }
-
-    initAuth()
-
-    // Auth değişikliklerini dinle (login/logout için)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[Auth] Event:', event, 'User:', session?.user?.email)
-
-      if (!isMounted) return
-
-      if (event === 'SIGNED_IN' && session?.user) {
+      // SIGNED_IN: Yeni login yapıldığında
+      else if (event === 'SIGNED_IN' && session?.user) {
         setAuthUser(session.user)
         const appUserData = await fetchAppUser(session.user.id)
         if (isMounted) {
           setAppUser(appUserData)
           setLoading(false)
         }
-      } else if (event === 'SIGNED_OUT') {
+      }
+      // SIGNED_OUT: Logout yapıldığında
+      else if (event === 'SIGNED_OUT') {
         setAuthUser(null)
         setAppUser(null)
         setLoading(false)
-      } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+      }
+      // TOKEN_REFRESHED: Token yenilendiğinde
+      else if (event === 'TOKEN_REFRESHED' && session?.user) {
         setAuthUser(session.user)
       }
     })
+
+    // Fallback: 2 saniye içinde INITIAL_SESSION gelmezse, manuel kontrol yap
+    const fallbackTimeout = setTimeout(async () => {
+      if (isMounted && !initialSessionHandled) {
+        console.warn('[Auth] INITIAL_SESSION timeout, checking manually...')
+        try {
+          const { data: { session } } = await supabase.auth.getSession()
+          if (isMounted && !initialSessionHandled) {
+            if (session?.user) {
+              setAuthUser(session.user)
+              const appUserData = await fetchAppUser(session.user.id)
+              if (isMounted) setAppUser(appUserData)
+            }
+            setLoading(false)
+            console.log('[Auth] Manual fallback complete')
+          }
+        } catch (err) {
+          console.error('[Auth] Fallback error:', err)
+          if (isMounted) setLoading(false)
+        }
+      }
+    }, 2000)
 
     return () => {
       isMounted = false
