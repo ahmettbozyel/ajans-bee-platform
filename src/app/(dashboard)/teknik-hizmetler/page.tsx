@@ -20,8 +20,11 @@ import { ConfirmModal } from '@/components/ui/confirm-modal'
 
 function getDaysDiff(date: string | null): number | null {
   if (!date) return null
+  // Parse date as local timezone (not UTC) to avoid 1 day offset
+  const [year, month, day] = date.split('-').map(Number)
+  const renewalDate = new Date(year, month - 1, day)
   const today = new Date()
-  const renewalDate = new Date(date)
+  today.setHours(0, 0, 0, 0) // Reset time to compare only dates
   const diffTime = renewalDate.getTime() - today.getTime()
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 }
@@ -46,19 +49,34 @@ function calculatePrice(service: TechnicalServiceWithRelations): number {
 }
 
 function getNextRenewalDate(currentDate: string | null, billingCycle: 'monthly' | 'yearly' = 'yearly'): string {
-  const baseDate = currentDate ? new Date(currentDate) : new Date()
+  let baseDate: Date
+  if (currentDate) {
+    // Parse date as local timezone (not UTC) to avoid 1 day offset
+    const [year, month, day] = currentDate.split('-').map(Number)
+    baseDate = new Date(year, month - 1, day)
+  } else {
+    baseDate = new Date()
+  }
+
   if (billingCycle === 'monthly') {
     baseDate.setMonth(baseDate.getMonth() + 1)
   } else {
     baseDate.setFullYear(baseDate.getFullYear() + 1)
   }
-  return baseDate.toISOString().split('T')[0]
+
+  // Format as YYYY-MM-DD without timezone conversion
+  const year = baseDate.getFullYear()
+  const month = String(baseDate.getMonth() + 1).padStart(2, '0')
+  const day = String(baseDate.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return '-'
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
+  // Parse date as local timezone (not UTC) to avoid 1 day offset
+  const [year, month, day] = dateStr.split('-').map(Number)
+  // Format as DD.MM.YYYY (Turkish format)
+  return `${String(day).padStart(2, '0')}.${String(month).padStart(2, '0')}.${year}`
 }
 
 // Provider renkleri
