@@ -43,8 +43,8 @@ export default function LoginPage() {
         return
       }
 
-      router.push('/dashboard')
-      router.refresh()
+      // Hard navigation - middleware session'ı görsün
+      window.location.href = '/dashboard'
     } catch {
       setError('Bir hata oluştu. Lütfen tekrar deneyin.')
     } finally {
