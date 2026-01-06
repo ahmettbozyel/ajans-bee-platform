@@ -5,15 +5,16 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { 
-  ArrowLeft, Building2, Globe, Users, FileText, 
-  Sparkles, Loader2, LayoutDashboard, Calendar, 
+import {
+  ArrowLeft, Building2, Globe, Users, FileText,
+  Sparkles, Loader2, LayoutDashboard, Calendar,
   BarChart3, FolderOpen, Save, Instagram, Megaphone, Mail,
-  History, CalendarHeart, ClipboardList, CheckCircle, Circle, CircleDot, Settings
+  History, CalendarHeart, ClipboardList, CheckCircle, Circle, CircleDot, Settings, Phone
 } from 'lucide-react'
 import { CustomerBriefForm } from '@/components/customers/customer-brief-form'
 import { CustomerFilesTab } from '@/components/customers/customer-files-tab'
 import { CustomerPerformanceTab } from '@/components/customers/customer-performance-tab'
+import { CustomerContactTab, type ContactFormData } from '@/components/customers/customer-contact-tab'
 import type { Customer, CustomerFormData } from '@/lib/customer-types'
 import { BRAND_VOICES, calculateBriefCompletion, CUSTOMER_TYPES } from '@/lib/customer-types'
 import { cn } from '@/lib/utils'
@@ -249,6 +250,42 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
     }
   }
 
+  // Save contact info
+  async function handleSaveContact(contactData: ContactFormData) {
+    if (!customer) return
+
+    if (savingRef.current) return
+
+    savingRef.current = true
+    setSaving(true)
+
+    try {
+      const freshSupabase = createClient()
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (freshSupabase as any)
+        .from('customers')
+        .update({
+          billing_contact_name: contactData.billing_contact_name,
+          billing_contact_email: contactData.billing_contact_email,
+          billing_contact_phone: contactData.billing_contact_phone,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', customer.id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setCustomer(data)
+    } catch (err) {
+      throw err
+    } finally {
+      savingRef.current = false
+      setSaving(false)
+    }
+  }
+
   // Loading state
   if (loading) {
     return (
@@ -427,12 +464,12 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
                 <span className="hidden xl:inline">Performans</span>
               </button>
               
-              <button 
+              <button
                 onClick={() => setActiveTab('dosyalar')}
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-all",
-                  activeTab === 'dosyalar' 
-                    ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10" 
+                  activeTab === 'dosyalar'
+                    ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10"
                     : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
                 )}
               >
@@ -441,6 +478,19 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
                 {fileCount > 0 && (
                   <span className="text-[10px] bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-full font-mono">{fileCount}</span>
                 )}
+              </button>
+
+              <button
+                onClick={() => setActiveTab('iletisim')}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-all",
+                  activeTab === 'iletisim'
+                    ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10"
+                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
+                )}
+              >
+                <Phone className="w-4 h-4" />
+                <span className="hidden lg:inline">İletişim</span>
               </button>
             </nav>
             
@@ -870,7 +920,18 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
             />
           </div>
         )}
-        
+
+        {/* İletişim Tab */}
+        {activeTab === 'iletisim' && (
+          <div>
+            <CustomerContactTab
+              customer={customer}
+              onSave={handleSaveContact}
+              isLoading={saving}
+            />
+          </div>
+        )}
+
       </div>
     </div>
   )
