@@ -24,15 +24,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Module-level flag to prevent duplicate initialization across renders
-let authInitialized = false
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [authUser, setAuthUser] = useState<User | null>(null)
   const [appUser, setAppUser] = useState<AppUser | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Singleton client kullan - tüm app'te aynı instance
   const supabase = createClient()
 
   const fetchAppUser = useCallback(async (userId: string): Promise<AppUser | null> => {
@@ -64,97 +60,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [supabase, fetchAppUser])
 
+  // Initialize auth - direkt getSession kullan, event beklemeden
   useEffect(() => {
-    // Check if already initialized (handles strict mode and hot reload)
-    if (authInitialized) {
-      console.log('[Auth] Already initialized, checking current session...')
-      // Still need to check current session state
-      supabase.auth.getSession().then(async ({ data: { session } }) => {
+    let isMounted = true
+    console.log('[Auth] Starting initialization...')
+
+    const initAuth = async () => {
+      try {
+        // Direkt session'ı al - event bekleme
+        const { data: { session }, error } = await supabase.auth.getSession()
+
+        console.log('[Auth] getSession result:', session?.user?.email || 'no session', error?.message || 'no error')
+
+        if (!isMounted) return
+
         if (session?.user) {
           setAuthUser(session.user)
           const appUserData = await fetchAppUser(session.user.id)
-          setAppUser(appUserData)
-        }
-        setLoading(false)
-      })
-      return
-    }
-
-    authInitialized = true
-    console.log('[Auth] Initializing auth provider...')
-
-    let isMounted = true
-    let initialLoadDone = false
-
-    const loadUser = async (user: User) => {
-      console.log('[Auth] loadUser called for:', user.email)
-      setAuthUser(user)
-
-      const appUserData = await fetchAppUser(user.id)
-      console.log('[Auth] appUser fetched:', appUserData?.email, 'role:', appUserData?.role)
-
-      if (isMounted) {
-        setAppUser(appUserData)
-        setLoading(false)
-        console.log('[Auth] Loading set to false')
-      }
-    }
-
-    // Timeout: 5 saniye içinde INITIAL_SESSION gelmezse loading'i kapat
-    // Bu, bozuk localStorage verileri durumunda sonsuz loading'i önler
-    const timeout = setTimeout(() => {
-      if (isMounted && !initialLoadDone) {
-        console.warn('[Auth] Timeout - clearing potentially corrupted session data')
-        // Sadece supabase session key'lerini temizle
-        if (typeof window !== 'undefined') {
-          const keysToRemove: string[] = []
-          for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i)
-            if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
-              keysToRemove.push(key)
-            }
+          console.log('[Auth] appUser loaded:', appUserData?.email, 'role:', appUserData?.role)
+          if (isMounted) {
+            setAppUser(appUserData)
           }
-          keysToRemove.forEach(key => localStorage.removeItem(key))
-          console.log('[Auth] Cleared corrupted keys:', keysToRemove)
         }
-        setLoading(false)
-      }
-    }, 5000)
 
-    // Listen for auth changes - INITIAL_SESSION is the key event
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[Auth] Event:', event, 'User:', session?.user?.email)
-      if (!isMounted) return
-
-      if (event === 'INITIAL_SESSION') {
-        // This fires when session is loaded from storage - the reliable event
-        clearTimeout(timeout)
-        initialLoadDone = true
-        if (session?.user) {
-          await loadUser(session.user)
-        } else {
-          console.log('[Auth] No session found, setting loading to false')
+        if (isMounted) {
+          setLoading(false)
+          console.log('[Auth] Loading complete')
+        }
+      } catch (err) {
+        console.error('[Auth] Init error:', err)
+        if (isMounted) {
           setLoading(false)
         }
-      } else if (event === 'SIGNED_IN' && session?.user) {
-        // Handle fresh login - clear timeout and load user
-        clearTimeout(timeout)
-        initialLoadDone = true
-        await loadUser(session.user)
+      }
+    }
+
+    initAuth()
+
+    // Auth değişikliklerini dinle (login/logout için)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[Auth] Event:', event, 'User:', session?.user?.email)
+
+      if (!isMounted) return
+
+      if (event === 'SIGNED_IN' && session?.user) {
+        setAuthUser(session.user)
+        const appUserData = await fetchAppUser(session.user.id)
+        if (isMounted) {
+          setAppUser(appUserData)
+          setLoading(false)
+        }
       } else if (event === 'SIGNED_OUT') {
-        console.log('[Auth] Signed out')
         setAuthUser(null)
         setAppUser(null)
         setLoading(false)
       } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-        console.log('[Auth] Token refreshed')
         setAuthUser(session.user)
       }
     })
 
     return () => {
       isMounted = false
-      clearTimeout(timeout)
       subscription.unsubscribe()
     }
   }, [supabase, fetchAppUser])
