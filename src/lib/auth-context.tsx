@@ -89,10 +89,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // Method 1: getSession (may be slow)
+    console.log('[Auth] Calling getSession...')
+    const startTime = Date.now()
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('[Auth] getSession returned in', Date.now() - startTime, 'ms')
       handleSession(session, 'getSession')
     }).catch(err => {
-      console.error('[Auth] getSession error:', err)
+      console.error('[Auth] getSession error after', Date.now() - startTime, 'ms:', err)
     })
 
     // Method 2: Timeout fallback - 1.5 saniye sonra session yok kabul et
