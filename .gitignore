@@ -12,3 +12,5 @@ node_modules/
 # Next.js build output
 .next/
 out/
+*.DS_Store
+supabase/.temp/
