@@ -121,13 +121,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === 'INITIAL_SESSION') {
         handleSession(session, 'INITIAL_SESSION')
       }
-      // SIGNED_IN: Yeni login yapıldığında
+      // SIGNED_IN: Yeni login yapıldığında (resolved olsa bile çalışmalı!)
       else if (event === 'SIGNED_IN' && session?.user) {
+        console.log('[Auth] Processing SIGNED_IN event...')
         setAuthUser(session.user)
         const appUserData = await fetchAppUser(session.user.id)
+        console.log('[Auth] SIGNED_IN appUser:', appUserData?.role)
         if (isMounted) {
           setAppUser(appUserData)
           setLoading(false)
+          console.log('[Auth] SIGNED_IN complete, redirecting...')
         }
       }
       // SIGNED_OUT: Logout yapıldığında
