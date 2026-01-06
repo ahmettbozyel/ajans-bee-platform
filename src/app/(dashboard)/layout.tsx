@@ -319,12 +319,10 @@ export default function DashboardLayout({
   const { appUser, loading: authLoading, isAdmin, signOut } = useAuth()
   const [counts, setCounts] = useState({ customers: 0, services: 0 })
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  
-  const supabase = createClient()
 
   // Marka detay sayfası kontrolü
   const isDetailPage = pathname.includes('/customers/') && pathname.split('/').length > 2
-  
+
   // Erişim kontrolü
   const hasAccess = (role: string, path: string): boolean => {
     if (role === 'admin') return true
@@ -335,21 +333,22 @@ export default function DashboardLayout({
   // Auth & Data fetch
   useEffect(() => {
     if (authLoading) return
-    
+
     if (!appUser) {
       router.push('/login')
       return
     }
-    
+
     const userRole = appUser.role || 'personel'
     if (!hasAccess(userRole, pathname)) {
       router.push('/dashboard')
       return
     }
-    
+
     async function fetchData() {
       try {
         if (isAdmin || appUser?.role === 'yonetici' || appUser?.role === 'operasyon') {
+          const supabase = createClient()
           const [customersRes, servicesRes] = await Promise.all([
             supabase.from('customers').select('id', { count: 'exact', head: true }),
             supabase.from('technical_services').select('id', { count: 'exact', head: true })
@@ -363,9 +362,9 @@ export default function DashboardLayout({
         console.error('Fetch error:', error)
       }
     }
-    
+
     fetchData()
-  }, [authLoading, appUser, isAdmin, router, supabase, pathname])
+  }, [authLoading, appUser, isAdmin, router, pathname])
 
   // Close sidebar on route change (mobile)
   useEffect(() => {

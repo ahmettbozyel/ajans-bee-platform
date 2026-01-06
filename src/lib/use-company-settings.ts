@@ -65,9 +65,8 @@ export function useCompanySettings(): CompanySettings {
   const [hybridOverrides, setHybridOverrides] = useState<HybridOverride[]>([])
   const [loading, setLoading] = useState(true)
 
-  const supabase = createClient()
-
   const fetchSettings = useCallback(async () => {
+    const supabase = createClient()
     setLoading(true)
     try {
       // Fetch all settings in parallel
@@ -103,7 +102,7 @@ export function useCompanySettings(): CompanySettings {
     } finally {
       setLoading(false)
     }
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     fetchSettings()

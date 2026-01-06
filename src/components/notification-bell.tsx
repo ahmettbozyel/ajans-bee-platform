@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Notification } from '@/lib/notifications'
-import { 
-  Bell, 
-  Clock, 
-  TrendingUp, 
+import {
+  Bell,
+  Clock,
+  TrendingUp,
   AlertTriangle,
   Check,
   CheckCheck
@@ -20,11 +20,11 @@ export function NotificationBell() {
   const [loading, setLoading] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
-  const supabase = createClient()
 
   // User ID'yi al
   useEffect(() => {
     const getUser = async () => {
+      const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUserId(user.id)
@@ -34,12 +34,11 @@ export function NotificationBell() {
   }, [])
 
   // Bildirimleri çek
-  const fetchNotifications = async () => {
-    if (!userId) {
-      return
-    }
+  const fetchNotifications = useCallback(async () => {
+    if (!userId) return
 
     try {
+      const supabase = createClient()
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from('notifications')
@@ -61,18 +60,18 @@ export function NotificationBell() {
     } catch (error) {
       console.error('Bildirimler yüklenirken beklenmeyen hata:', error)
     }
-  }
+  }, [userId])
 
   // userId değişince bildirimleri çek
   useEffect(() => {
     if (userId) {
       fetchNotifications()
-      
+
       // Her 30 saniyede bir kontrol et
       const interval = setInterval(fetchNotifications, 30000)
       return () => clearInterval(interval)
     }
-  }, [userId])
+  }, [userId, fetchNotifications])
 
   // Dışarı tıklamada kapat
   useEffect(() => {
@@ -88,6 +87,7 @@ export function NotificationBell() {
   // Tek bildirimi okundu işaretle
   const markAsRead = async (id: string) => {
     try {
+      const supabase = createClient()
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase as any)
         .from('notifications')
@@ -109,6 +109,7 @@ export function NotificationBell() {
     setLoading(true)
 
     try {
+      const supabase = createClient()
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase as any)
         .from('notifications')
