@@ -335,7 +335,7 @@ export default function DashboardLayout({
     if (authLoading) return
 
     if (!appUser) {
-      router.push('/login')
+      window.location.href = '/login'
       return
     }
 
@@ -405,7 +405,16 @@ export default function DashboardLayout({
     )
   }
 
-  if (!appUser) return null
+  if (!appUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-body">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+          <p className="text-sm text-zinc-500">Giriş sayfasına yönlendiriliyor...</p>
+        </div>
+      </div>
+    )
+  }
 
   const userRole = appUser.role || 'personel'
   // Erişim yoksa loading göster (useEffect redirect yapacak)
