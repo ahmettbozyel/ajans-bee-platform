@@ -61,37 +61,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [fetchAppUser]) // supabase stable
 
-  // Initialize auth - INITIAL_SESSION event'i ile senkronize çalış
+  // Initialize auth - getSession ile hemen başla, event'leri dinle
   useEffect(() => {
     let isMounted = true
-    let initialSessionHandled = false
     console.log('[Auth] Starting initialization...', new Date().toISOString())
 
-    // Auth state change listener - bu INITIAL_SESSION event'ini de yakalar
+    // Hemen getSession çağır - beklemeden
+    const initSession = async () => {
+      try {
+        console.log('[Auth] Calling getSession...')
+        const startTime = Date.now()
+        const { data: { session }, error } = await supabase.auth.getSession()
+        console.log('[Auth] getSession completed in', Date.now() - startTime, 'ms')
+
+        if (error) {
+          console.error('[Auth] getSession error:', error.message)
+        }
+
+        if (!isMounted) return
+
+        if (session?.user) {
+          console.log('[Auth] Session found:', session.user.email)
+          setAuthUser(session.user)
+          const appUserData = await fetchAppUser(session.user.id)
+          if (isMounted) {
+            setAppUser(appUserData)
+            console.log('[Auth] appUser loaded:', appUserData?.role)
+          }
+        } else {
+          console.log('[Auth] No session found')
+        }
+
+        if (isMounted) {
+          setLoading(false)
+          console.log('[Auth] Loading complete')
+        }
+      } catch (err) {
+        console.error('[Auth] Init error:', err)
+        if (isMounted) setLoading(false)
+      }
+    }
+
+    initSession()
+
+    // Auth değişikliklerini dinle (login/logout/token refresh için)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('[Auth] Event:', event, 'User:', session?.user?.email)
 
       if (!isMounted) return
 
-      // INITIAL_SESSION: Sayfa ilk yüklendiğinde localStorage'dan session okunduğunda
-      if (event === 'INITIAL_SESSION') {
-        initialSessionHandled = true
-
-        if (session?.user) {
-          setAuthUser(session.user)
-          const appUserData = await fetchAppUser(session.user.id)
-          if (isMounted) {
-            setAppUser(appUserData)
-          }
-        }
-
-        if (isMounted) {
-          setLoading(false)
-          console.log('[Auth] Initial session handled, loading complete')
-        }
-      }
       // SIGNED_IN: Yeni login yapıldığında
-      else if (event === 'SIGNED_IN' && session?.user) {
+      if (event === 'SIGNED_IN' && session?.user) {
         setAuthUser(session.user)
         const appUserData = await fetchAppUser(session.user.id)
         if (isMounted) {
@@ -111,31 +131,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     })
 
-    // Fallback: 2 saniye içinde INITIAL_SESSION gelmezse, manuel kontrol yap
-    const fallbackTimeout = setTimeout(async () => {
-      if (isMounted && !initialSessionHandled) {
-        console.warn('[Auth] INITIAL_SESSION timeout, checking manually...')
-        try {
-          const { data: { session } } = await supabase.auth.getSession()
-          if (isMounted && !initialSessionHandled) {
-            if (session?.user) {
-              setAuthUser(session.user)
-              const appUserData = await fetchAppUser(session.user.id)
-              if (isMounted) setAppUser(appUserData)
-            }
-            setLoading(false)
-            console.log('[Auth] Manual fallback complete')
-          }
-        } catch (err) {
-          console.error('[Auth] Fallback error:', err)
-          if (isMounted) setLoading(false)
-        }
-      }
-    }, 2000)
-
     return () => {
       isMounted = false
-      clearTimeout(fallbackTimeout)
       subscription.unsubscribe()
     }
   }, [fetchAppUser]) // supabase stable
