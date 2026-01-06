@@ -78,12 +78,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    // Timeout: 5 saniye içinde INITIAL_SESSION gelmezse loading'i kapat
+    // Bu, bozuk localStorage verileri durumunda sonsuz loading'i önler
+    const timeout = setTimeout(() => {
+      if (isMounted && !initialLoadDone) {
+        console.warn('Auth timeout - clearing potentially corrupted session data')
+        // Sadece supabase session key'lerini temizle
+        if (typeof window !== 'undefined') {
+          const keysToRemove: string[] = []
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i)
+            if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+              keysToRemove.push(key)
+            }
+          }
+          keysToRemove.forEach(key => localStorage.removeItem(key))
+        }
+        setLoading(false)
+      }
+    }, 5000)
+
     // Listen for auth changes - INITIAL_SESSION is the key event
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return
 
       if (event === 'INITIAL_SESSION') {
         // This fires when session is loaded from storage - the reliable event
+        clearTimeout(timeout)
         initialLoadDone = true
         if (session?.user) {
           await loadUser(session.user)
@@ -104,6 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       isMounted = false
+      clearTimeout(timeout)
       subscription.unsubscribe()
     }
   }, [supabase, fetchAppUser])
