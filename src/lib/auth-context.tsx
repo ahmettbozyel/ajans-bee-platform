@@ -88,23 +88,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // Method 1: getSession (may be slow)
-    console.log('[Auth] Calling getSession...')
+    // Method 1: getUser kullan (getSession yerine - daha güvenilir)
+    console.log('[Auth] Calling getUser...')
     const startTime = Date.now()
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('[Auth] getSession returned in', Date.now() - startTime, 'ms')
-      handleSession(session, 'getSession')
+    supabase.auth.getUser().then(({ data: { user }, error }) => {
+      console.log('[Auth] getUser returned in', Date.now() - startTime, 'ms', user?.email || 'no user', error?.message || '')
+      if (user) {
+        handleSession({ user } as any, 'getUser')
+      } else {
+        handleSession(null, 'getUser')
+      }
     }).catch(err => {
-      console.error('[Auth] getSession error after', Date.now() - startTime, 'ms:', err)
+      console.error('[Auth] getUser error after', Date.now() - startTime, 'ms:', err)
+      handleSession(null, 'getUser-error')
     })
 
-    // Method 2: Timeout fallback - 1.5 saniye sonra session yok kabul et
+    // Method 2: Timeout fallback - 3 saniye (getUser network call yapıyor)
     const timeoutId = setTimeout(() => {
       if (!resolved && isMounted) {
         console.warn('[Auth] Timeout - no session assumed')
         handleSession(null, 'timeout')
       }
-    }, 1500)
+    }, 3000)
 
     // Auth değişikliklerini dinle
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
