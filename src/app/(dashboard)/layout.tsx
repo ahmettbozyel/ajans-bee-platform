@@ -330,32 +330,6 @@ export default function DashboardLayout({
     return allowedPaths.some(p => path.startsWith(p))
   }
 
-  // Otomatik cache temizleme - eski Supabase session verilerini temizle
-  useEffect(() => {
-    const CACHE_VERSION = 'v2' // Versiyon değiştirince tüm kullanıcılarda temizlik yapılır
-    const CACHE_KEY = 'ajans-bee-cache-version'
-
-    const currentVersion = localStorage.getItem(CACHE_KEY)
-    if (currentVersion !== CACHE_VERSION) {
-      // Eski Supabase session key'lerini temizle
-      const keysToRemove: string[] = []
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i)
-        if (key && (key.startsWith('sb-') || key.includes('supabase'))) {
-          // Sadece eski/orphan session'ları temizle, aktif olanı koru
-          if (!key.includes('auth-token')) {
-            keysToRemove.push(key)
-          }
-        }
-      }
-      keysToRemove.forEach(key => localStorage.removeItem(key))
-
-      // Yeni versiyonu kaydet
-      localStorage.setItem(CACHE_KEY, CACHE_VERSION)
-      console.log('[Ajans Bee] Cache temizlendi, performans optimize edildi')
-    }
-  }, [])
-
   // Auth & Data fetch
   useEffect(() => {
     if (authLoading) return

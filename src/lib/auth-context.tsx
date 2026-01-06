@@ -1,8 +1,8 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo, useRef } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from 'react'
 import { User } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/client'
 import { AppUser, UserRole, canAccess, canEdit, getDefaultRoute, ModuleSlug } from './auth-types'
 
 interface AuthContextType {
@@ -30,12 +30,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const initialized = useRef(false)
 
-  const supabase = useMemo(() =>
-    createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    ),
-  [])
+  // Singleton client kullan - tüm app'te aynı instance
+  const supabase = createClient()
 
   const fetchAppUser = useCallback(async (userId: string): Promise<AppUser | null> => {
     try {
