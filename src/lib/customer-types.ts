@@ -49,6 +49,14 @@ export interface PlatformRule {
   emoji_count?: string;
   hashtag_count?: string;
   cta_style?: string;
+  // Instagram/TikTok specific
+  post_frequency?: number;
+  reels_per_week?: number;
+  best_times?: string;
+  hashtags?: string;
+  tone?: string;
+  // Facebook specific
+  priority?: string;
 }
 
 export interface PlatformRules {

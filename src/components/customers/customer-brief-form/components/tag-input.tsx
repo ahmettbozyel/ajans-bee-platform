@@ -9,7 +9,7 @@ interface TagInputProps {
   value: string[]
   onChange: (v: string[]) => void
   placeholder?: string
-  colorClass?: 'indigo' | 'cyan' | 'amber' | 'rose' | 'fuchsia'
+  colorClass?: 'indigo' | 'cyan' | 'amber' | 'rose' | 'fuchsia' | 'emerald' | 'violet'
 }
 
 const colors = {
@@ -17,7 +17,9 @@ const colors = {
   cyan: 'bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-400',
   amber: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400',
   rose: 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400',
-  fuchsia: 'bg-fuchsia-100 dark:bg-fuchsia-500/20 text-fuchsia-700 dark:text-fuchsia-400'
+  fuchsia: 'bg-fuchsia-100 dark:bg-fuchsia-500/20 text-fuchsia-700 dark:text-fuchsia-400',
+  emerald: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400',
+  violet: 'bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-400'
 }
 
 export function TagInput({

@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Plus, Search, Pencil, Trash2, Building2, Eye, EyeOff, Sparkles, PauseCircle, Loader2, ChevronsUpDown, Check } from 'lucide-react'
+import { toast } from 'sonner'
 import { getRecentCustomers, addToRecentCustomers, type RecentCustomer } from '@/lib/local-storage'
 import type { Customer } from '@/lib/customer-types'
 import { calculateBriefCompletion, getCustomerTypeLabel } from '@/lib/customer-types'
@@ -207,7 +208,7 @@ export default function MusterilerPage() {
       }
     } catch (error) {
       console.error('Error creating brand:', error)
-      alert('Marka oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.')
+      toast.error('Marka oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.')
     } finally {
       setFormLoading(false)
     }
@@ -229,7 +230,7 @@ export default function MusterilerPage() {
       fetchCustomers()
     } catch (error) {
       console.error('Error deleting customer:', error)
-      alert('Marka silinirken bir hata oluştu. Lütfen tekrar deneyin.')
+      toast.error('Marka silinirken bir hata oluştu. Lütfen tekrar deneyin.')
     }
   }
 
@@ -252,7 +253,7 @@ export default function MusterilerPage() {
       ))
     } catch (error) {
       console.error('Error toggling status:', error)
-      alert('Marka durumu güncellenirken bir hata oluştu. Lütfen tekrar deneyin.')
+      toast.error('Marka durumu güncellenirken bir hata oluştu. Lütfen tekrar deneyin.')
     }
   }
 

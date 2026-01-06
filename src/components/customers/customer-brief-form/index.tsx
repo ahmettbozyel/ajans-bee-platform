@@ -15,9 +15,11 @@ import type {
   CustomerFormData,
   BrandVoice,
   BrandColors,
-  BrandFonts
+  BrandFonts,
+  BusinessType,
+  PriceSegment
 } from '@/lib/customer-types'
-import { BRAND_VOICES } from '@/lib/customer-types'
+import { BRAND_VOICES, BUSINESS_TYPES, PRICE_SEGMENTS } from '@/lib/customer-types'
 
 import { BRIEF_SECTIONS_CONFIG, GENERAL_HOLIDAYS } from './config'
 import type { AIResearchState } from './types'
@@ -44,26 +46,6 @@ function DisabledField({ children, label }: { children: React.ReactNode; label?:
   )
 }
 
-// Disabled Section Component
-function DisabledSection({ title, icon, description }: { title: string; icon: string; description: string }) {
-  return (
-    <div className="section-card rounded-2xl overflow-hidden border border-zinc-200 dark:border-white/5 bg-white dark:bg-zinc-900/50 opacity-60">
-      <div className="px-5 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-xl">{icon}</span>
-          <div>
-            <h3 className="font-semibold text-zinc-900 dark:text-white">{title}</h3>
-            <p className="text-xs text-zinc-500">{description}</p>
-          </div>
-        </div>
-        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
-          <Lock className="w-3 h-3" />
-          Faz 2'de Aktif
-        </span>
-      </div>
-    </div>
-  )
-}
 
 // AI Result type
 interface AIResult {
@@ -260,9 +242,28 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
           total: 1
         }
       case 'rakipler':
+        return {
+          filled: [
+            formData.competitors?.length
+          ].filter(Boolean).length,
+          total: 1
+        }
       case 'ozel-gunler':
+        return {
+          filled: [
+            formData.special_events?.length,
+            formData.seasonal_calendar?.length
+          ].filter(Boolean).length,
+          total: 2
+        }
       case 'marka-assets':
-        return { filled: 0, total: 0 }
+        return {
+          filled: [
+            Object.keys(formData.brand_colors || {}).length,
+            Object.keys(formData.brand_fonts || {}).length
+          ].filter(Boolean).length,
+          total: 2
+        }
       default:
         return { filled: 0, total: 0 }
     }
@@ -272,7 +273,10 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
     { label: 'Marka Kimliği', id: 'marka-kimligi', ...getSectionCompletion('marka-kimligi') },
     { label: 'Hedef Kitle', id: 'hedef-kitle', ...getSectionCompletion('hedef-kitle') },
     { label: 'Ürün/Hizmet', id: 'urun-hizmet', ...getSectionCompletion('urun-hizmet') },
-    { label: 'İçerik Kuralları', id: 'kurallar', ...getSectionCompletion('kurallar') }
+    { label: 'İçerik Kuralları', id: 'kurallar', ...getSectionCompletion('kurallar') },
+    { label: 'Rakip Analizi', id: 'rakipler', ...getSectionCompletion('rakipler') },
+    { label: 'Özel Günler', id: 'ozel-gunler', ...getSectionCompletion('ozel-gunler') },
+    { label: 'Renkler & Fontlar', id: 'marka-assets', ...getSectionCompletion('marka-assets') }
   ]
 
   const totalFilled = allSectionsProgress.reduce((acc, s) => acc + s.filled, 0)
@@ -595,6 +599,22 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
                 />
               </div>
 
+              {/* ✅ Ticari Ünvan / Brand Name - AKTİF */}
+              <div>
+                <Label className="flex items-center gap-2 mb-2 text-zinc-700 dark:text-zinc-300">
+                  Ticari Ünvan
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Şirketin resmi ticari ünvanı">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+                <Input
+                  value={formData.brand_name || ''}
+                  onChange={(e) => setFormData({ ...formData, brand_name: e.target.value })}
+                  placeholder="Örn: PERDIM Kuyumculuk A.Ş."
+                  className="input-glow text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+                />
+              </div>
+
               {/* ✅ Website - AKTİF */}
               <div>
                 <Label className="flex items-center gap-2 mb-2 text-zinc-700 dark:text-zinc-300">
@@ -641,11 +661,17 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
                   </span>
                 </Label>
                 <Select
-                  value={formData.sector || ''}
+                  key={`sector-${sectors.length}-${formData.sector || 'empty'}`}
+                  value={formData.sector || undefined}
                   onValueChange={(value) => setFormData({ ...formData, sector: value })}
                 >
                   <SelectTrigger className="input-glow text-zinc-900 dark:text-white">
-                    <SelectValue placeholder="Sektör seçin..." />
+                    <SelectValue placeholder="Sektör seçin...">
+                      {formData.sector && sectors.length > 0
+                        ? sectors.find(s => s.slug === formData.sector)?.name || formData.sector
+                        : undefined
+                      }
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {sectors.map((sector) => (
@@ -655,6 +681,70 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* ✅ Alt Sektör - AKTİF */}
+              <div>
+                <Label className="flex items-center gap-2 mb-2 text-zinc-700 dark:text-zinc-300">
+                  Alt Sektör
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Daha spesifik sektör bilgisi">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+                <Input
+                  value={formData.sub_sector || ''}
+                  onChange={(e) => setFormData({ ...formData, sub_sector: e.target.value })}
+                  placeholder="Örn: Butik Otel, Pırlanta Takı, Organik Kozmetik"
+                  className="input-glow text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+                />
+              </div>
+
+              {/* ✅ İş Modeli - AKTİF */}
+              <div>
+                <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">İş Modeli</Label>
+                <div className="grid grid-cols-3 gap-3">
+                  {BUSINESS_TYPES.map((type) => (
+                    <OptionCard
+                      key={type.value}
+                      label={type.label}
+                      selected={formData.business_type === type.value}
+                      onChange={() => setFormData({ ...formData, business_type: type.value as BusinessType })}
+                      colorClass="violet"
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* ✅ Konum - AKTİF */}
+              <div>
+                <Label className="flex items-center gap-2 mb-2 text-zinc-700 dark:text-zinc-300">
+                  Konum
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Fiziksel mağaza/ofis konumu">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+                <Input
+                  value={formData.location || ''}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  placeholder="Örn: İstanbul, Nişantaşı"
+                  className="input-glow text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+                />
+              </div>
+
+              {/* ✅ Fiyat Segmenti - AKTİF */}
+              <div>
+                <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">Fiyat Segmenti</Label>
+                <div className="grid grid-cols-4 gap-3">
+                  {PRICE_SEGMENTS.map((segment) => (
+                    <OptionCard
+                      key={segment.value}
+                      label={segment.label}
+                      selected={formData.price_segment === segment.value}
+                      onChange={() => setFormData({ ...formData, price_segment: segment.value as PriceSegment })}
+                      colorClass="emerald"
+                    />
+                  ))}
+                </div>
               </div>
 
               {/* ✅ Slogan - AKTİF */}
@@ -707,62 +797,56 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
                 </div>
               </div>
 
-              {/* 🔒 Misyon - DISABLED */}
-              <DisabledField>
-                <div>
-                  <Label className="flex items-center gap-2 mb-2 text-zinc-700 dark:text-zinc-300">
-                    Misyon
-                    <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Markanın var oluş amacı, ne için çalıştığı">
-                      <Info className="w-3.5 h-3.5" />
-                    </span>
-                  </Label>
-                  <Textarea
-                    value={formData.mission || ''}
-                    disabled
-                    placeholder="Örn: Müşterilerimize en kaliteli pırlantaları en güvenilir şekilde sunmak..."
-                    className="input-glow resize-none text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 cursor-not-allowed"
-                    rows={2}
-                  />
-                </div>
-              </DisabledField>
+              {/* ✅ Misyon - AKTİF */}
+              <div>
+                <Label className="flex items-center gap-2 mb-2 text-zinc-700 dark:text-zinc-300">
+                  Misyon
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Markanın var oluş amacı, ne için çalıştığı">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+                <Textarea
+                  value={formData.mission || ''}
+                  onChange={(e) => setFormData({ ...formData, mission: e.target.value })}
+                  placeholder="Örn: Müşterilerimize en kaliteli pırlantaları en güvenilir şekilde sunmak..."
+                  className="input-glow resize-none text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+                  rows={2}
+                />
+              </div>
 
-              {/* 🔒 Vizyon - DISABLED */}
-              <DisabledField>
-                <div>
-                  <Label className="flex items-center gap-2 mb-2 text-zinc-700 dark:text-zinc-300">
-                    Vizyon
-                    <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Markanın gelecekte ulaşmak istediği nokta">
-                      <Info className="w-3.5 h-3.5" />
-                    </span>
-                  </Label>
-                  <Textarea
-                    value={formData.vision || ''}
-                    disabled
-                    placeholder="Örn: Türkiye'nin en güvenilir mücevher markası olmak..."
-                    className="input-glow resize-none text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 cursor-not-allowed"
-                    rows={2}
-                  />
-                </div>
-              </DisabledField>
+              {/* ✅ Vizyon - AKTİF */}
+              <div>
+                <Label className="flex items-center gap-2 mb-2 text-zinc-700 dark:text-zinc-300">
+                  Vizyon
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Markanın gelecekte ulaşmak istediği nokta">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+                <Textarea
+                  value={formData.vision || ''}
+                  onChange={(e) => setFormData({ ...formData, vision: e.target.value })}
+                  placeholder="Örn: Türkiye'nin en güvenilir mücevher markası olmak..."
+                  className="input-glow resize-none text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+                  rows={2}
+                />
+              </div>
 
-              {/* 🔒 USP - DISABLED */}
-              <DisabledField>
-                <div>
-                  <Label className="flex items-center gap-2 mb-2 text-zinc-700 dark:text-zinc-300">
-                    USP (Benzersiz Satış Vaadi)
-                    <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Markayı rakiplerinden ayıran en önemli özellik">
-                      <Info className="w-3.5 h-3.5" />
-                    </span>
-                  </Label>
-                  <Textarea
-                    value={formData.usp || ''}
-                    disabled
-                    placeholder="Örn: Türkiye'nin en güvenilir pırlanta markası, tüm ürünlerde GIA sertifikası garantisi"
-                    className="input-glow resize-none text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 cursor-not-allowed"
-                    rows={2}
-                  />
-                </div>
-              </DisabledField>
+              {/* ✅ USP - AKTİF */}
+              <div>
+                <Label className="flex items-center gap-2 mb-2 text-zinc-700 dark:text-zinc-300">
+                  USP (Benzersiz Satış Vaadi)
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Markayı rakiplerinden ayıran en önemli özellik">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+                <Textarea
+                  value={formData.usp || ''}
+                  onChange={(e) => setFormData({ ...formData, usp: e.target.value })}
+                  placeholder="Örn: Türkiye'nin en güvenilir pırlanta markası, tüm ürünlerde GIA sertifikası garantisi"
+                  className="input-glow resize-none text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+                  rows={2}
+                />
+              </div>
 
               {/* ✅ Sosyal Medya - AKTİF */}
               <div>
@@ -859,18 +943,95 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
                 />
               </div>
 
-              {/* 🔒 Lokasyon - DISABLED */}
-              <DisabledField>
-                <div>
-                  <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">Lokasyon</Label>
-                  <Input
-                    value={formData.target_geography || ''}
-                    disabled
-                    placeholder="Örn: Türkiye geneli, özellikle büyükşehirler"
-                    className="input-glow text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 cursor-not-allowed"
-                  />
+              {/* ✅ Hedef Coğrafya - AKTİF */}
+              <div>
+                <Label className="flex items-center gap-2 mb-2 text-zinc-700 dark:text-zinc-300">
+                  Hedef Coğrafya
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Hedef kitlenin bulunduğu bölgeler">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+                <Input
+                  value={formData.target_geography || ''}
+                  onChange={(e) => setFormData({ ...formData, target_geography: e.target.value })}
+                  placeholder="Örn: Türkiye geneli, özellikle büyükşehirler"
+                  className="input-glow text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+                />
+              </div>
+
+              {/* ✅ Ağrı Noktaları (Pain Points) - AKTİF */}
+              <div>
+                <Label className="flex items-center gap-2 mb-3 text-zinc-700 dark:text-zinc-300">
+                  Müşteri Ağrı Noktaları
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Hedef kitlenin yaşadığı sorunlar ve bunların çözümleri">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+
+                <div className="space-y-3 mb-4">
+                  {(formData.pain_points || []).map((point: any, idx: number) => (
+                    <div key={idx} className="p-4 rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-zinc-800/50">
+                      <div className="flex items-start justify-between mb-3">
+                        <span className="text-xs font-medium text-violet-600 dark:text-violet-400">Ağrı Noktası #{idx + 1}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const updated = [...(formData.pain_points || [])]
+                            updated.splice(idx, 1)
+                            setFormData({ ...formData, pain_points: updated })
+                          }}
+                          className="text-zinc-400 hover:text-rose-500 h-6 w-6 p-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="space-y-3">
+                        <Input
+                          value={point.problem || ''}
+                          onChange={(e) => {
+                            const updated = [...(formData.pain_points || [])]
+                            updated[idx] = { ...updated[idx], problem: e.target.value }
+                            setFormData({ ...formData, pain_points: updated })
+                          }}
+                          placeholder="Problem/ağrı noktası..."
+                          className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white"
+                        />
+                        <Select
+                          value={point.intensity || 'medium'}
+                          onValueChange={(val: 'low' | 'medium' | 'high') => {
+                            const updated = [...(formData.pain_points || [])]
+                            updated[idx] = { ...updated[idx], intensity: val }
+                            setFormData({ ...formData, pain_points: updated })
+                          }}
+                        >
+                          <SelectTrigger className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white">
+                            <SelectValue placeholder="Yoğunluk seçin" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Düşük</SelectItem>
+                            <SelectItem value="medium">Orta</SelectItem>
+                            <SelectItem value="high">Yüksek</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </DisabledField>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const newPoint = { problem: '', intensity: 'medium' as const }
+                    setFormData({ ...formData, pain_points: [...(formData.pain_points || []), newPoint] })
+                  }}
+                  className="w-full border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                >
+                  + Ağrı Noktası Ekle
+                </Button>
+              </div>
 
             </div>
           </div>
@@ -978,75 +1139,1097 @@ export function CustomerBriefForm({ customer, onSave, onCancel, isLoading }: Cus
                 />
               </div>
 
-              {/* 🔒 Hashtag Tercihi - DISABLED */}
-              <DisabledField>
-                <div>
-                  <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">Hashtag Tercihi</Label>
-                  <Select value={hashtagPreference} disabled>
-                    <SelectTrigger className="input-glow text-zinc-900 dark:text-white cursor-not-allowed">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="few">Az hashtag (3-5 adet)</SelectItem>
-                      <SelectItem value="medium">Orta (5-10 adet)</SelectItem>
-                      <SelectItem value="many">Çok (10+ adet)</SelectItem>
-                      <SelectItem value="none">Hashtag kullanma</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </DisabledField>
+              {/* ✅ Vurgulanması Gerekenler - AKTİF */}
+              <div>
+                <Label className="flex items-center gap-2 mb-2 text-zinc-700 dark:text-zinc-300">
+                  Vurgulanması Gerekenler
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Her içerikte vurgulanması gereken önemli noktalar">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+                <TagInput
+                  value={formData.must_emphasize || []}
+                  onChange={(v) => setFormData({ ...formData, must_emphasize: v })}
+                  placeholder="+ Vurgulama noktası ekle..."
+                  colorClass="emerald"
+                />
+              </div>
 
-              {/* 🔒 Emoji Tercihi - DISABLED */}
-              <DisabledField>
+              {/* ✅ Yasaklı Kelimeler (Detaylı) - AKTİF */}
+              <div>
+                <Label className="flex items-center gap-2 mb-3 text-zinc-700 dark:text-zinc-300">
+                  Yasaklı Kelimeler (Detaylı)
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Kullanılmaması gereken kelimeler ve alternatifleri">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+
+                <div className="space-y-3 mb-4">
+                  {(formData.forbidden_words || []).map((item: any, idx: number) => {
+                    // DB'de string veya object olabilir - normalize et
+                    const wordValue = typeof item === 'string' ? item : (item.word || '')
+                    const altValue = typeof item === 'string' ? '' : (item.alternative || '')
+                    const reasonValue = typeof item === 'string' ? '' : (item.reason || '')
+
+                    return (
+                      <div key={idx} className="p-4 rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-zinc-800/50">
+                        <div className="flex items-start justify-between mb-3">
+                          <span className="text-xs font-medium text-rose-600 dark:text-rose-400">Yasaklı Kelime #{idx + 1}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const updated = [...(formData.forbidden_words || [])]
+                              updated.splice(idx, 1)
+                              setFormData({ ...formData, forbidden_words: updated })
+                            }}
+                            className="text-zinc-400 hover:text-rose-500 h-6 w-6 p-0"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <div className="space-y-3">
+                          <Input
+                            value={wordValue}
+                            onChange={(e) => {
+                              const updated = [...(formData.forbidden_words || [])]
+                              updated[idx] = { word: e.target.value, alternative: altValue, reason: reasonValue }
+                              setFormData({ ...formData, forbidden_words: updated })
+                            }}
+                            placeholder="Yasaklı kelime..."
+                            className="input-glow text-zinc-900 dark:text-white"
+                          />
+                          <Input
+                            value={altValue}
+                            onChange={(e) => {
+                              const updated = [...(formData.forbidden_words || [])]
+                              updated[idx] = { word: wordValue, alternative: e.target.value, reason: reasonValue }
+                              setFormData({ ...formData, forbidden_words: updated })
+                            }}
+                            placeholder="Alternatif kelime (opsiyonel)..."
+                            className="input-glow text-zinc-900 dark:text-white"
+                          />
+                          <Input
+                            value={reasonValue}
+                            onChange={(e) => {
+                              const updated = [...(formData.forbidden_words || [])]
+                              updated[idx] = { word: wordValue, alternative: altValue, reason: e.target.value }
+                              setFormData({ ...formData, forbidden_words: updated })
+                            }}
+                            placeholder="Neden yasaklı? (opsiyonel)..."
+                            className="input-glow text-zinc-900 dark:text-white"
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const newWord = { word: '', reason: '', alternative: '' }
+                    setFormData({ ...formData, forbidden_words: [...(formData.forbidden_words || []), newWord] })
+                  }}
+                  className="w-full border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                >
+                  + Yasaklı Kelime Ekle
+                </Button>
+              </div>
+
+              {/* ✅ Hook Cümleleri - AKTİF */}
+              <div>
+                <Label className="flex items-center gap-2 mb-3 text-zinc-700 dark:text-zinc-300">
+                  Hook Cümleleri
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Dikkat çekici açılış cümleleri">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+
+                <div className="space-y-3 mb-4">
+                  {(formData.hook_sentences || []).map((item: any, idx: number) => {
+                    // DB'de string veya object olabilir - normalize et
+                    const hookValue = typeof item === 'string' ? item : (item.hook || '')
+                    const typeValue = typeof item === 'string' ? 'emotion' : (item.type || 'emotion')
+
+                    return (
+                      <div key={idx} className="p-4 rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-zinc-800/50">
+                        <div className="flex items-start justify-between mb-3">
+                          <span className="text-xs font-medium text-violet-600 dark:text-violet-400">Hook #{idx + 1}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const updated = [...(formData.hook_sentences || [])]
+                              updated.splice(idx, 1)
+                              setFormData({ ...formData, hook_sentences: updated })
+                            }}
+                            className="text-zinc-400 hover:text-rose-500 h-6 w-6 p-0"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <div className="space-y-3">
+                          <Input
+                            value={hookValue}
+                            onChange={(e) => {
+                              const updated = [...(formData.hook_sentences || [])]
+                              updated[idx] = { hook: e.target.value, type: typeValue }
+                              setFormData({ ...formData, hook_sentences: updated })
+                            }}
+                            placeholder="Hook cümlesi yazın..."
+                            className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white"
+                          />
+                          <Select
+                            value={typeValue}
+                            onValueChange={(val: 'question' | 'statistic' | 'emotion' | 'curiosity' | 'benefit') => {
+                              const updated = [...(formData.hook_sentences || [])]
+                              updated[idx] = { hook: hookValue, type: val }
+                              setFormData({ ...formData, hook_sentences: updated })
+                            }}
+                          >
+                            <SelectTrigger className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white">
+                              <SelectValue placeholder="Tür seçin" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="question">Soru</SelectItem>
+                              <SelectItem value="statistic">İstatistik</SelectItem>
+                              <SelectItem value="emotion">Duygu</SelectItem>
+                              <SelectItem value="curiosity">Merak</SelectItem>
+                              <SelectItem value="benefit">Fayda</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const newHook = { hook: '', type: 'question' as const }
+                    setFormData({ ...formData, hook_sentences: [...(formData.hook_sentences || []), newHook] })
+                  }}
+                  className="w-full border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                >
+                  + Hook Cümlesi Ekle
+                </Button>
+              </div>
+
+              {/* ✅ CTA Standartları - AKTİF */}
+              <div>
+                <Label className="flex items-center gap-2 mb-3 text-zinc-700 dark:text-zinc-300">
+                  CTA Standartları
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Call-to-action cümleleri">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+
+                <div className="space-y-3 mb-4">
+                  {(formData.cta_standards || []).map((item: any, idx: number) => (
+                    <div key={idx} className="p-4 rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-zinc-800/50">
+                      <div className="flex items-start justify-between mb-3">
+                        <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">CTA #{idx + 1}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const updated = [...(formData.cta_standards || [])]
+                            updated.splice(idx, 1)
+                            setFormData({ ...formData, cta_standards: updated })
+                          }}
+                          className="text-zinc-400 hover:text-rose-500 h-6 w-6 p-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="space-y-3">
+                        <Input
+                          value={item.cta || ''}
+                          onChange={(e) => {
+                            const updated = [...(formData.cta_standards || [])]
+                            updated[idx] = { ...updated[idx], cta: e.target.value }
+                            setFormData({ ...formData, cta_standards: updated })
+                          }}
+                          placeholder="CTA metni (örn: Hemen İncele, Detaylar için tıkla)"
+                          className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white"
+                        />
+                        <Input
+                          value={item.context || ''}
+                          onChange={(e) => {
+                            const updated = [...(formData.cta_standards || [])]
+                            updated[idx] = { ...updated[idx], context: e.target.value }
+                            setFormData({ ...formData, cta_standards: updated })
+                          }}
+                          placeholder="Kullanım bağlamı (örn: Ürün tanıtımlarında)"
+                          className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const newCta = { cta: '', context: '' }
+                    setFormData({ ...formData, cta_standards: [...(formData.cta_standards || []), newCta] })
+                  }}
+                  className="w-full border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                >
+                  + CTA Ekle
+                </Button>
+              </div>
+
+              {/* ✅ Kelime Dönüşümleri - AKTİF */}
+              <div>
+                <Label className="flex items-center gap-2 mb-3 text-zinc-700 dark:text-zinc-300">
+                  Kelime Dönüşümleri
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Yanlış kullanımlar ve doğru karşılıkları">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+
+                <div className="space-y-3 mb-4">
+                  {(formData.word_mapping || []).map((item: any, idx: number) => {
+                    // DB'de iki farklı yapı olabilir:
+                    // Yeni: {avoid, use_instead}
+                    // Eski: {wrong, correct}
+                    const avoidValue = item.avoid || item.wrong || ''
+                    const useInsteadValue = item.use_instead || item.correct || ''
+
+                    return (
+                      <div key={idx} className="p-4 rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-zinc-800/50">
+                        <div className="flex items-start justify-between mb-3">
+                          <span className="text-xs font-medium text-cyan-600 dark:text-cyan-400">Dönüşüm #{idx + 1}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const updated = [...(formData.word_mapping || [])]
+                              updated.splice(idx, 1)
+                              setFormData({ ...formData, word_mapping: updated })
+                            }}
+                            className="text-zinc-400 hover:text-rose-500 h-6 w-6 p-0"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Input
+                            value={avoidValue}
+                            onChange={(e) => {
+                              const updated = [...(formData.word_mapping || [])]
+                              updated[idx] = { avoid: e.target.value, use_instead: useInsteadValue }
+                              setFormData({ ...formData, word_mapping: updated })
+                            }}
+                            placeholder="Yanlış/Kaçınılacak"
+                            className="flex-1 bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400"
+                          />
+                          <ChevronRight className="w-4 h-4 text-zinc-400 flex-shrink-0" />
+                          <Input
+                            value={useInsteadValue}
+                            onChange={(e) => {
+                              const updated = [...(formData.word_mapping || [])]
+                              updated[idx] = { avoid: avoidValue, use_instead: e.target.value }
+                              setFormData({ ...formData, word_mapping: updated })
+                            }}
+                            placeholder="Doğru/Kullanılacak"
+                            className="flex-1 bg-white dark:bg-zinc-900 text-emerald-600 dark:text-emerald-400"
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const newMapping = { avoid: '', use_instead: '' }
+                    setFormData({ ...formData, word_mapping: [...(formData.word_mapping || []), newMapping] })
+                  }}
+                  className="w-full border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                >
+                  + Kelime Dönüşümü Ekle
+                </Button>
+              </div>
+
+              {/* ✅ İçerik Direkleri - AKTİF */}
+              <div>
+                <Label className="flex items-center gap-2 mb-3 text-zinc-700 dark:text-zinc-300">
+                  İçerik Direkleri (Content Pillars)
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Ana içerik kategorileri ve yüzdeleri">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+
+                <div className="space-y-3 mb-4">
+                  {(formData.content_pillars || []).map((pillar: any, idx: number) => (
+                    <div key={idx} className="p-4 rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-zinc-800/50">
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="font-medium text-zinc-900 dark:text-white">{pillar.name || 'İçerik Direği'}</h4>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const updated = [...(formData.content_pillars || [])]
+                            updated.splice(idx, 1)
+                            setFormData({ ...formData, content_pillars: updated })
+                          }}
+                          className="text-zinc-400 hover:text-rose-500"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      {pillar.description && (
+                        <p className="text-sm text-zinc-500 mb-2">{pillar.description}</p>
+                      )}
+                      {pillar.example_topics && pillar.example_topics.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {pillar.example_topics.map((topic: string, i: number) => (
+                            <span key={i} className="px-2 py-0.5 rounded-full text-xs bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                              {topic}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const newPillar = { name: '', description: '', example_topics: [] }
+                    setFormData({ ...formData, content_pillars: [...(formData.content_pillars || []), newPillar] })
+                  }}
+                  className="w-full border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                >
+                  + İçerik Direği Ekle
+                </Button>
+              </div>
+
+              {/* ✅ Örnek Caption'lar - AKTİF */}
+              <div>
+                <Label className="flex items-center gap-2 mb-3 text-zinc-700 dark:text-zinc-300">
+                  Örnek Caption'lar
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="İyi ve kötü caption örnekleri">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+
+                {/* İyi Örnekler */}
+                <div className="mb-4">
+                  <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium mb-2">İyi Örnekler</p>
+                  <div className="space-y-2 mb-2">
+                    {(formData.example_captions?.good_examples || []).map((example: string, idx: number) => (
+                      <div key={idx} className="flex items-start gap-2">
+                        <Textarea
+                          value={example}
+                          onChange={(e) => {
+                            const updated = [...(formData.example_captions?.good_examples || [])]
+                            updated[idx] = e.target.value
+                            setFormData({ ...formData, example_captions: { ...formData.example_captions, good_examples: updated } })
+                          }}
+                          placeholder="İyi caption örneği..."
+                          rows={2}
+                          className="flex-1 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white resize-none"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const updated = [...(formData.example_captions?.good_examples || [])]
+                            updated.splice(idx, 1)
+                            setFormData({ ...formData, example_captions: { ...formData.example_captions, good_examples: updated } })
+                          }}
+                          className="text-zinc-400 hover:text-rose-500 h-8 w-8 p-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const updated = [...(formData.example_captions?.good_examples || []), '']
+                      setFormData({ ...formData, example_captions: { ...formData.example_captions, good_examples: updated } })
+                    }}
+                    className="border-dashed border-emerald-300 dark:border-emerald-600 text-emerald-600 dark:text-emerald-400"
+                  >
+                    + İyi Örnek Ekle
+                  </Button>
+                </div>
+
+                {/* Kötü Örnekler */}
                 <div>
-                  <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">Emoji Kullanımı</Label>
-                  <div className="grid grid-cols-3 gap-3 pointer-events-none">
-                    <OptionCard
-                      label="Hiç"
-                      selected={emojiPreference === 'none'}
-                      onChange={() => {}}
-                      colorClass="rose"
-                    />
-                    <OptionCard
-                      label="Az"
-                      selected={emojiPreference === 'moderate'}
-                      onChange={() => {}}
-                      colorClass="rose"
-                    />
-                    <OptionCard
-                      label="Çok"
-                      selected={emojiPreference === 'many'}
-                      onChange={() => {}}
-                      colorClass="rose"
-                    />
+                  <p className="text-sm text-rose-600 dark:text-rose-400 font-medium mb-2">Kötü Örnekler (Kaçınılacak)</p>
+                  <div className="space-y-2 mb-2">
+                    {(formData.example_captions?.bad_examples || []).map((example: string, idx: number) => (
+                      <div key={idx} className="flex items-start gap-2">
+                        <Textarea
+                          value={example}
+                          onChange={(e) => {
+                            const updated = [...(formData.example_captions?.bad_examples || [])]
+                            updated[idx] = e.target.value
+                            setFormData({ ...formData, example_captions: { ...formData.example_captions, bad_examples: updated } })
+                          }}
+                          placeholder="Kötü caption örneği..."
+                          rows={2}
+                          className="flex-1 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white resize-none"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const updated = [...(formData.example_captions?.bad_examples || [])]
+                            updated.splice(idx, 1)
+                            setFormData({ ...formData, example_captions: { ...formData.example_captions, bad_examples: updated } })
+                          }}
+                          className="text-zinc-400 hover:text-rose-500 h-8 w-8 p-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const updated = [...(formData.example_captions?.bad_examples || []), '']
+                      setFormData({ ...formData, example_captions: { ...formData.example_captions, bad_examples: updated } })
+                    }}
+                    className="border-dashed border-rose-300 dark:border-rose-600 text-rose-600 dark:text-rose-400"
+                  >
+                    + Kötü Örnek Ekle
+                  </Button>
+                </div>
+              </div>
+
+              {/* ✅ Platform Kuralları - AKTİF */}
+              <div>
+                <Label className="flex items-center gap-2 mb-3 text-zinc-700 dark:text-zinc-300">
+                  Platform Kuralları
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Her platform için özel ayarlar">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+
+                {/* Instagram Kuralları */}
+                <div className="p-4 rounded-xl border border-zinc-200 dark:border-white/10 bg-gradient-to-br from-purple-500/5 to-pink-500/5 mb-4">
+                  <h4 className="font-medium text-zinc-900 dark:text-white mb-3 flex items-center gap-2">
+                    <span className="text-lg">📸</span> Instagram
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs text-zinc-500 mb-1.5 block">Haftalık Post</Label>
+                      <Input
+                        type="number"
+                        value={formData.platform_rules?.instagram?.post_frequency || ''}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          platform_rules: {
+                            ...formData.platform_rules,
+                            instagram: { ...formData.platform_rules?.instagram, post_frequency: parseInt(e.target.value) || 0 }
+                          }
+                        })}
+                        placeholder="3"
+                        className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-zinc-500 mb-1.5 block">Haftalık Reels</Label>
+                      <Input
+                        type="number"
+                        value={formData.platform_rules?.instagram?.reels_per_week || ''}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          platform_rules: {
+                            ...formData.platform_rules,
+                            instagram: { ...formData.platform_rules?.instagram, reels_per_week: parseInt(e.target.value) || 0 }
+                          }
+                        })}
+                        placeholder="2"
+                        className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label className="text-xs text-zinc-500 mb-1.5 block">En İyi Paylaşım Saatleri</Label>
+                      <Input
+                        value={formData.platform_rules?.instagram?.best_times || ''}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          platform_rules: {
+                            ...formData.platform_rules,
+                            instagram: { ...formData.platform_rules?.instagram, best_times: e.target.value }
+                          }
+                        })}
+                        placeholder="12:00, 18:00, 21:00"
+                        className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label className="text-xs text-zinc-500 mb-1.5 block">Varsayılan Hashtagler</Label>
+                      <Input
+                        value={formData.platform_rules?.instagram?.hashtags || ''}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          platform_rules: {
+                            ...formData.platform_rules,
+                            instagram: { ...formData.platform_rules?.instagram, hashtags: e.target.value }
+                          }
+                        })}
+                        placeholder="#marka #sektör #trend"
+                        className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label className="text-xs text-zinc-500 mb-1.5 block">Ton & Ses</Label>
+                      <Select
+                        value={formData.platform_rules?.instagram?.tone || ''}
+                        onValueChange={(val) => setFormData({
+                          ...formData,
+                          platform_rules: {
+                            ...formData.platform_rules,
+                            instagram: { ...formData.platform_rules?.instagram, tone: val }
+                          }
+                        })}
+                      >
+                        <SelectTrigger className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white">
+                          <SelectValue placeholder="Ton seçin..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="casual">Günlük/Rahat</SelectItem>
+                          <SelectItem value="professional">Profesyonel</SelectItem>
+                          <SelectItem value="playful">Eğlenceli</SelectItem>
+                          <SelectItem value="inspirational">İlham Verici</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
-              </DisabledField>
+
+                {/* Facebook Kuralları */}
+                <div className="p-4 rounded-xl border border-zinc-200 dark:border-white/10 bg-gradient-to-br from-blue-500/5 to-cyan-500/5">
+                  <h4 className="font-medium text-zinc-900 dark:text-white mb-3 flex items-center gap-2">
+                    <span className="text-lg">📘</span> Facebook
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs text-zinc-500 mb-1.5 block">Haftalık Post</Label>
+                      <Input
+                        type="number"
+                        value={formData.platform_rules?.facebook?.post_frequency || ''}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          platform_rules: {
+                            ...formData.platform_rules,
+                            facebook: { ...formData.platform_rules?.facebook, post_frequency: parseInt(e.target.value) || 0 }
+                          }
+                        })}
+                        placeholder="2"
+                        className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-zinc-500 mb-1.5 block">Öncelik</Label>
+                      <Select
+                        value={formData.platform_rules?.facebook?.priority || ''}
+                        onValueChange={(val) => setFormData({
+                          ...formData,
+                          platform_rules: {
+                            ...formData.platform_rules,
+                            facebook: { ...formData.platform_rules?.facebook, priority: val }
+                          }
+                        })}
+                      >
+                        <SelectTrigger className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white">
+                          <SelectValue placeholder="Öncelik..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="high">Yüksek</SelectItem>
+                          <SelectItem value="medium">Orta</SelectItem>
+                          <SelectItem value="low">Düşük</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
             </div>
           </div>
         )}
       </div>
 
-      {/* ==================== 🔒 DISABLED SECTIONS ==================== */}
-      
-      <DisabledSection 
-        title="Rakip Analizi" 
-        icon="🎯" 
-        description="Rakip takibi ve karşılaştırmalı analiz"
-      />
+      {/* ==================== SECTION 5: RAKİP ANALİZİ ==================== */}
+      <div
+        ref={(el) => { sectionRefs.current['rakipler'] = el }}
+        className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5 bg-white dark:bg-zinc-900/50 scroll-mt-32"
+      >
+        <SectionHeader
+          section={BRIEF_SECTIONS_CONFIG.rakipler}
+          isOpen={openSections.includes('rakipler')}
+          onToggle={() => toggleSection('rakipler')}
+          completion={getSectionCompletion('rakipler')}
+        />
+        {openSections.includes('rakipler') && (
+          <div className="px-5 pb-5">
+            <div className="pt-4 border-t border-zinc-200 dark:border-white/5 space-y-5">
 
-      <DisabledSection 
-        title="Özel Günler & Takvim" 
-        icon="📅" 
-        description="İçerik takvimi ve özel gün planlaması"
-      />
+              {/* Rakipler Listesi */}
+              <div>
+                <Label className="flex items-center gap-2 mb-3 text-zinc-700 dark:text-zinc-300">
+                  Rakip Markalar
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Rekabet ettiğiniz markalar">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
 
-      <DisabledSection 
-        title="Renkler & Fontlar" 
-        icon="🎨" 
-        description="Marka görsel kimliği"
-      />
+                {/* Mevcut Rakipler */}
+                <div className="space-y-3 mb-4">
+                  {(formData.competitors || []).map((competitor: any, idx: number) => (
+                    <div key={idx} className="p-4 rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-zinc-800/50">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center">
+                            <span className="text-lg">🎯</span>
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-zinc-900 dark:text-white">{competitor.name || 'İsimsiz Rakip'}</h4>
+                            {competitor.instagram && (
+                              <a href={`https://instagram.com/${competitor.instagram.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="text-xs text-violet-500 hover:underline">
+                                {competitor.instagram.startsWith('@') ? competitor.instagram : `@${competitor.instagram}`}
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const updated = [...(formData.competitors || [])]
+                            updated.splice(idx, 1)
+                            setFormData({ ...formData, competitors: updated })
+                          }}
+                          className="text-zinc-400 hover:text-rose-500"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+
+                      {competitor.instagram_followers && (
+                        <div className="text-xs text-zinc-500 mb-2">
+                          <span className="font-medium">{Number(competitor.instagram_followers).toLocaleString('tr-TR')}</span> takipçi
+                        </div>
+                      )}
+
+                      {competitor.strengths && competitor.strengths.length > 0 && (
+                        <div className="mb-2">
+                          <span className="text-xs text-emerald-500 font-medium">Güçlü Yönleri:</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {competitor.strengths.map((s: string, i: number) => (
+                              <span key={i} className="px-2 py-0.5 rounded-full text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                {s}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {competitor.weaknesses && competitor.weaknesses.length > 0 && (
+                        <div>
+                          <span className="text-xs text-rose-500 font-medium">Zayıf Yönleri:</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {competitor.weaknesses.map((w: string, i: number) => (
+                              <span key={i} className="px-2 py-0.5 rounded-full text-xs bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                                {w}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Yeni Rakip Ekleme Butonu */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const newCompetitor = {
+                      name: '',
+                      instagram: '',
+                      instagram_followers: null,
+                      strengths: [],
+                      weaknesses: []
+                    }
+                    setFormData({ ...formData, competitors: [...(formData.competitors || []), newCompetitor] })
+                  }}
+                  className="w-full border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                >
+                  + Rakip Ekle
+                </Button>
+              </div>
+
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ==================== SECTION 6: ÖZEL GÜNLER & TAKVİM ==================== */}
+      <div
+        ref={(el) => { sectionRefs.current['ozel-gunler'] = el }}
+        className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5 bg-white dark:bg-zinc-900/50 scroll-mt-32"
+      >
+        <SectionHeader
+          section={BRIEF_SECTIONS_CONFIG.ozelGunler}
+          isOpen={openSections.includes('ozel-gunler')}
+          onToggle={() => toggleSection('ozel-gunler')}
+          completion={getSectionCompletion('ozel-gunler')}
+        />
+        {openSections.includes('ozel-gunler') && (
+          <div className="px-5 pb-5">
+            <div className="pt-4 border-t border-zinc-200 dark:border-white/5 space-y-5">
+
+              {/* Özel Günler */}
+              <div>
+                <Label className="flex items-center gap-2 mb-3 text-zinc-700 dark:text-zinc-300">
+                  Markaya Özel Günler
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Yıldönümü, lansman tarihi gibi özel günler">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+
+                <div className="space-y-3 mb-4">
+                  {(formData.special_events || []).map((event: any, idx: number) => (
+                    <div key={idx} className="p-4 rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-zinc-800/50 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-fuchsia-500/20 to-pink-500/20 flex items-center justify-center">
+                          <span className="text-lg">📅</span>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-zinc-900 dark:text-white">{event.name || 'İsimsiz Etkinlik'}</h4>
+                          {event.date && (
+                            <span className="text-xs text-zinc-500">{event.date}</span>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const updated = [...(formData.special_events || [])]
+                          updated.splice(idx, 1)
+                          setFormData({ ...formData, special_events: updated })
+                        }}
+                        className="text-zinc-400 hover:text-rose-500"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const newEvent = { name: '', date: '', description: '' }
+                    setFormData({ ...formData, special_events: [...(formData.special_events || []), newEvent] })
+                  }}
+                  className="w-full border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                >
+                  + Özel Gün Ekle
+                </Button>
+              </div>
+
+              {/* Sezonsal Takvim */}
+              <div>
+                <Label className="flex items-center gap-2 mb-3 text-zinc-700 dark:text-zinc-300">
+                  Sezonsal Takvim
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Yıl içindeki önemli dönemler">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+
+                <div className="space-y-3 mb-4">
+                  {(formData.seasonal_calendar || []).map((season: any, idx: number) => {
+                    // DB'de iki farklı yapı olabilir:
+                    // Yeni: {name, date_range, content_ideas}
+                    // Eski: {month, season, themes, critical, opportunities}
+                    const monthNames = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık']
+
+                    const nameValue = season.name || (season.month ? `${monthNames[season.month - 1]} - ${season.season || ''}` : '')
+                    const dateRangeValue = season.date_range || (season.month ? monthNames[season.month - 1] : '')
+                    const ideasValue = season.content_ideas || season.themes || []
+                    const notesValue = season.critical || (season.opportunities ? season.opportunities.join(', ') : '')
+
+                    return (
+                      <div key={idx} className="p-4 rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-zinc-800/50">
+                        <div className="flex items-start justify-between mb-3">
+                          <span className="text-xs font-medium text-fuchsia-600 dark:text-fuchsia-400">Sezon #{idx + 1}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const updated = [...(formData.seasonal_calendar || [])]
+                              updated.splice(idx, 1)
+                              setFormData({ ...formData, seasonal_calendar: updated })
+                            }}
+                            className="text-zinc-400 hover:text-rose-500 h-6 w-6 p-0"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <div className="space-y-3">
+                          <Input
+                            value={nameValue}
+                            onChange={(e) => {
+                              const updated = [...(formData.seasonal_calendar || [])]
+                              updated[idx] = { name: e.target.value, date_range: dateRangeValue, content_ideas: ideasValue }
+                              setFormData({ ...formData, seasonal_calendar: updated })
+                            }}
+                            placeholder="Sezon adı (örn: Yaz Sezonu, Black Friday)"
+                            className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white"
+                          />
+                          <Input
+                            value={dateRangeValue}
+                            onChange={(e) => {
+                              const updated = [...(formData.seasonal_calendar || [])]
+                              updated[idx] = { name: nameValue, date_range: e.target.value, content_ideas: ideasValue }
+                              setFormData({ ...formData, seasonal_calendar: updated })
+                            }}
+                            placeholder="Tarih aralığı (örn: Haziran - Ağustos)"
+                            className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white"
+                          />
+                          <Textarea
+                            value={Array.isArray(ideasValue) ? ideasValue.join(', ') : ''}
+                            onChange={(e) => {
+                              const updated = [...(formData.seasonal_calendar || [])]
+                              const ideas = e.target.value.split(',').map(s => s.trim()).filter(Boolean)
+                              updated[idx] = { name: nameValue, date_range: dateRangeValue, content_ideas: ideas }
+                              setFormData({ ...formData, seasonal_calendar: updated })
+                            }}
+                            placeholder="İçerik fikirleri (virgülle ayırın)"
+                            rows={2}
+                            className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white resize-none"
+                          />
+                          {notesValue && (
+                            <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-3 py-2 rounded-lg">
+                              📌 {notesValue}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const newSeason = { name: '', date_range: '', content_ideas: [], hashtags: [] }
+                    setFormData({ ...formData, seasonal_calendar: [...(formData.seasonal_calendar || []), newSeason] })
+                  }}
+                  className="w-full border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                >
+                  + Sezon Ekle
+                </Button>
+              </div>
+
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ==================== SECTION 7: RENKLER & FONTLAR ==================== */}
+      <div
+        ref={(el) => { sectionRefs.current['marka-assets'] = el }}
+        className="section-card rounded-2xl overflow-hidden transition-all border border-zinc-200 dark:border-white/5 bg-white dark:bg-zinc-900/50 scroll-mt-32"
+      >
+        <SectionHeader
+          section={BRIEF_SECTIONS_CONFIG.markaAssets}
+          isOpen={openSections.includes('marka-assets')}
+          onToggle={() => toggleSection('marka-assets')}
+          completion={getSectionCompletion('marka-assets')}
+        />
+        {openSections.includes('marka-assets') && (
+          <div className="px-5 pb-5">
+            <div className="pt-4 border-t border-zinc-200 dark:border-white/5 space-y-5">
+
+              {/* Marka Renkleri */}
+              <div>
+                <Label className="flex items-center gap-2 mb-3 text-zinc-700 dark:text-zinc-300">
+                  Marka Renkleri
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Ana ve yardımcı marka renkleri">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Primary Color */}
+                  <div className="p-4 rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-zinc-800/50">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div
+                        className="w-8 h-8 rounded-lg border border-zinc-300 dark:border-zinc-600"
+                        style={{ backgroundColor: (formData.brand_colors as any)?.primary || '#6366f1' }}
+                      />
+                      <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Ana Renk</span>
+                    </div>
+                    <Input
+                      type="color"
+                      value={(formData.brand_colors as any)?.primary || '#6366f1'}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        brand_colors: { ...(formData.brand_colors as any), primary: e.target.value }
+                      })}
+                      className="w-full h-10 cursor-pointer"
+                    />
+                    <span className="text-xs text-zinc-500 mt-1 block">
+                      {(formData.brand_colors as any)?.primary || '#6366f1'}
+                    </span>
+                  </div>
+
+                  {/* Secondary Color */}
+                  <div className="p-4 rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-zinc-800/50">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div
+                        className="w-8 h-8 rounded-lg border border-zinc-300 dark:border-zinc-600"
+                        style={{ backgroundColor: (formData.brand_colors as any)?.secondary || '#ec4899' }}
+                      />
+                      <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Yardımcı Renk</span>
+                    </div>
+                    <Input
+                      type="color"
+                      value={(formData.brand_colors as any)?.secondary || '#ec4899'}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        brand_colors: { ...(formData.brand_colors as any), secondary: e.target.value }
+                      })}
+                      className="w-full h-10 cursor-pointer"
+                    />
+                    <span className="text-xs text-zinc-500 mt-1 block">
+                      {(formData.brand_colors as any)?.secondary || '#ec4899'}
+                    </span>
+                  </div>
+
+                  {/* Accent Color */}
+                  <div className="p-4 rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-zinc-800/50">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div
+                        className="w-8 h-8 rounded-lg border border-zinc-300 dark:border-zinc-600"
+                        style={{ backgroundColor: (formData.brand_colors as any)?.accent || '#f59e0b' }}
+                      />
+                      <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Vurgu Renk</span>
+                    </div>
+                    <Input
+                      type="color"
+                      value={(formData.brand_colors as any)?.accent || '#f59e0b'}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        brand_colors: { ...(formData.brand_colors as any), accent: e.target.value }
+                      })}
+                      className="w-full h-10 cursor-pointer"
+                    />
+                    <span className="text-xs text-zinc-500 mt-1 block">
+                      {(formData.brand_colors as any)?.accent || '#f59e0b'}
+                    </span>
+                  </div>
+
+                  {/* Background Color */}
+                  <div className="p-4 rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-zinc-800/50">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div
+                        className="w-8 h-8 rounded-lg border border-zinc-300 dark:border-zinc-600"
+                        style={{ backgroundColor: (formData.brand_colors as any)?.background || '#ffffff' }}
+                      />
+                      <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Arka Plan</span>
+                    </div>
+                    <Input
+                      type="color"
+                      value={(formData.brand_colors as any)?.background || '#ffffff'}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        brand_colors: { ...(formData.brand_colors as any), background: e.target.value }
+                      })}
+                      className="w-full h-10 cursor-pointer"
+                    />
+                    <span className="text-xs text-zinc-500 mt-1 block">
+                      {(formData.brand_colors as any)?.background || '#ffffff'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Marka Fontları */}
+              <div>
+                <Label className="flex items-center gap-2 mb-3 text-zinc-700 dark:text-zinc-300">
+                  Marka Fontları
+                  <span className="text-zinc-400 dark:text-zinc-500 cursor-help" title="Başlık ve metin fontları">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </Label>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Heading Font */}
+                  <div>
+                    <Label className="text-xs text-zinc-500 mb-1 block">Başlık Fontu</Label>
+                    <Input
+                      value={(formData.brand_fonts as any)?.heading || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        brand_fonts: { ...(formData.brand_fonts as any), heading: e.target.value }
+                      })}
+                      placeholder="Örn: Montserrat"
+                      className="input-glow text-zinc-900 dark:text-white"
+                    />
+                  </div>
+
+                  {/* Body Font */}
+                  <div>
+                    <Label className="text-xs text-zinc-500 mb-1 block">Metin Fontu</Label>
+                    <Input
+                      value={(formData.brand_fonts as any)?.body || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        brand_fonts: { ...(formData.brand_fonts as any), body: e.target.value }
+                      })}
+                      placeholder="Örn: Open Sans"
+                      className="input-glow text-zinc-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+      </div>
 
     </form>
   )

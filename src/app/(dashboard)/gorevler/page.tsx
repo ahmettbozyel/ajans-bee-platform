@@ -35,6 +35,7 @@ import {
   History,
   Search
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 
 // TaskRevision tipi
@@ -987,7 +988,7 @@ export default function GunlukIslerPage() {
       }
     } catch (error) {
       console.error('Fetch error:', error)
-      alert('Görevler yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.')
+      toast.error('Görevler yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.')
     } finally {
       setLoading(false)
     }
@@ -1042,7 +1043,7 @@ export default function GunlukIslerPage() {
       fetchData()
     } catch (error) {
       console.error('Save error:', error)
-      alert('Görev kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.')
+      toast.error('Görev kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.')
     } finally {
       setSaving(false)
     }
@@ -1066,7 +1067,7 @@ export default function GunlukIslerPage() {
       fetchData()
     } catch (error) {
       console.error('Pause error:', error)
-      alert('Görev duraklatılırken bir hata oluştu.')
+      toast.error('Görev duraklatılırken bir hata oluştu.')
     }
   }
 
@@ -1084,7 +1085,7 @@ export default function GunlukIslerPage() {
       fetchData()
     } catch (error) {
       console.error('Resume error:', error)
-      alert('Görev devam ettirilirken bir hata oluştu.')
+      toast.error('Görev devam ettirilirken bir hata oluştu.')
     }
   }
 
@@ -1111,7 +1112,7 @@ export default function GunlukIslerPage() {
       fetchData()
     } catch (error) {
       console.error('Complete error:', error)
-      alert('Görev tamamlanırken bir hata oluştu.')
+      toast.error('Görev tamamlanırken bir hata oluştu.')
     }
   }
 
@@ -1155,7 +1156,7 @@ export default function GunlukIslerPage() {
       fetchData()
     } catch (error) {
       console.error('Start revision error:', error)
-      alert('Revize başlatılırken bir hata oluştu.')
+      toast.error('Revize başlatılırken bir hata oluştu.')
     }
   }
 
@@ -1174,7 +1175,7 @@ export default function GunlukIslerPage() {
       fetchData()
     } catch (error) {
       console.error('Reopen error:', error)
-      alert('Görev yeniden açılırken bir hata oluştu.')
+      toast.error('Görev yeniden açılırken bir hata oluştu.')
     }
   }
 
@@ -1186,7 +1187,7 @@ export default function GunlukIslerPage() {
       fetchData()
     } catch (error) {
       console.error('Delete error:', error)
-      alert('Görev silinirken bir hata oluştu.')
+      toast.error('Görev silinirken bir hata oluştu.')
     }
   }
 
@@ -1215,7 +1216,7 @@ export default function GunlukIslerPage() {
   }
 
   const handleExcelExport = () => {
-    alert('Excel export özelliği yakında eklenecek!')
+    toast.info('Excel export özelliği yakında eklenecek!')
   }
 
   // Admin/Yönetici ve Personel için farklı render

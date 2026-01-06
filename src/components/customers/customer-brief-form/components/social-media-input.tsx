@@ -29,8 +29,12 @@ export function SocialMediaInput({ value, onChange }: SocialMediaInputProps) {
           <div className="flex-1 relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500 text-sm font-medium">{prefix}</span>
             <Input
-              value={value[key]?.handle || ''}
-              onChange={(e) => onChange({ ...value, [key]: { ...value[key], handle: e.target.value } })}
+              value={(value[key]?.handle || '').replace(/^[@/]/, '')}
+              onChange={(e) => {
+                // @ veya / ile başlıyorsa temizle (prefix zaten gösteriliyor)
+                const cleanHandle = e.target.value.replace(/^[@/]/, '')
+                onChange({ ...value, [key]: { ...value[key], handle: cleanHandle } })
+              }}
               placeholder="kullanici_adi"
               className="input-glow pl-8 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
             />

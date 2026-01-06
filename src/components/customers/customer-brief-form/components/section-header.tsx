@@ -2,7 +2,7 @@
 
 import {
   Fingerprint, Users, Package, Swords, ShieldAlert, CalendarHeart,
-  ChevronDown
+  ChevronDown, Palette
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { BriefSectionConfig } from '../config'
@@ -21,7 +21,8 @@ const iconMap = {
   Package: <Package className="w-5 h-5" />,
   Swords: <Swords className="w-5 h-5" />,
   ShieldAlert: <ShieldAlert className="w-5 h-5" />,
-  CalendarHeart: <CalendarHeart className="w-5 h-5" />
+  CalendarHeart: <CalendarHeart className="w-5 h-5" />,
+  Palette: <Palette className="w-5 h-5" />
 }
 
 // HTML ile uyumlu renk mapping
@@ -49,6 +50,10 @@ const colorClasses = {
   fuchsia: {
     bg: 'bg-fuchsia-100 dark:bg-fuchsia-500/10',
     text: 'text-fuchsia-600 dark:text-fuchsia-400'
+  },
+  emerald: {
+    bg: 'bg-emerald-100 dark:bg-emerald-500/10',
+    text: 'text-emerald-600 dark:text-emerald-400'
   }
 }
 

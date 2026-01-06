@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 import type { ServiceProvider, ServiceType, BillingCycle } from '@/lib/service-provider-types'
 import { SERVICE_TYPES, BILLING_CYCLES, SERVICE_TYPE_COLORS } from '@/lib/service-provider-types'
 
@@ -94,7 +95,7 @@ export function ServiceProvidersTab() {
         await loadProviders()
       } else {
         const data = await res.json()
-        alert(data.error || 'Silme işlemi başarısız')
+        toast.error(data.error || 'Silme işlemi başarısız')
       }
     } catch (error) {
       console.error('Error deleting provider:', error)

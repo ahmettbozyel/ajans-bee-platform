@@ -1,4 +1,5 @@
 import { OFFICE_LOCATION, WORK_HOURS } from './constants'
+import { MonthlyStats } from './types'
 
 // Distance calculation using Haversine formula
 export function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -94,4 +95,30 @@ export const avatarColors = [
 
 export function getAvatarColor(name: string): string {
   return avatarColors[name?.charCodeAt(0) % avatarColors.length || 0]
+}
+
+// MonthlyStats hesaplama - attendance kayıtlarından istatistik çıkar
+export function calculateMonthlyStats(monthData: any[]): MonthlyStats {
+  const stats: MonthlyStats = {}
+  monthData.forEach((r: any) => {
+    if (!stats[r.user_id]) stats[r.user_id] = { overtime: 0, late: 0, lateDays: 0 }
+    stats[r.user_id].overtime += r.overtime_minutes || 0
+    stats[r.user_id].late += r.late_minutes || 0
+    if (r.late_minutes && r.late_minutes > 0) stats[r.user_id].lateDays += 1
+  })
+  return stats
+}
+
+// Location type belirleme - konum ve hybrid durumuna göre
+export function determineLocationType(
+  location: { lat: number; lng: number } | null,
+  isHybridDay: boolean
+): 'office' | 'home' | 'other' | 'unknown' {
+  if (location) {
+    const isInOffice = getLocationType(location.lat, location.lng) === 'office'
+    if (isInOffice) return 'office'
+    if (isHybridDay) return 'home'
+    return 'other'
+  }
+  return isHybridDay ? 'home' : 'unknown'
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Loader2, AlertTriangle } from 'lucide-react'
+import { toast } from 'sonner'
 import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase/client'
 import { Attendance, AppUser } from '@/lib/auth-types'
@@ -20,7 +21,9 @@ import * as XLSX from 'xlsx'
 import { AttendanceWithUser, MonthlyStats, WeeklyTrendItem, PendingCheckIn, PendingCheckOut } from './types'
 import {
   getLocationType,
-  getLocation
+  getLocation,
+  calculateMonthlyStats,
+  determineLocationType
 } from './utils'
 import { AdminView, StaffView } from './components'
 
@@ -84,14 +87,7 @@ export default function GirisCikisPage() {
 
         if (monthData) {
           setAllMonthlyRecords(monthData as Attendance[])
-          const stats: MonthlyStats = {}
-          monthData.forEach((r: any) => {
-            if (!stats[r.user_id]) stats[r.user_id] = { overtime: 0, late: 0, lateDays: 0 }
-            stats[r.user_id].overtime += r.overtime_minutes || 0
-            stats[r.user_id].late += r.late_minutes || 0
-            if (r.late_minutes && r.late_minutes > 0) stats[r.user_id].lateDays += 1
-          })
-          setMonthlyStats(stats)
+          setMonthlyStats(calculateMonthlyStats(monthData))
 
           // Weekly trend calculation
           const dayTotals: { [key: number]: { total: number; count: number } } = { 1: { total: 0, count: 0 }, 2: { total: 0, count: 0 }, 3: { total: 0, count: 0 }, 4: { total: 0, count: 0 }, 5: { total: 0, count: 0 } }
@@ -130,19 +126,12 @@ export default function GirisCikisPage() {
         const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]
         const { data: monthData } = await supabase.from('attendance').select('user_id, overtime_minutes, late_minutes').gte('date', startDate).lte('date', endDate)
         if (monthData) {
-          const stats: MonthlyStats = {}
-          monthData.forEach((r: any) => {
-            if (!stats[r.user_id]) stats[r.user_id] = { overtime: 0, late: 0, lateDays: 0 }
-            stats[r.user_id].overtime += r.overtime_minutes || 0
-            stats[r.user_id].late += r.late_minutes || 0
-            if (r.late_minutes && r.late_minutes > 0) stats[r.user_id].lateDays += 1
-          })
-          setMonthlyStats(stats)
+          setMonthlyStats(calculateMonthlyStats(monthData))
         }
       }
     } catch (error) {
       console.error('Fetch error:', error)
-      alert('Veriler yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.')
+      toast.error('Veriler yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.')
     }
     finally { setLoading(false) }
   }
@@ -314,7 +303,7 @@ export default function GirisCikisPage() {
 
       const monthNames = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık']
       XLSX.writeFile(wb, `Mesai-Raporu-${monthNames[month - 1]}-${year}.xlsx`)
-    } catch (error) { console.error('Export error:', error); alert('Excel oluşturulurken hata oluştu.') }
+    } catch (error) { console.error('Export error:', error); toast.error('Excel oluşturulurken hata oluştu.') }
     finally { setExportLoading(false) }
   }
 
@@ -336,7 +325,7 @@ export default function GirisCikisPage() {
       await saveCheckIn(now, location, 0, '')
     } catch (error) {
       console.error('Check-in error:', error)
-      alert('Giriş kaydı oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.')
+      toast.error('Giriş kaydı oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.')
       setActionLoading(false)
     }
   }
@@ -344,13 +333,7 @@ export default function GirisCikisPage() {
   const saveCheckIn = async (now: Date, location: { lat: number; lng: number } | null, lateMinutes: number, reason: string) => {
     const today = now.toISOString().split('T')[0]
     const todayIsHybrid = isHybridDayWithSettings(now, hybridDays, hybridOverrides)
-    let locationType: 'office' | 'home' | 'other' | 'unknown'
-    if (location) {
-      const isInOffice = getLocationType(location.lat, location.lng) === 'office'
-      if (isInOffice) { locationType = 'office' }
-      else if (todayIsHybrid) { locationType = 'home' }
-      else { locationType = 'other' }
-    } else { locationType = todayIsHybrid ? 'home' : 'unknown' }
+    const locationType = determineLocationType(location, todayIsHybrid)
 
     const status = lateMinutes > 0 ? 'late' : 'normal'
     const checkInData: any = { user_id: appUser!.id, date: today, check_in: now.toISOString(), late_minutes: lateMinutes, status, check_in_location_type: locationType, late_reason: reason || null, record_type: 'normal' }
@@ -377,20 +360,14 @@ export default function GirisCikisPage() {
       await saveCheckOut(now, location, 0, earlyLeaveMinutes, '')
     } catch (error) {
       console.error('Check-out error:', error)
-      alert('Çıkış kaydı oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.')
+      toast.error('Çıkış kaydı oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.')
       setActionLoading(false)
     }
   }
 
   const saveCheckOut = async (now: Date, location: { lat: number; lng: number } | null, overtimeMinutes: number, earlyLeaveMinutes: number, reason: string) => {
     const todayIsHybrid = isHybridDayWithSettings(now, hybridDays, hybridOverrides)
-    let locationType: 'office' | 'home' | 'other' | 'unknown'
-    if (location) {
-      const isInOffice = getLocationType(location.lat, location.lng) === 'office'
-      if (isInOffice) { locationType = 'office' }
-      else if (todayIsHybrid) { locationType = 'home' }
-      else { locationType = 'other' }
-    } else { locationType = todayIsHybrid ? 'home' : 'unknown' }
+    const locationType = determineLocationType(location, todayIsHybrid)
 
     let status = myRecord!.status || 'normal'
     if (earlyLeaveMinutes > 0) status = 'early_leave'

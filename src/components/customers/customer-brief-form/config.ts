@@ -47,10 +47,18 @@ export const BRIEF_SECTIONS_CONFIG = {
   ozelGunler: {
     id: 'ozel-gunler',
     label: 'Özel Günler',
-    description: 'Marka için önemli tarihler',
+    description: 'Marka için önemli tarihler ve sezonsal takvim',
     icon: 'CalendarHeart',
     color: 'fuchsia',
-    fields: ['general_holidays', 'special_events']
+    fields: ['general_holidays', 'special_events', 'seasonal_calendar']
+  },
+  markaAssets: {
+    id: 'marka-assets',
+    label: 'Renkler & Fontlar',
+    description: 'Marka görsel kimliği',
+    icon: 'Palette',
+    color: 'emerald',
+    fields: ['brand_colors', 'brand_fonts']
   }
 } as const
 

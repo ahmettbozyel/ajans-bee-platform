@@ -97,9 +97,6 @@ interface CustomerDetailPageProps {
   params: Promise<{ id: string }>
 }
 
-// Create supabase client outside component to avoid re-creation
-const supabase = createClient()
-
 export default function CustomerDetailPage({ params }: CustomerDetailPageProps) {
   const { id } = use(params)
   const router = useRouter()
@@ -122,6 +119,7 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
 
   // Sektörleri çek
   const fetchSectors = useCallback(async () => {
+    const supabase = createClient()
     const { data } = await supabase
       .from('sectors')
       .select('*')
@@ -137,8 +135,10 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
   const fetchCustomer = useCallback(async () => {
     setLoading(true)
     setError(null)
-    
+
     try {
+      // Create fresh client to avoid cache issues
+      const supabase = createClient()
       const { data, error } = await supabase
         .from('customers')
         .select('*')
@@ -147,15 +147,15 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
 
       if (error) throw error
       if (!data) throw new Error('Marka bulunamadı')
-      
+
       setCustomer(data)
-      
+
       // Fetch file count
       const { count } = await supabase
         .from('customer_files')
         .select('*', { count: 'exact', head: true })
         .eq('customer_id', id)
-      
+
       setFileCount(count || 0)
     } catch {
       setError('Marka yüklenirken bir hata oluştu')

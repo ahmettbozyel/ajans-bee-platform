@@ -1,7 +1,285 @@
 // Supabase Database Types
+// Son güncelleme: 2026-01-05
 export type Database = {
   public: {
     Tables: {
+      // ==================== USERS ====================
+      users: {
+        Row: {
+          id: string
+          email: string
+          full_name: string | null
+          role: 'admin' | 'yonetici' | 'operasyon' | 'personel' | 'stajer'
+          is_active: boolean
+          created_at: string
+          updated_at: string
+          phone: string | null
+          address: string | null
+          blood_type: 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | '0+' | '0-' | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          health_notes: string | null
+          avatar_url: string | null
+        }
+        Insert: {
+          id: string
+          email: string
+          full_name?: string | null
+          role?: 'admin' | 'yonetici' | 'operasyon' | 'personel' | 'stajer'
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+          phone?: string | null
+          address?: string | null
+          blood_type?: 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | '0+' | '0-' | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          health_notes?: string | null
+          avatar_url?: string | null
+        }
+        Update: {
+          id?: string
+          email?: string
+          full_name?: string | null
+          role?: 'admin' | 'yonetici' | 'operasyon' | 'personel' | 'stajer'
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+          phone?: string | null
+          address?: string | null
+          blood_type?: 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | '0+' | '0-' | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          health_notes?: string | null
+          avatar_url?: string | null
+        }
+      }
+      // ==================== ATTENDANCE ====================
+      attendance: {
+        Row: {
+          id: string
+          user_id: string
+          date: string
+          check_in: string | null
+          check_out: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+          check_in_lat: number | null
+          check_in_lng: number | null
+          check_out_lat: number | null
+          check_out_lng: number | null
+          check_in_location_type: 'office' | 'home' | 'other' | 'unknown' | null
+          check_out_location_type: 'office' | 'home' | 'other' | 'unknown' | null
+          status: 'normal' | 'late' | 'early_leave' | 'absent' | 'leave' | 'remote' | 'holiday' | null
+          late_minutes: number | null
+          overtime_minutes: number | null
+          early_leave_minutes: number | null
+          record_type: 'normal' | 'leave' | 'sick' | 'remote' | 'holiday' | null
+          admin_notes: string | null
+          late_reason: string | null
+          overtime_reason: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          date: string
+          check_in?: string | null
+          check_out?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+          check_in_lat?: number | null
+          check_in_lng?: number | null
+          check_out_lat?: number | null
+          check_out_lng?: number | null
+          check_in_location_type?: 'office' | 'home' | 'other' | 'unknown' | null
+          check_out_location_type?: 'office' | 'home' | 'other' | 'unknown' | null
+          status?: 'normal' | 'late' | 'early_leave' | 'absent' | 'leave' | 'remote' | 'holiday' | null
+          late_minutes?: number | null
+          overtime_minutes?: number | null
+          early_leave_minutes?: number | null
+          record_type?: 'normal' | 'leave' | 'sick' | 'remote' | 'holiday' | null
+          admin_notes?: string | null
+          late_reason?: string | null
+          overtime_reason?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          date?: string
+          check_in?: string | null
+          check_out?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+          check_in_lat?: number | null
+          check_in_lng?: number | null
+          check_out_lat?: number | null
+          check_out_lng?: number | null
+          check_in_location_type?: 'office' | 'home' | 'other' | 'unknown' | null
+          check_out_location_type?: 'office' | 'home' | 'other' | 'unknown' | null
+          status?: 'normal' | 'late' | 'early_leave' | 'absent' | 'leave' | 'remote' | 'holiday' | null
+          late_minutes?: number | null
+          overtime_minutes?: number | null
+          early_leave_minutes?: number | null
+          record_type?: 'normal' | 'leave' | 'sick' | 'remote' | 'holiday' | null
+          admin_notes?: string | null
+          late_reason?: string | null
+          overtime_reason?: string | null
+        }
+      }
+      // ==================== TASK CATEGORIES ====================
+      task_categories: {
+        Row: {
+          id: string
+          name: string
+          slug: string
+          color: string
+          icon: string
+          sort_order: number
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          slug: string
+          color?: string
+          icon?: string
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          slug?: string
+          color?: string
+          icon?: string
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+        }
+      }
+      // ==================== DAILY TASKS ====================
+      daily_tasks: {
+        Row: {
+          id: string
+          user_id: string
+          brand_id: string | null
+          category_id: string
+          description: string
+          status: 'active' | 'paused' | 'completed'
+          start_time: string
+          end_time: string | null
+          paused_at: string | null
+          total_duration: number
+          revision_count: number
+          work_date: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          brand_id?: string | null
+          category_id: string
+          description: string
+          status?: 'active' | 'paused' | 'completed'
+          start_time?: string
+          end_time?: string | null
+          paused_at?: string | null
+          total_duration?: number
+          revision_count?: number
+          work_date?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          brand_id?: string | null
+          category_id?: string
+          description?: string
+          status?: 'active' | 'paused' | 'completed'
+          start_time?: string
+          end_time?: string | null
+          paused_at?: string | null
+          total_duration?: number
+          revision_count?: number
+          work_date?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      // ==================== TASK REVISIONS ====================
+      task_revisions: {
+        Row: {
+          id: string
+          task_id: string
+          revision_number: number
+          note: string | null
+          start_time: string
+          end_time: string | null
+          duration: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          task_id: string
+          revision_number: number
+          note?: string | null
+          start_time?: string
+          end_time?: string | null
+          duration?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          task_id?: string
+          revision_number?: number
+          note?: string | null
+          start_time?: string
+          end_time?: string | null
+          duration?: number
+          created_at?: string
+        }
+      }
+      // ==================== NOTIFICATIONS ====================
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          type: string
+          title: string
+          message: string
+          is_read: boolean
+          related_user_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          type: string
+          title: string
+          message: string
+          is_read?: boolean
+          related_user_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          type?: string
+          title?: string
+          message?: string
+          is_read?: boolean
+          related_user_id?: string | null
+          created_at?: string
+        }
+      }
+      // ==================== CUSTOMERS ====================
       customers: {
         Row: {
           id: string
@@ -356,6 +634,13 @@ export type Database = {
       payment_status: 'pending' | 'paid' | 'overdue'
       billing_cycle: 'monthly' | 'yearly'
       service_status: 'active' | 'pending_renewal' | 'expired' | 'cancelled'
+      // Yeni enum'lar
+      user_role: 'admin' | 'yonetici' | 'operasyon' | 'personel' | 'stajer'
+      blood_type: 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | '0+' | '0-'
+      attendance_status: 'normal' | 'late' | 'early_leave' | 'absent' | 'leave' | 'remote' | 'holiday'
+      location_type: 'office' | 'home' | 'other' | 'unknown'
+      record_type: 'normal' | 'leave' | 'sick' | 'remote' | 'holiday'
+      task_status: 'active' | 'paused' | 'completed'
     }
   }
 }
@@ -390,3 +675,36 @@ export type ServiceType = Database['public']['Enums']['service_type']
 export type PaymentStatus = Database['public']['Enums']['payment_status']
 export type BillingCycle = Database['public']['Enums']['billing_cycle']
 export type ServiceStatus = Database['public']['Enums']['service_status']
+
+// Yeni helper types
+export type User = Database['public']['Tables']['users']['Row']
+export type UserInsert = Database['public']['Tables']['users']['Insert']
+export type UserUpdate = Database['public']['Tables']['users']['Update']
+
+export type Attendance = Database['public']['Tables']['attendance']['Row']
+export type AttendanceInsert = Database['public']['Tables']['attendance']['Insert']
+export type AttendanceUpdate = Database['public']['Tables']['attendance']['Update']
+
+export type TaskCategory = Database['public']['Tables']['task_categories']['Row']
+export type TaskCategoryInsert = Database['public']['Tables']['task_categories']['Insert']
+export type TaskCategoryUpdate = Database['public']['Tables']['task_categories']['Update']
+
+export type DailyTask = Database['public']['Tables']['daily_tasks']['Row']
+export type DailyTaskInsert = Database['public']['Tables']['daily_tasks']['Insert']
+export type DailyTaskUpdate = Database['public']['Tables']['daily_tasks']['Update']
+
+export type TaskRevision = Database['public']['Tables']['task_revisions']['Row']
+export type TaskRevisionInsert = Database['public']['Tables']['task_revisions']['Insert']
+export type TaskRevisionUpdate = Database['public']['Tables']['task_revisions']['Update']
+
+export type Notification = Database['public']['Tables']['notifications']['Row']
+export type NotificationInsert = Database['public']['Tables']['notifications']['Insert']
+export type NotificationUpdate = Database['public']['Tables']['notifications']['Update']
+
+// Enum helper types
+export type UserRole = Database['public']['Enums']['user_role']
+export type BloodType = Database['public']['Enums']['blood_type']
+export type AttendanceStatus = Database['public']['Enums']['attendance_status']
+export type LocationType = Database['public']['Enums']['location_type']
+export type RecordType = Database['public']['Enums']['record_type']
+export type TaskStatus = Database['public']['Enums']['task_status']
