@@ -33,12 +33,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   const fetchAppUser = useCallback(async (userId: string): Promise<AppUser | null> => {
+    console.log('[Auth] fetchAppUser starting for:', userId)
     try {
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single()
+
+      console.log('[Auth] fetchAppUser result:', data, error?.message)
 
       if (error) {
         console.error('[Auth] fetchAppUser error:', error.message)
@@ -92,17 +95,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     )
 
-    // Fallback: 2 saniye sonra loading'i kapat
-    const timeoutId = setTimeout(() => {
-      if (isMounted && loading) {
-        console.log('[Auth] Timeout - closing loading')
-        setLoading(false)
-      }
-    }, 2000)
-
     return () => {
       isMounted = false
-      clearTimeout(timeoutId)
       subscription.unsubscribe()
     }
   }, [fetchAppUser])
