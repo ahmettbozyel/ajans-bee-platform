@@ -95,8 +95,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     )
 
+    // Fallback: 5 saniye sonra loading'i kapat (event gelmezse)
+    const timeoutId = setTimeout(() => {
+      if (isMounted && loading) {
+        console.log('[Auth] Timeout - closing loading, no event received')
+        setLoading(false)
+      }
+    }, 5000)
+
     return () => {
       isMounted = false
+      clearTimeout(timeoutId)
       subscription.unsubscribe()
     }
   }, [fetchAppUser])
