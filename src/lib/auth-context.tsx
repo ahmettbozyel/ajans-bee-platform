@@ -24,9 +24,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Global supabase client - tek instance
-const supabase = createClient()
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [authUser, setAuthUser] = useState<User | null>(null)
   const [appUser, setAppUser] = useState<AppUser | null>(null)
@@ -34,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchAppUser = useCallback(async (userId: string): Promise<AppUser | null> => {
     console.log('[Auth] fetchAppUser starting for:', userId)
+    const supabase = createClient()
     try {
       const { data, error } = await supabase
         .from('users')
@@ -56,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const refreshUser = useCallback(async () => {
+    const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
       setAuthUser(user)
@@ -67,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Basit auth initialization - sadece onAuthStateChange kullan
   useEffect(() => {
     let isMounted = true
+    const supabase = createClient()
     console.log('[Auth] Starting simple initialization...')
 
     // Auth state değişikliklerini dinle
@@ -111,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchAppUser])
 
   const signOut = useCallback(async () => {
+    const supabase = createClient()
     await supabase.auth.signOut()
     setAuthUser(null)
     setAppUser(null)
