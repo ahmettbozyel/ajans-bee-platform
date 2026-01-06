@@ -61,57 +61,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [fetchAppUser]) // supabase stable
 
-  // Initialize auth - getSession ile hemen başla, event'leri dinle
+  // Initialize auth - race condition ile en hızlı yöntemi kullan
   useEffect(() => {
     let isMounted = true
+    let resolved = false
     console.log('[Auth] Starting initialization...', new Date().toISOString())
 
-    // Hemen getSession çağır - beklemeden
-    const initSession = async () => {
-      try {
-        console.log('[Auth] Calling getSession...')
-        const startTime = Date.now()
-        const { data: { session }, error } = await supabase.auth.getSession()
-        console.log('[Auth] getSession completed in', Date.now() - startTime, 'ms')
+    const handleSession = async (session: { user: User } | null, source: string) => {
+      if (resolved || !isMounted) return
+      resolved = true
 
-        if (error) {
-          console.error('[Auth] getSession error:', error.message)
-        }
+      console.log('[Auth] Session from', source, ':', session?.user?.email || 'none')
 
-        if (!isMounted) return
-
-        if (session?.user) {
-          console.log('[Auth] Session found:', session.user.email)
-          setAuthUser(session.user)
-          const appUserData = await fetchAppUser(session.user.id)
-          if (isMounted) {
-            setAppUser(appUserData)
-            console.log('[Auth] appUser loaded:', appUserData?.role)
-          }
-        } else {
-          console.log('[Auth] No session found')
-        }
-
+      if (session?.user) {
+        setAuthUser(session.user)
+        const appUserData = await fetchAppUser(session.user.id)
         if (isMounted) {
-          setLoading(false)
-          console.log('[Auth] Loading complete')
+          setAppUser(appUserData)
+          console.log('[Auth] appUser loaded:', appUserData?.role)
         }
-      } catch (err) {
-        console.error('[Auth] Init error:', err)
-        if (isMounted) setLoading(false)
+      }
+
+      if (isMounted) {
+        setLoading(false)
+        console.log('[Auth] Loading complete via', source)
       }
     }
 
-    initSession()
+    // Method 1: getSession (may be slow)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      handleSession(session, 'getSession')
+    }).catch(err => {
+      console.error('[Auth] getSession error:', err)
+    })
 
-    // Auth değişikliklerini dinle (login/logout/token refresh için)
+    // Method 2: Timeout fallback - 1.5 saniye sonra session yok kabul et
+    const timeoutId = setTimeout(() => {
+      if (!resolved && isMounted) {
+        console.warn('[Auth] Timeout - no session assumed')
+        handleSession(null, 'timeout')
+      }
+    }, 1500)
+
+    // Auth değişikliklerini dinle
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('[Auth] Event:', event, 'User:', session?.user?.email)
 
       if (!isMounted) return
 
+      // İlk yüklemede INITIAL_SESSION gelirse kullan
+      if (event === 'INITIAL_SESSION') {
+        handleSession(session, 'INITIAL_SESSION')
+      }
       // SIGNED_IN: Yeni login yapıldığında
-      if (event === 'SIGNED_IN' && session?.user) {
+      else if (event === 'SIGNED_IN' && session?.user) {
         setAuthUser(session.user)
         const appUserData = await fetchAppUser(session.user.id)
         if (isMounted) {
@@ -133,6 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       isMounted = false
+      clearTimeout(timeoutId)
       subscription.unsubscribe()
     }
   }, [fetchAppUser]) // supabase stable
