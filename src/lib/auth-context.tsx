@@ -63,10 +63,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Initialize auth - direkt getSession kullan, event beklemeden
   useEffect(() => {
     let isMounted = true
-    console.log('[Auth] Starting initialization...')
+    console.log('[Auth] Starting initialization...', new Date().toISOString())
+
+    // Fallback timeout - 3 saniye içinde tamamlanmazsa loading'i kapat
+    const fallbackTimeout = setTimeout(() => {
+      if (isMounted) {
+        console.warn('[Auth] Fallback timeout triggered - forcing loading to false')
+        setLoading(false)
+      }
+    }, 3000)
 
     const initAuth = async () => {
       try {
+        console.log('[Auth] Calling getSession...')
         // Direkt session'ı al - event bekleme
         const { data: { session }, error } = await supabase.auth.getSession()
 
@@ -76,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (session?.user) {
           setAuthUser(session.user)
+          console.log('[Auth] Fetching appUser...')
           const appUserData = await fetchAppUser(session.user.id)
           console.log('[Auth] appUser loaded:', appUserData?.email, 'role:', appUserData?.role)
           if (isMounted) {
@@ -84,12 +94,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (isMounted) {
+          clearTimeout(fallbackTimeout)
           setLoading(false)
           console.log('[Auth] Loading complete')
         }
       } catch (err) {
         console.error('[Auth] Init error:', err)
         if (isMounted) {
+          clearTimeout(fallbackTimeout)
           setLoading(false)
         }
       }
@@ -121,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       isMounted = false
+      clearTimeout(fallbackTimeout)
       subscription.unsubscribe()
     }
   }, [supabase, fetchAppUser])
