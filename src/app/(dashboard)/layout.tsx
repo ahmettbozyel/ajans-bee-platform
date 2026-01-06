@@ -45,14 +45,6 @@ const navTabs = [
   { label: 'Markalar', href: '/musteriler' },
 ]
 
-// Erişim kontrolü
-const ALLOWED_PAGES: Record<string, string[]> = {
-  admin: ['*'],
-  yonetici: ['/dashboard', '/gorevler', '/mesai', '/teknik-hizmetler', '/ayarlar'],
-  operasyon: ['/dashboard', '/gorevler', '/mesai', '/teknik-hizmetler', '/ayarlar'],
-  personel: ['/dashboard', '/gorevler', '/mesai', '/ayarlar'],
-  stajer: ['/dashboard', '/gorevler', '/mesai', '/ayarlar']
-}
 
 // ==========================================
 // SIDEBAR COMPONENT
@@ -323,40 +315,8 @@ export default function DashboardLayout({
   // Marka detay sayfası kontrolü
   const isDetailPage = pathname.includes('/customers/') && pathname.split('/').length > 2
 
-  // Erişim kontrolü
-  const hasAccess = (role: string, path: string): boolean => {
-    if (role === 'admin') return true
-    const allowedPaths = ALLOWED_PAGES[role] || []
-    return allowedPaths.some(p => path.startsWith(p))
-  }
-
-  // Auth check - sadece auth değiştiğinde çalışsın
+  // Data fetch - sadece mount'ta çalışsın
   useEffect(() => {
-    if (authLoading) return
-
-    if (!appUser) {
-      router.push('/login')
-      return
-    }
-  }, [authLoading, appUser, router])
-
-  // Access check - pathname değiştiğinde kontrol et
-  useEffect(() => {
-    if (authLoading || !appUser) return
-
-    const userRole = appUser.role || 'personel'
-    if (!hasAccess(userRole, pathname)) {
-      router.push('/dashboard')
-    }
-  }, [authLoading, appUser, pathname, router])
-
-  // Data fetch - sadece mount'ta ve role değiştiğinde çalışsın (pathname'den bağımsız)
-  useEffect(() => {
-    if (authLoading || !appUser) return
-
-    const shouldFetchCounts = isAdmin || appUser?.role === 'yonetici' || appUser?.role === 'operasyon'
-    if (!shouldFetchCounts) return
-
     const supabase = createClient()
 
     async function fetchCounts() {
@@ -375,7 +335,7 @@ export default function DashboardLayout({
     }
 
     fetchCounts()
-  }, [authLoading, appUser?.role, isAdmin]) // pathname kaldırıldı!
+  }, [])
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
@@ -404,37 +364,13 @@ export default function DashboardLayout({
   const isYonetici = appUser?.role === 'yonetici'
   const isOperasyon = appUser?.role === 'operasyon'
 
-  // Loading state
-  if (authLoading) {
+  // Loading state - sadece ilk yüklemede
+  if (authLoading && !appUser) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-body">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
           <p className="text-sm text-zinc-500">Yükleniyor...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!appUser) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-body">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
-          <p className="text-sm text-zinc-500">Giriş sayfasına yönlendiriliyor...</p>
-        </div>
-      </div>
-    )
-  }
-
-  const userRole = appUser.role || 'personel'
-  // Erişim yoksa loading göster (useEffect redirect yapacak)
-  if (!hasAccess(userRole, pathname)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-body">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
-          <p className="text-sm text-zinc-500">Yönlendiriliyor...</p>
         </div>
       </div>
     )
