@@ -330,41 +330,52 @@ export default function DashboardLayout({
     return allowedPaths.some(p => path.startsWith(p))
   }
 
-  // Auth & Data fetch
+  // Auth check - sadece auth değiştiğinde çalışsın
   useEffect(() => {
     if (authLoading) return
 
     if (!appUser) {
-      window.location.href = '/login'
+      router.push('/login')
       return
     }
+  }, [authLoading, appUser, router])
+
+  // Access check - pathname değiştiğinde kontrol et
+  useEffect(() => {
+    if (authLoading || !appUser) return
 
     const userRole = appUser.role || 'personel'
     if (!hasAccess(userRole, pathname)) {
       router.push('/dashboard')
-      return
     }
+  }, [authLoading, appUser, pathname, router])
 
-    async function fetchData() {
+  // Data fetch - sadece mount'ta ve role değiştiğinde çalışsın (pathname'den bağımsız)
+  useEffect(() => {
+    if (authLoading || !appUser) return
+
+    const shouldFetchCounts = isAdmin || appUser?.role === 'yonetici' || appUser?.role === 'operasyon'
+    if (!shouldFetchCounts) return
+
+    const supabase = createClient()
+
+    async function fetchCounts() {
       try {
-        if (isAdmin || appUser?.role === 'yonetici' || appUser?.role === 'operasyon') {
-          const supabase = createClient()
-          const [customersRes, servicesRes] = await Promise.all([
-            supabase.from('customers').select('id', { count: 'exact', head: true }),
-            supabase.from('technical_services').select('id', { count: 'exact', head: true })
-          ])
-          setCounts({
-            customers: customersRes.count || 0,
-            services: servicesRes.count || 0
-          })
-        }
+        const [customersRes, servicesRes] = await Promise.all([
+          supabase.from('customers').select('id', { count: 'exact', head: true }),
+          supabase.from('technical_services').select('id', { count: 'exact', head: true })
+        ])
+        setCounts({
+          customers: customersRes.count || 0,
+          services: servicesRes.count || 0
+        })
       } catch (error) {
         console.error('Fetch error:', error)
       }
     }
 
-    fetchData()
-  }, [authLoading, appUser, isAdmin, router, pathname])
+    fetchCounts()
+  }, [authLoading, appUser?.role, isAdmin]) // pathname kaldırıldı!
 
   // Close sidebar on route change (mobile)
   useEffect(() => {

@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react'
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo } from 'react'
 import { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { AppUser, UserRole, canAccess, canEdit, getDefaultRoute, ModuleSlug } from './auth-types'
@@ -29,7 +29,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [appUser, setAppUser] = useState<AppUser | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const supabase = createClient()
+  // Supabase client'ı useMemo ile cache'le - her renderda yeni instance oluşmasını engelle
+  const supabase = useMemo(() => createClient(), [])
 
   const fetchAppUser = useCallback(async (userId: string): Promise<AppUser | null> => {
     try {
@@ -49,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('[Auth] fetchAppUser exception:', err)
       return null
     }
-  }, [supabase])
+  }, []) // supabase artık stable, dependency'den çıkarıldı
 
   const refreshUser = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -58,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const appUserData = await fetchAppUser(user.id)
       setAppUser(appUserData)
     }
-  }, [supabase, fetchAppUser])
+  }, [fetchAppUser]) // supabase stable
 
   // Initialize auth - direkt getSession kullan, event beklemeden
   useEffect(() => {
@@ -136,13 +137,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearTimeout(fallbackTimeout)
       subscription.unsubscribe()
     }
-  }, [supabase, fetchAppUser])
+  }, [fetchAppUser]) // supabase stable
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut()
     setAuthUser(null)
     setAppUser(null)
-  }, [supabase])
+  }, []) // supabase stable
 
   const role = appUser?.role ?? null
 
