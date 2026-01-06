@@ -1,56 +1,42 @@
-# Claude Code Calisma Kurallari - Ajans Bee Platform
+# CLAUDE CODE ÇALIŞMA KURALLARI
 
 ## KIRMIZI - HER ZAMAN SOR
-
-Bu aksiyonlari YAPMADAN ONCE mutlaka onay al:
-
-1. **Deploy** - vercel deploy, git push origin main
-2. **Database** - Migration, tablo silme/degistirme, Supabase schema
-3. **Paket** - npm install/uninstall/update
-4. **Silme** - Dosya veya klasor silme
-5. **Environment** - .env.local degisiklikleri
+1. Deploy (vercel deploy, git push origin main)
+2. Database (Migration, tablo silme/değiştirme, Supabase schema)
+3. Paket (npm install/uninstall/update)
+4. Silme (Dosya veya klasör silme)
+5. Environment (.env.local değişiklikleri)
 
 ## SARI - BILGI VER
+- Yeni dosya oluşturma
+- Mevcut component'te büyük değişiklik
 
-- Yeni dosya olustururken hangi klasore koyacagini soyle
-- Component olustururken mevcut patterne uydugunu belirt
+## YEŞİL - SERBEST
+- Bug fix, console.log, yorum ekleme, type düzeltme
 
-## YESIL - SERBEST
-
-Bug fix, console.log, yorum, type duzeltme
-
-## UI REFERANSI
-
-Bu repodaki UI-KIT.md dosyasini kullan.
-
-## PROJE OZELLIGI
-
-- Coklu dil YOK
-- AI entegrasyonu VAR (Anthropic Claude)
-- Route groups: (auth), (dashboard)
+## PROJE ÖZELLİKLERİ
+- Çoklu dil: YOK
+- AI entegrasyonu: VAR
+- UI referans: /docs/UI-KIT.md
 
 ---
 
-## GIT PROTOKOLÜ (2 KİŞİLİK EKİP)
+## GIT PROTOKOLÜ (OTOMATİK)
 
-### HER İŞE BAŞLAMADAN ÖNCE:
-```bash
-git pull
-```
+### İŞE BAŞLARKEN:
+Claude Code her göreve başlamadan önce `git pull` çalıştırır.
 
-### HER İŞ BİTİNCE:
-```bash
-git add .
-git commit -m "açıklayıcı mesaj"
-git push
-```
+### İŞ BİTİNCE:
+Claude Code işi bitirince:
+1. `git add .`
+2. `git commit -m "açıklayıcı mesaj"`
+3. `git push` - KULLANICIYA SOR (Kırmızı kural)
 
 ### CONFLICT DURUMUNDA:
-- Panik yapma
-- Dosyayı manuel düzenleme
-- Ahmet'e veya Claude'a danış
+- Durumu kullanıcıya açıkla
+- Manuel çözüm için yardım iste
 
-### AYNI ANDA ÇALIŞMA:
+### 2 KİŞİLİK EKİP:
+- Ahmet + Berk aynı repo'da çalışıyor
 - Farklı dosyalarda çalışmak → OK
 - Aynı dosyada çalışmak → CONFLICT riski
-- Başlamadan önce ekibe haber ver
