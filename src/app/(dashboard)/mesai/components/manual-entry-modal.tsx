@@ -117,7 +117,7 @@ export function ManualEntryModal({ isOpen, onClose, onSuccess, users, selectedDa
         // O tarihte kayıt var mı kontrol et
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: existing } = await (supabase as any)
-          .from('attendance')
+          .from('app_attendance')
           .select('id')
           .eq('user_id', selectedUser)
           .eq('date', date)
@@ -127,7 +127,7 @@ export function ManualEntryModal({ isOpen, onClose, onSuccess, users, selectedDa
           // Güncelle
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const { error: updateError } = await (supabase as any)
-            .from('attendance')
+            .from('app_attendance')
             .update({
               record_type: recordType,
               admin_notes: notes || null,
@@ -142,7 +142,7 @@ export function ManualEntryModal({ isOpen, onClose, onSuccess, users, selectedDa
           // Yeni kayıt oluştur
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const { error: insertError } = await (supabase as any)
-            .from('attendance')
+            .from('app_attendance')
             .insert({
               user_id: selectedUser,
               date: date,

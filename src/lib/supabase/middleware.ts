@@ -33,11 +33,6 @@ export async function updateSession(request: NextRequest) {
   // Protected routes - tüm dashboard sayfaları
   const protectedPaths = [
     '/dashboard',
-    '/icerik-uret',
-    '/gorseller',
-    '/gecmis',
-    '/musteriler',
-    '/customers',
     '/teknik-hizmetler',
     '/ayarlar',
     '/gorevler',

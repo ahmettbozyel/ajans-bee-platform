@@ -29,11 +29,11 @@ export async function GET() {
 
     // RLS politikası authenticated kullanıcılara izin veriyor
     const { data, error } = await supabase
-      .from('technical_services')
+      .from('app_technical_services')
       .select(`
         *,
-        provider:service_providers(id, name, base_price_usd, billing_cycle),
-        brand:customers(id, name, brand_name)
+        provider:app_service_providers(id, name, base_price_usd, billing_cycle),
+        brand:customers(id, name)
       `)
       .order('renewal_date', { ascending: true, nullsFirst: false })
 
@@ -71,12 +71,12 @@ export async function POST(request: NextRequest) {
     // RLS politikası authenticated kullanıcılara izin veriyor
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any)
-      .from('technical_services')
+      .from('app_technical_services')
       .insert(parsed.data)
       .select(`
         *,
-        provider:service_providers(id, name, base_price_usd, billing_cycle),
-        brand:customers(id, name, brand_name)
+        provider:app_service_providers(id, name, base_price_usd, billing_cycle),
+        brand:customers(id, name)
       `)
       .single()
 

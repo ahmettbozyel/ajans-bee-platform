@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Settings, DollarSign, Users, Calendar, Clock, Sliders, User, Layers } from 'lucide-react'
+import { Settings, DollarSign, Users, Calendar, Clock, Sliders, User, Building2 } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { ServiceProvidersTab } from './components/service-providers-tab'
 import { UsersTab } from './components/users-tab'
@@ -9,9 +9,9 @@ import { HolidaysTab } from './components/holidays-tab'
 import { WorkCalendarTab } from './components/work-calendar-tab'
 import { TolerancesTab } from './components/tolerances-tab'
 import { ProfileTab } from './components/profile-tab'
-import { SectorsTab } from './components/sectors-tab'
+import { CustomersTab } from './components/customers-tab'
 
-type TabType = 'profile' | 'providers' | 'users' | 'holidays' | 'calendar' | 'tolerances' | 'sectors'
+type TabType = 'profile' | 'providers' | 'users' | 'holidays' | 'calendar' | 'tolerances' | 'customers'
 
 interface TabConfig {
   id: TabType
@@ -59,10 +59,10 @@ const ALL_TABS: TabConfig[] = [
     roles: ['admin', 'yonetici', 'operasyon']
   },
   {
-    id: 'sectors',
-    label: 'Sektörler',
-    icon: Layers,
-    roles: ['admin', 'yonetici']
+    id: 'customers',
+    label: 'Müşteriler',
+    icon: Building2,
+    roles: ['admin']
   },
 ]
 
@@ -132,7 +132,7 @@ export default function AyarlarPage() {
       {activeTab === 'tolerances' && <TolerancesTab />}
       {activeTab === 'holidays' && <HolidaysTab />}
       {activeTab === 'providers' && <ServiceProvidersTab />}
-      {activeTab === 'sectors' && <SectorsTab />}
+      {activeTab === 'customers' && <CustomersTab />}
     </div>
   )
 }

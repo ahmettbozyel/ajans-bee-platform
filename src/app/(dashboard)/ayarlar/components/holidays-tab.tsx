@@ -34,7 +34,7 @@ export function HolidaysTab() {
   const fetchHolidays = useCallback(async () => {
     setLoading(true)
     const { data, error } = await (supabase as any)
-      .from('holidays')
+      .from('app_holidays')
       .select('*')
       .order('date', { ascending: true })
 
@@ -78,7 +78,7 @@ export function HolidaysTab() {
     try {
       if (editingHoliday) {
         await (supabase as any)
-          .from('holidays')
+          .from('app_holidays')
           .update({
             name: formData.name,
             date: formData.date,
@@ -89,7 +89,7 @@ export function HolidaysTab() {
           .eq('id', editingHoliday.id)
       } else {
         await (supabase as any)
-          .from('holidays')
+          .from('app_holidays')
           .insert({
             name: formData.name,
             date: formData.date,
@@ -111,7 +111,7 @@ export function HolidaysTab() {
 
     setDeleting(id)
     try {
-      await (supabase as any).from('holidays').delete().eq('id', id)
+      await (supabase as any).from('app_holidays').delete().eq('id', id)
       fetchHolidays()
     } catch (error) {
       console.error('Delete error:', error)

@@ -1,13 +1,11 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
 import { useCompanySettings, isHybridDayWithSettings, isWorkDay, isHoliday } from '@/lib/use-company-settings'
 import { DailyTask, Attendance } from '@/lib/auth-types'
-import ReactMarkdown from 'react-markdown'
-import type { Components } from 'react-markdown'
 import {
   Sun,
   Moon,
@@ -21,9 +19,6 @@ import {
   Zap,
   Target,
   Loader2,
-  Bot,
-  Send,
-  AlertCircle,
   Server,
   Building2,
   CalendarClock,
@@ -162,253 +157,6 @@ function WeeklyChart({ data, target }: { data: { day: string; hours: number }[];
 }
 
 // ==========================================
-// MARKDOWN COMPONENTS FOR BEETA
-// ==========================================
-const markdownComponents: Components = {
-  p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-  strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
-  em: ({ children }) => <em className="italic text-zinc-300">{children}</em>,
-  code: ({ children }) => (
-    <code className="px-1.5 py-0.5 rounded-md bg-white/10 text-fuchsia-400 text-xs font-mono">
-      {children}
-    </code>
-  ),
-  pre: ({ children }) => (
-    <pre className="my-2 p-3 rounded-xl bg-white/5 border border-white/10 overflow-x-auto">
-      {children}
-    </pre>
-  ),
-  ul: ({ children }) => <ul className="list-disc list-inside space-y-1 my-2">{children}</ul>,
-  ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 my-2">{children}</ol>,
-  li: ({ children }) => <li className="text-zinc-300">{children}</li>,
-  a: ({ href, children }) => (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-cyan-400 hover:text-cyan-300 underline underline-offset-2 transition-colors"
-    >
-      {children}
-    </a>
-  ),
-}
-
-// ==========================================
-// BEETA MESSAGE COMPONENT
-// ==========================================
-function BeeBotMessageItem({ content, isBot, timestamp }: {
-  content: string
-  isBot: boolean
-  timestamp?: Date
-}) {
-  return (
-    <div className={`flex gap-2 ${isBot ? 'justify-start' : 'justify-end'}`}>
-      {isBot && (
-        <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 flex items-center justify-center">
-          <Bot className="w-3.5 h-3.5 text-white" />
-        </div>
-      )}
-
-      <div className={`max-w-[85%] ${isBot ? 'order-2' : 'order-1'}`}>
-        <div
-          className={`px-3 py-2 rounded-xl text-sm leading-relaxed ${
-            isBot
-              ? 'bg-white/5 border border-white/10 text-zinc-200'
-              : 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white'
-          }`}
-          style={isBot ? { borderTopLeftRadius: '4px' } : { borderTopRightRadius: '4px' }}
-        >
-          {isBot ? (
-            <ReactMarkdown components={markdownComponents}>{content}</ReactMarkdown>
-          ) : (
-            content
-          )}
-        </div>
-        {timestamp && (
-          <p className={`text-[10px] text-zinc-600 mt-1 ${isBot ? 'text-left' : 'text-right'}`}>
-            {timestamp.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
-          </p>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ==========================================
-// DASHBOARD BEETA CHAT PANEL
-// ==========================================
-interface BeeBotMessage {
-  id: string
-  content: string
-  isBot: boolean
-  timestamp: Date
-}
-
-function DashboardBeeBot({ userName }: { userName: string }) {
-  const [messages, setMessages] = useState<BeeBotMessage[]>(() => [
-    {
-      id: 'welcome',
-      content: `Hey ${userName}! 🐝 Ben BeeBot, senin AI asistanın. Platform hakkında aklına takılan her şeyi sorabilirsin!`,
-      isBot: true,
-      timestamp: new Date()
-    }
-  ])
-  const [input, setInput] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [])
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages, scrollToBottom])
-
-  const sendMessage = async () => {
-    if (!input.trim() || isLoading) return
-
-    const userMessage: BeeBotMessage = {
-      id: Date.now().toString(),
-      content: input.trim(),
-      isBot: false,
-      timestamp: new Date()
-    }
-
-    setMessages(prev => [...prev, userMessage])
-    setInput('')
-    setError(null)
-    setIsLoading(true)
-
-    try {
-      const response = await fetch('https://n8n.beeswebsite.com/webhook/beeta', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMessage.content })
-      })
-
-      if (!response.ok) {
-        throw new Error('Sunucu hatası')
-      }
-
-      const data = await response.json()
-
-      const botMessage: BeeBotMessage = {
-        id: (Date.now() + 1).toString(),
-        content: data.reply || 'Üzgünüm, bir yanıt oluşturamadım.',
-        isBot: true,
-        timestamp: new Date()
-      }
-
-      setMessages(prev => [...prev, botMessage])
-    } catch (err) {
-      setError('Mesaj gönderilemedi. Lütfen tekrar deneyin.')
-      console.error('BeeBot error:', err)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage()
-    }
-  }
-
-  return (
-    <div className="glass-card rounded-2xl border border-white/10 h-[550px] max-h-[550px] flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex-shrink-0 px-4 py-3 border-b border-white/10 bg-gradient-to-r from-fuchsia-600/10 to-violet-600/10">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 flex items-center justify-center shadow-lg shadow-fuchsia-500/25">
-            <Bot className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-white text-sm">Merhaba {userName}!</h3>
-            <div className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[11px] text-zinc-500">BeeBot Online</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-        {messages.map((msg) => (
-          <BeeBotMessageItem
-            key={msg.id}
-            content={msg.content}
-            isBot={msg.isBot}
-            timestamp={msg.timestamp}
-          />
-        ))}
-
-        {/* Loading indicator */}
-        {isLoading && (
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 flex items-center justify-center">
-              <Bot className="w-3.5 h-3.5 text-white" />
-            </div>
-            <div className="px-3 py-2 rounded-xl bg-white/5 border border-white/10" style={{ borderTopLeftRadius: '4px' }}>
-              <div className="flex items-center gap-2 text-zinc-400">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span className="text-xs">Yazıyor...</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Error message */}
-        {error && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">
-            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-            {error}
-          </div>
-        )}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Input */}
-      <div className="flex-shrink-0 p-3 border-t border-white/10">
-        <div className="flex items-center gap-2">
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Bir şey sor..."
-            disabled={isLoading}
-            className="flex-1 h-10 px-3 rounded-xl text-sm text-white
-              bg-white/5 border border-white/10
-              placeholder:text-zinc-500
-              focus:outline-none focus:border-fuchsia-500/50 focus:ring-1 focus:ring-fuchsia-500/20
-              disabled:opacity-50 disabled:cursor-not-allowed
-              transition-all"
-          />
-          <button
-            onClick={sendMessage}
-            disabled={!input.trim() || isLoading}
-            className="w-10 h-10 rounded-xl flex items-center justify-center
-              bg-gradient-to-r from-fuchsia-600 to-violet-600
-              shadow-lg shadow-fuchsia-500/25 hover:shadow-fuchsia-500/40
-              disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none
-              active:scale-95 transition-all"
-          >
-            <Send className="w-4 h-4 text-white" />
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ==========================================
 // MAIN DASHBOARD PAGE
 // ==========================================
 export default function DashboardPage() {
@@ -435,7 +183,7 @@ export default function DashboardPage() {
   } | null>(null)
   const [upcomingRenewals, setUpcomingRenewals] = useState<any[]>([])
   const [systemAlerts, setSystemAlerts] = useState<any[]>([])
-  const [totalBrands, setTotalBrands] = useState(0)
+  const [totalCustomers, setTotalCustomers] = useState(0)
   const [totalServices, setTotalServices] = useState(0)
 
   const today = new Date()
@@ -462,7 +210,7 @@ export default function DashboardPage() {
       try {
         // Today's attendance
         const { data: attendanceData } = await supabase
-          .from('attendance')
+          .from('app_attendance')
           .select('*')
           .eq('user_id', userId)
           .eq('date', todayStr)
@@ -472,8 +220,8 @@ export default function DashboardPage() {
 
         // Today's tasks (customers join'i kaldırıldı - RLS sorunu)
         const { data: tasksData } = await supabase
-          .from('daily_tasks')
-          .select('*, category:task_categories(*)')
+          .from('app_daily_tasks')
+          .select('*, category:app_task_categories(*)')
           .eq('user_id', userId)
           .eq('work_date', todayStr)
           .order('created_at', { ascending: false })
@@ -486,7 +234,7 @@ export default function DashboardPage() {
         const weekAgoStr = weekAgo.toISOString().split('T')[0]
 
         const { data: weeklyAttendance } = await supabase
-          .from('attendance')
+          .from('app_attendance')
           .select('date, check_in, check_out')
           .eq('user_id', userId)
           .gte('date', weekAgoStr)
@@ -521,14 +269,14 @@ export default function DashboardPage() {
             const brandsRes = await fetch('/api/customers?all=true')
             if (brandsRes.ok) {
               const brandsData = await brandsRes.json()
-              setTotalBrands(brandsData.length || 0)
+              setTotalCustomers(brandsData.length || 0)
             }
           } catch {
             // Brands fetch failed silently
           }
 
           const { count: servicesCount } = await (supabase as any)
-            .from('technical_services')
+            .from('app_technical_services')
             .select('*', { count: 'exact', head: true })
 
           setTotalServices(servicesCount || 0)
@@ -598,8 +346,8 @@ export default function DashboardPage() {
           const thirtyDaysStr = thirtyDaysLater.toISOString().split('T')[0]
 
           const { data: servicesData } = await supabase
-            .from('technical_services')
-            .select('*, customer:customers(brand_name)')
+            .from('app_technical_services')
+            .select('*, customer:customers(name)')
             .lte('end_date', thirtyDaysStr)
             .gte('end_date', todayStr)
             .order('end_date', { ascending: true })
@@ -632,8 +380,6 @@ export default function DashboardPage() {
   const animatedCompleted = useCountUp(completedTasks, 800)
   const animatedWeeklyHours = useCountUp(Math.round(weeklyTotalHours), 1200)
 
-  const firstName = appUser?.full_name?.split(' ')[0] || 'Kullanıcı'
-
   if (loading || settingsLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -643,10 +389,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="xl:flex xl:gap-6">
-      {/* ========== LEFT COLUMN - Main Content ========== */}
-      <div className="flex-1 space-y-6 min-w-0">
-        {/* ========== WELCOME CARD ========== */}
+    <div className="space-y-6">
+      {/* ========== WELCOME CARD ========== */}
       <AnimatedCard delay={0}>
         <div className="glass-card rounded-2xl p-6 border border-white/10 glow-indigo">
           <div className="flex items-start justify-between">
@@ -701,16 +445,16 @@ export default function DashboardPage() {
           {/* Admin Stats Cards */}
           <AnimatedCard delay={0.2}>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {/* Toplam Marka */}
+              {/* Toplam Müşteri */}
               <div className="glass-card rounded-2xl p-5 border border-white/10">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="p-2.5 rounded-xl bg-violet-500/10 border border-violet-500/20">
                     <Building2 className="w-5 h-5 text-violet-400" />
                   </div>
-                  <p className="text-sm text-zinc-400">Markalar</p>
+                  <p className="text-sm text-zinc-400">Müşteriler</p>
                 </div>
-                <p className="text-3xl font-bold text-white">{totalBrands}</p>
-                <p className="text-xs text-zinc-500 mt-1">Toplam marka</p>
+                <p className="text-3xl font-bold text-white">{totalCustomers}</p>
+                <p className="text-xs text-zinc-500 mt-1">Toplam müşteri</p>
               </div>
 
               {/* Toplam Servis */}
@@ -780,7 +524,7 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-3">
                         <Globe className="w-4 h-4 text-zinc-500" />
                         <div>
-                          <p className="text-sm font-medium text-white">{renewal.brand_name || renewal.identifier}</p>
+                          <p className="text-sm font-medium text-white">{renewal.customer_name || renewal.identifier}</p>
                           <p className="text-xs text-zinc-500">{renewal.service_type} • {renewal.provider_name}</p>
                         </div>
                       </div>
@@ -1043,7 +787,7 @@ export default function DashboardPage() {
                 return (
                   <div key={service.id} className="px-5 py-3 flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-white">{service.customer?.brand_name}</p>
+                      <p className="text-sm font-medium text-white">{service.customer?.name}</p>
                       <p className="text-xs text-zinc-500">{service.service_type} - {service.domain || service.provider}</p>
                     </div>
                     <span className={`text-xs px-2 py-1 rounded-full font-medium ${
@@ -1103,16 +847,6 @@ export default function DashboardPage() {
           </div>
         </AnimatedCard>
       )}
-      </div>
-
-      {/* ========== RIGHT COLUMN - BeeBot Chat (Desktop Only, Sticky) ========== */}
-      <div className="hidden xl:block min-w-[400px] w-[400px] flex-shrink-0">
-        <div className="sticky top-6">
-          <AnimatedCard delay={0.3}>
-            <DashboardBeeBot userName={firstName} />
-          </AnimatedCard>
-        </div>
-      </div>
     </div>
   )
 }

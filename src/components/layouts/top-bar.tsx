@@ -11,11 +11,7 @@ import { NotificationBell } from '@/components/notification-bell'
 const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/': { title: 'Hoş geldin, {name} 👋', subtitle: 'Hemen içerik üretmeye başla' },
   '/dashboard': { title: 'Hoş geldin, {name} 👋', subtitle: 'Hemen içerik üretmeye başla' },
-  '/musteriler': { title: 'Markalar', subtitle: "Marka brief'lerini yönetin" },
   '/teknik-hizmetler': { title: 'Teknik Hizmetler', subtitle: 'Hosting, domain ve SSL yönetimi' },
-  '/icerik-uret': { title: 'İçerik Üret', subtitle: 'AI ile içerik oluştur' },
-  '/gorseller': { title: 'Görseller', subtitle: 'AI ile görsel oluştur' },
-  '/gecmis': { title: 'Geçmiş', subtitle: 'Önceki içerikler' },
   '/ayarlar': { title: 'Ayarlar', subtitle: 'Hesap ve uygulama ayarları' },
   '/gorevler': { title: 'Görevler', subtitle: 'Günlük görev takibi' },
   '/mesai': { title: 'Mesai', subtitle: 'Mesai takibi' },
@@ -24,7 +20,6 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
 // Üst Navigation Tabs
 const navTabs = [
   { label: 'Dashboard', href: '/dashboard' },
-  { label: 'Markalar', href: '/musteriler' },
   { label: 'Teknik', href: '/teknik-hizmetler' },
 ]
 
@@ -69,9 +64,6 @@ export function TopBar() {
 
   // Sayfa başlığını al
   const getPageInfo = () => {
-    if (pathname.startsWith('/customers/') || pathname.startsWith('/musteriler/')) {
-      return { title: 'Marka Detayı', subtitle: "Brief bilgilerini düzenle" }
-    }
     return pageTitles[pathname] || { title: 'Dashboard', subtitle: '' }
   }
 
@@ -210,8 +202,8 @@ export function TopBar() {
             </kbd>
           </div>
           
-          {/* Notifications Bell */}
-          <NotificationBell />
+          {/* Notifications Bell - Tablo oluşturulunca aktif edilecek */}
+          {/* <NotificationBell /> */}
         </div>
       </div>
     </header>

@@ -40,9 +40,9 @@ export function WorkCalendarTab() {
     setLoading(true)
     try {
       const [daysRes, hoursRes, hybridRes] = await Promise.all([
-        (supabase as any).from('company_settings').select('value').eq('key', 'work_days').single(),
-        (supabase as any).from('company_settings').select('value').eq('key', 'work_hours').single(),
-        (supabase as any).from('company_settings').select('value').eq('key', 'hybrid_days').single()
+        (supabase as any).from('app_company_settings').select('value').eq('key', 'work_days').single(),
+        (supabase as any).from('app_company_settings').select('value').eq('key', 'work_hours').single(),
+        (supabase as any).from('app_company_settings').select('value').eq('key', 'hybrid_days').single()
       ])
 
       if (daysRes.data?.value) {
@@ -95,15 +95,15 @@ export function WorkCalendarTab() {
     try {
       const [daysResult, hoursResult, hybridResult] = await Promise.all([
         (supabase as any)
-          .from('company_settings')
+          .from('app_company_settings')
           .update({ value: workDays, updated_at: new Date().toISOString() })
           .eq('key', 'work_days'),
         (supabase as any)
-          .from('company_settings')
+          .from('app_company_settings')
           .update({ value: workHours, updated_at: new Date().toISOString() })
           .eq('key', 'work_hours'),
         (supabase as any)
-          .from('company_settings')
+          .from('app_company_settings')
           .upsert({ key: 'hybrid_days', value: hybridDays, updated_at: new Date().toISOString() }, { onConflict: 'key' })
       ])
 

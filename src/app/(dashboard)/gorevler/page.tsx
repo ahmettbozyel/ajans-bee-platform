@@ -303,7 +303,7 @@ function TaskCard({
           {task.brand && (
             <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
               <Building2 className="w-3 h-3 inline mr-1" />
-              {task.brand.brand_name}
+              {task.brand.name}
             </span>
           )}
           
@@ -576,7 +576,7 @@ function AdminStatsPanel({ tasks, users }: { tasks: DailyTask[], users: AppUser[
   
   const brandStats: Record<string, { name: string; duration: number }> = {}
   tasks.forEach(task => {
-    const brandName = task.brand?.brand_name || 'Genel'
+    const brandName = task.brand?.name || 'Genel'
     if (!brandStats[brandName]) {
       brandStats[brandName] = { name: brandName, duration: 0 }
     }
@@ -592,7 +592,7 @@ function AdminStatsPanel({ tasks, users }: { tasks: DailyTask[], users: AppUser[
   const brandRevisions: Record<string, { name: string; count: number }> = {}
   tasks.forEach(task => {
     if (task.revision_count > 0) {
-      const brandName = task.brand?.brand_name || 'Genel'
+      const brandName = task.brand?.name || 'Genel'
       if (!brandRevisions[brandName]) {
         brandRevisions[brandName] = { name: brandName, count: 0 }
       }
@@ -737,7 +737,7 @@ function PersonelStatsPanel({ tasks, allMonthTasks, categories }: {
   // Marka dağılımı
   const brandStats: Record<string, { name: string; duration: number }> = {}
   allMonthTasks.forEach(task => {
-    const brandName = task.brand?.brand_name || 'Genel'
+    const brandName = task.brand?.name || 'Genel'
     if (!brandStats[brandName]) {
       brandStats[brandName] = { name: brandName, duration: 0 }
     }
@@ -865,7 +865,7 @@ export default function GunlukIslerPage() {
   const [revisions, setRevisions] = useState<TaskRevision[]>([])
   const [monthTasks, setMonthTasks] = useState<DailyTask[]>([])
   const [categories, setCategories] = useState<TaskCategory[]>([])
-  const [brands, setBrands] = useState<{ id: string; brand_name: string }[]>([])
+  const [brands, setBrands] = useState<{ id: string; name: string }[]>([])
   const [users, setUsers] = useState<AppUser[]>([])
   const [loading, setLoading] = useState(true)
   
@@ -892,24 +892,24 @@ export default function GunlukIslerPage() {
     setLoading(true)
     try {
       const { data: cats } = await (supabase as any)
-        .from('task_categories')
+        .from('app_task_categories')
         .select('*')
         .eq('is_active', true)
         .order('sort_order')
       
       if (cats) setCategories(cats as TaskCategory[])
 
-      // Markaları API'den çek (RLS sorunu nedeniyle)
+      // Müşterileri API'den çek (RLS sorunu nedeniyle)
       try {
         const brandsRes = await fetch('/api/customers?minimal=true')
         if (brandsRes.ok) {
           const brandsData = await brandsRes.json()
-          setBrands(brandsData.map((b: any) => ({ id: b.id, brand_name: b.brand_name || b.name })))
+          setBrands(brandsData.map((b: { id: string; name: string }) => ({ id: b.id, name: b.name })))
         } else {
-          console.error('Markalar yüklenirken hata:', await brandsRes.text())
+          console.error('Müşteriler yüklenirken hata:', await brandsRes.text())
         }
       } catch (err) {
-        console.error('Markalar fetch hatası:', err)
+        console.error('Müşteriler fetch hatası:', err)
       }
 
       // Yönetici de admin gibi tüm personeli görür
@@ -927,11 +927,11 @@ export default function GunlukIslerPage() {
 
       // Günlük işler
       let query = (supabase as any)
-        .from('daily_tasks')
+        .from('app_daily_tasks')
         .select(`
           *,
-          category:task_categories(*),
-          brand:customers(id, brand_name),
+          category:app_task_categories(*),
+          brand:customers(id, name),
           user:users(id, full_name, email, role)
         `)
         .eq('work_date', selectedDate)
@@ -956,7 +956,7 @@ export default function GunlukIslerPage() {
         const taskIds = tasksData.map((t: DailyTask) => t.id)
         if (taskIds.length > 0) {
           const { data: revisionsData } = await (supabase as any)
-            .from('task_revisions')
+            .from('app_task_revisions')
             .select('*')
             .in('task_id', taskIds)
             .order('revision_number')
@@ -974,11 +974,11 @@ export default function GunlukIslerPage() {
         const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]
         
         const { data: monthData } = await (supabase as any)
-          .from('daily_tasks')
+          .from('app_daily_tasks')
           .select(`
             *,
-            category:task_categories(*),
-            brand:customers(id, brand_name)
+            category:app_task_categories(*),
+            brand:customers(id, name)
           `)
           .eq('user_id', appUser.id)
           .gte('work_date', firstDay)
@@ -1014,7 +1014,7 @@ export default function GunlukIslerPage() {
     try {
       if (editingTask) {
         await (supabase as any)
-          .from('daily_tasks')
+          .from('app_daily_tasks')
           .update({
             brand_id: formData.brand_id || null,
             category_id: formData.category_id,
@@ -1023,7 +1023,7 @@ export default function GunlukIslerPage() {
           .eq('id', editingTask.id)
       } else {
         await (supabase as any)
-          .from('daily_tasks')
+          .from('app_daily_tasks')
           .insert({
             user_id: appUser.id,
             brand_id: formData.brand_id || null,
@@ -1056,7 +1056,7 @@ export default function GunlukIslerPage() {
       const elapsed = Math.floor((now.getTime() - startTime) / 1000)
 
       await (supabase as any)
-        .from('daily_tasks')
+        .from('app_daily_tasks')
         .update({
           status: 'paused',
           paused_at: now.toISOString(),
@@ -1074,7 +1074,7 @@ export default function GunlukIslerPage() {
   const handleResume = async (task: DailyTask) => {
     try {
       await (supabase as any)
-        .from('daily_tasks')
+        .from('app_daily_tasks')
         .update({
           status: 'active',
           start_time: new Date().toISOString(),
@@ -1101,7 +1101,7 @@ export default function GunlukIslerPage() {
       }
 
       await (supabase as any)
-        .from('daily_tasks')
+        .from('app_daily_tasks')
         .update({
           status: 'completed',
           end_time: now.toISOString(),
@@ -1131,7 +1131,7 @@ export default function GunlukIslerPage() {
 
       // Task'ı güncelle
       await (supabase as any)
-        .from('daily_tasks')
+        .from('app_daily_tasks')
         .update({
           status: 'active',
           start_time: now.toISOString(),
@@ -1142,7 +1142,7 @@ export default function GunlukIslerPage() {
 
       // Revize kaydı oluştur
       await (supabase as any)
-        .from('task_revisions')
+        .from('app_task_revisions')
         .insert({
           task_id: revisionTask.id,
           revision_number: revisionTask.revision_count + 1,
@@ -1164,7 +1164,7 @@ export default function GunlukIslerPage() {
   const handleReopen = async (task: DailyTask) => {
     try {
       await (supabase as any)
-        .from('daily_tasks')
+        .from('app_daily_tasks')
         .update({
           status: 'active',
           start_time: new Date().toISOString(),
@@ -1183,7 +1183,7 @@ export default function GunlukIslerPage() {
     if (!confirm('Bu işi silmek istediğine emin misin?')) return
 
     try {
-      await (supabase as any).from('daily_tasks').delete().eq('id', task.id)
+      await (supabase as any).from('app_daily_tasks').delete().eq('id', task.id)
       fetchData()
     } catch (error) {
       console.error('Delete error:', error)
@@ -1284,12 +1284,12 @@ export default function GunlukIslerPage() {
                 <Select value={selectedBrand} onValueChange={setSelectedBrand}>
                   <SelectTrigger className="w-[200px] h-9 rounded-lg bg-white/5 border-white/10 text-zinc-300 text-sm">
                     <Building2 className="w-4 h-4 mr-2 text-zinc-500 flex-shrink-0" />
-                    <SelectValue placeholder="Tüm Markalar" />
+                    <SelectValue placeholder="Tüm Müşteriler" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tüm Markalar</SelectItem>
+                    <SelectItem value="all">Tüm Müşteriler</SelectItem>
                     {brands.map(brand => (
-                      <SelectItem key={brand.id} value={brand.id}>{brand.brand_name}</SelectItem>
+                      <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1427,7 +1427,7 @@ export default function GunlukIslerPage() {
                       <SelectContent>
                         <SelectItem value="none">Genel</SelectItem>
                         {brands.map((brand) => (
-                          <SelectItem key={brand.id} value={brand.id}>{brand.brand_name}</SelectItem>
+                          <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -1654,7 +1654,7 @@ export default function GunlukIslerPage() {
               <SelectContent>
                 <SelectItem value="all">Tümü</SelectItem>
                 {brands.map(brand => (
-                  <SelectItem key={brand.id} value={brand.id}>{brand.brand_name}</SelectItem>
+                  <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -1722,7 +1722,7 @@ export default function GunlukIslerPage() {
                     <SelectContent>
                       <SelectItem value="none">Genel</SelectItem>
                       {brands.map((brand) => (
-                        <SelectItem key={brand.id} value={brand.id}>{brand.brand_name}</SelectItem>
+                        <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

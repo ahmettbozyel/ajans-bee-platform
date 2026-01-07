@@ -31,7 +31,7 @@ export async function GET(
     const adminClient = createAdminClient()
 
     const { data, error } = await adminClient
-      .from('service_providers')
+      .from('app_service_providers')
       .select('*')
       .eq('id', id)
       .single()
@@ -75,7 +75,7 @@ export async function PATCH(
 
     const adminClient = createAdminClient()
     const { data, error } = await adminClient
-      .from('service_providers')
+      .from('app_service_providers')
       .update(updateData)
       .eq('id', id)
       .select()
@@ -109,7 +109,7 @@ export async function DELETE(
 
     // Önce bu sağlayıcıya bağlı servis var mı kontrol et
     const { count } = await adminClient
-      .from('technical_services')
+      .from('app_technical_services')
       .select('*', { count: 'exact', head: true })
       .eq('provider_id', id)
 
@@ -121,7 +121,7 @@ export async function DELETE(
     }
 
     const { error } = await adminClient
-      .from('service_providers')
+      .from('app_service_providers')
       .delete()
       .eq('id', id)
 

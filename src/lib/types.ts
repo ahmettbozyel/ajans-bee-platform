@@ -55,7 +55,7 @@ export type Database = {
         }
       }
       // ==================== ATTENDANCE ====================
-      attendance: {
+      app_attendance: {
         Row: {
           id: string
           user_id: string
@@ -130,7 +130,7 @@ export type Database = {
         }
       }
       // ==================== TASK CATEGORIES ====================
-      task_categories: {
+      app_task_categories: {
         Row: {
           id: string
           name: string
@@ -163,7 +163,7 @@ export type Database = {
         }
       }
       // ==================== DAILY TASKS ====================
-      daily_tasks: {
+      app_daily_tasks: {
         Row: {
           id: string
           user_id: string
@@ -214,7 +214,7 @@ export type Database = {
         }
       }
       // ==================== TASK REVISIONS ====================
-      task_revisions: {
+      app_task_revisions: {
         Row: {
           id: string
           task_id: string
@@ -459,7 +459,7 @@ export type Database = {
           billing_contact_phone?: string | null
         }
       }
-      service_providers: {
+      app_service_providers: {
         Row: {
           id: string
           name: string
@@ -494,7 +494,7 @@ export type Database = {
           updated_at?: string
         }
       }
-      technical_services: {
+      app_technical_services: {
         Row: {
           id: string
           brand_id: string
@@ -541,7 +541,7 @@ export type Database = {
           updated_at?: string
         }
       }
-      renewal_history: {
+      app_renewal_history: {
         Row: {
           id: string
           service_id: string
@@ -650,17 +650,17 @@ export type Customer = Database['public']['Tables']['customers']['Row']
 export type CustomerInsert = Database['public']['Tables']['customers']['Insert']
 export type CustomerUpdate = Database['public']['Tables']['customers']['Update']
 
-export type ServiceProvider = Database['public']['Tables']['service_providers']['Row']
-export type ServiceProviderInsert = Database['public']['Tables']['service_providers']['Insert']
-export type ServiceProviderUpdate = Database['public']['Tables']['service_providers']['Update']
+export type ServiceProvider = Database['public']['Tables']['app_service_providers']['Row']
+export type ServiceProviderInsert = Database['public']['Tables']['app_service_providers']['Insert']
+export type ServiceProviderUpdate = Database['public']['Tables']['app_service_providers']['Update']
 
-export type TechnicalService = Database['public']['Tables']['technical_services']['Row']
-export type TechnicalServiceInsert = Database['public']['Tables']['technical_services']['Insert']
-export type TechnicalServiceUpdate = Database['public']['Tables']['technical_services']['Update']
+export type TechnicalService = Database['public']['Tables']['app_technical_services']['Row']
+export type TechnicalServiceInsert = Database['public']['Tables']['app_technical_services']['Insert']
+export type TechnicalServiceUpdate = Database['public']['Tables']['app_technical_services']['Update']
 
-export type RenewalHistory = Database['public']['Tables']['renewal_history']['Row']
-export type RenewalHistoryInsert = Database['public']['Tables']['renewal_history']['Insert']
-export type RenewalHistoryUpdate = Database['public']['Tables']['renewal_history']['Update']
+export type RenewalHistory = Database['public']['Tables']['app_renewal_history']['Row']
+export type RenewalHistoryInsert = Database['public']['Tables']['app_renewal_history']['Insert']
+export type RenewalHistoryUpdate = Database['public']['Tables']['app_renewal_history']['Update']
 
 export type Post = Database['public']['Tables']['posts']['Row']
 export type PostInsert = Database['public']['Tables']['posts']['Insert']
@@ -681,21 +681,21 @@ export type User = Database['public']['Tables']['users']['Row']
 export type UserInsert = Database['public']['Tables']['users']['Insert']
 export type UserUpdate = Database['public']['Tables']['users']['Update']
 
-export type Attendance = Database['public']['Tables']['attendance']['Row']
-export type AttendanceInsert = Database['public']['Tables']['attendance']['Insert']
-export type AttendanceUpdate = Database['public']['Tables']['attendance']['Update']
+export type Attendance = Database['public']['Tables']['app_attendance']['Row']
+export type AttendanceInsert = Database['public']['Tables']['app_attendance']['Insert']
+export type AttendanceUpdate = Database['public']['Tables']['app_attendance']['Update']
 
-export type TaskCategory = Database['public']['Tables']['task_categories']['Row']
-export type TaskCategoryInsert = Database['public']['Tables']['task_categories']['Insert']
-export type TaskCategoryUpdate = Database['public']['Tables']['task_categories']['Update']
+export type TaskCategory = Database['public']['Tables']['app_task_categories']['Row']
+export type TaskCategoryInsert = Database['public']['Tables']['app_task_categories']['Insert']
+export type TaskCategoryUpdate = Database['public']['Tables']['app_task_categories']['Update']
 
-export type DailyTask = Database['public']['Tables']['daily_tasks']['Row']
-export type DailyTaskInsert = Database['public']['Tables']['daily_tasks']['Insert']
-export type DailyTaskUpdate = Database['public']['Tables']['daily_tasks']['Update']
+export type DailyTask = Database['public']['Tables']['app_daily_tasks']['Row']
+export type DailyTaskInsert = Database['public']['Tables']['app_daily_tasks']['Insert']
+export type DailyTaskUpdate = Database['public']['Tables']['app_daily_tasks']['Update']
 
-export type TaskRevision = Database['public']['Tables']['task_revisions']['Row']
-export type TaskRevisionInsert = Database['public']['Tables']['task_revisions']['Insert']
-export type TaskRevisionUpdate = Database['public']['Tables']['task_revisions']['Update']
+export type TaskRevision = Database['public']['Tables']['app_task_revisions']['Row']
+export type TaskRevisionInsert = Database['public']['Tables']['app_task_revisions']['Insert']
+export type TaskRevisionUpdate = Database['public']['Tables']['app_task_revisions']['Update']
 
 export type Notification = Database['public']['Tables']['notifications']['Row']
 export type NotificationInsert = Database['public']['Tables']['notifications']['Insert']

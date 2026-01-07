@@ -77,13 +77,13 @@ export default function GirisCikisPage() {
         const { data: usersData } = await supabase.from('users').select('*').eq('is_active', true).neq('role', 'admin').neq('role', 'yonetici').order('full_name')
         if (usersData) setUsers(usersData as AppUser[])
 
-        const { data: recordsData } = await supabase.from('attendance').select('*, user:users(*)').eq('date', selectedDate).order('check_in', { ascending: true })
+        const { data: recordsData } = await supabase.from('app_attendance').select('*, user:users(*)').eq('date', selectedDate).order('check_in', { ascending: true })
         if (recordsData) setTodayRecords((recordsData as unknown as AttendanceWithUser[]).filter(r => r.user?.role !== 'admin' && r.user?.role !== 'yonetici'))
 
         const [year, month] = selectedMonth.split('-').map(Number)
         const startDate = `${year}-${String(month).padStart(2, '0')}-01`
         const endDate = new Date(year, month, 0).toISOString().split('T')[0]
-        const { data: monthData } = await supabase.from('attendance').select('*').gte('date', startDate).lte('date', endDate)
+        const { data: monthData } = await supabase.from('app_attendance').select('*').gte('date', startDate).lte('date', endDate)
 
         if (monthData) {
           setAllMonthlyRecords(monthData as Attendance[])
@@ -109,12 +109,12 @@ export default function GirisCikisPage() {
         }
       } else {
         // Staff view (personel, stajer, operasyon)
-        const { data: todayData } = await supabase.from('attendance').select('*').eq('user_id', appUser.id).eq('date', selectedDate).maybeSingle()
+        const { data: todayData } = await supabase.from('app_attendance').select('*').eq('user_id', appUser.id).eq('date', selectedDate).maybeSingle()
         setTodayRecords(todayData ? [todayData as Attendance] : [])
 
         const thirtyDaysAgo = new Date()
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-        const { data: historyData } = await supabase.from('attendance').select('*').eq('user_id', appUser.id).gte('date', thirtyDaysAgo.toISOString().split('T')[0]).order('date', { ascending: false })
+        const { data: historyData } = await supabase.from('app_attendance').select('*').eq('user_id', appUser.id).gte('date', thirtyDaysAgo.toISOString().split('T')[0]).order('date', { ascending: false })
         if (historyData) setMyHistory(historyData as Attendance[])
 
         // Leaderboard data
@@ -124,7 +124,7 @@ export default function GirisCikisPage() {
         const now = new Date()
         const startDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
         const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]
-        const { data: monthData } = await supabase.from('attendance').select('user_id, overtime_minutes, late_minutes').gte('date', startDate).lte('date', endDate)
+        const { data: monthData } = await supabase.from('app_attendance').select('user_id, overtime_minutes, late_minutes').gte('date', startDate).lte('date', endDate)
         if (monthData) {
           setMonthlyStats(calculateMonthlyStats(monthData))
         }
@@ -159,7 +159,7 @@ export default function GirisCikisPage() {
 
       // Fetch records and users
       const [recordsRes, usersRes] = await Promise.all([
-        supabase.from('attendance').select('*, user:users(full_name, email, role)').gte('date', startDate).lte('date', endDate).order('date', { ascending: true }),
+        supabase.from('app_attendance').select('*, user:users(full_name, email, role)').gte('date', startDate).lte('date', endDate).order('date', { ascending: true }),
         supabase.from('users').select('*').eq('is_active', true).neq('role', 'admin').neq('role', 'yonetici').order('full_name')
       ])
 
@@ -339,8 +339,8 @@ export default function GirisCikisPage() {
     const checkInData: any = { user_id: appUser!.id, date: today, check_in: now.toISOString(), late_minutes: lateMinutes, status, check_in_location_type: locationType, late_reason: reason || null, record_type: 'normal' }
     if (location) { checkInData.check_in_lat = location.lat; checkInData.check_in_lng = location.lng }
 
-    if (myRecord) { await (supabase as any).from('attendance').update({ ...checkInData, updated_at: now.toISOString() }).eq('id', myRecord.id) }
-    else { await (supabase as any).from('attendance').insert(checkInData) }
+    if (myRecord) { await (supabase as any).from('app_attendance').update({ ...checkInData, updated_at: now.toISOString() }).eq('id', myRecord.id) }
+    else { await (supabase as any).from('app_attendance').insert(checkInData) }
 
     if (lateMinutes > 0 && appUser) { await notifyAdmins(supabase, { type: 'late', title: `${appUser.full_name} geç kaldı`, message: `${lateMinutes} dakika geç giriş. Sebep: ${reason || 'Belirtilmedi'}`, related_user_id: appUser.id }) }
     setShowLateModal(false); setLateReason(''); setPendingCheckIn(null); setActionLoading(false); fetchData()
@@ -375,7 +375,7 @@ export default function GirisCikisPage() {
     const checkOutData: any = { check_out: now.toISOString(), overtime_minutes: overtimeMinutes, early_leave_minutes: earlyLeaveMinutes, check_out_location_type: locationType, status, overtime_reason: reason || null, updated_at: now.toISOString() }
     if (location) { checkOutData.check_out_lat = location.lat; checkOutData.check_out_lng = location.lng }
 
-    await (supabase as any).from('attendance').update(checkOutData).eq('id', myRecord!.id)
+    await (supabase as any).from('app_attendance').update(checkOutData).eq('id', myRecord!.id)
 
     if (overtimeMinutes > 0 && appUser) { await notifyAdmins(supabase, { type: 'overtime', title: `${appUser.full_name} mesai yaptı`, message: `${overtimeMinutes} dakika mesai. Sebep: ${reason || 'Belirtilmedi'}`, related_user_id: appUser.id }) }
     if (earlyLeaveMinutes > 15 && appUser) { await notifyAdmins(supabase, { type: 'early_leave', title: `${appUser.full_name} erken çıktı`, message: `${earlyLeaveMinutes} dakika erken çıkış.`, related_user_id: appUser.id }) }

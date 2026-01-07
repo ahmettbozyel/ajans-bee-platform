@@ -1,9 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 
-// GET - List customers (brands)
-export async function GET(request: NextRequest) {
+// GET - List all customers
+export async function GET(request: Request) {
   try {
     const supabase = await createClient()
 
@@ -13,35 +12,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const searchParams = request.nextUrl.searchParams
+    const { searchParams } = new URL(request.url)
     const minimal = searchParams.get('minimal') === 'true'
-    const includeInactive = searchParams.get('all') === 'true'
 
-    const selectFields = minimal ? 'id, name, brand_name' : '*'
+    // Tüm müşterileri çek (pasif dahil - teknik hizmetler için gerekli)
+    const selectFields = minimal
+      ? 'id, name'
+      : 'id, name, email, phone, notes, customer_type, created_at'
 
-    // Admin client kullan (RLS bypass)
-    const adminClient = createAdminClient()
-
-    let query = adminClient
+    const { data, error } = await supabase
       .from('customers')
       .select(selectFields)
       .order('name', { ascending: true })
 
-    // Sadece aktif olanları getir (all=true değilse)
-    if (!includeInactive) {
-      query = query.eq('status', 'active')
-    }
-
-    const { data, error } = await query
-
     if (error) {
-      console.error('Supabase error:', error)
+      console.error('Customers fetch error:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     return NextResponse.json(data || [])
   } catch (error) {
-    console.error('GET /api/customers error:', error)
+    console.error('Customers API error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

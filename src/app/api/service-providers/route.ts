@@ -22,7 +22,7 @@ export async function GET() {
   try {
     const adminClient = createAdminClient()
     const { data, error } = await adminClient
-      .from('service_providers')
+      .from('app_service_providers')
       .select('*')
       .order('service_type')
       .order('name')
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     const adminClient = createAdminClient()
     const { data, error } = await adminClient
-      .from('service_providers')
+      .from('app_service_providers')
       .insert(parsed.data)
       .select()
       .single()

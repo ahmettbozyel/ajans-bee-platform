@@ -30,7 +30,6 @@ export interface TechnicalServiceWithRelations extends TechnicalService {
   brand?: {
     id: string
     name: string
-    brand_name: string | null
   }
 }
 

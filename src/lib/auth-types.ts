@@ -30,16 +30,14 @@ export interface AppUser {
 // Modül erişimleri
 export type ModuleSlug =
   | 'dashboard'
-  | 'markalar'
   | 'teknik-hizmetler'
-  | 'icerik-uret'
   | 'gorevler'
   | 'mesai'
   | 'ayarlar'
 
 // Rol bazlı erişim matrisi
 export const ROLE_ACCESS: Record<UserRole, ModuleSlug[]> = {
-  admin: ['dashboard', 'markalar', 'teknik-hizmetler', 'icerik-uret', 'gorevler', 'mesai', 'ayarlar'],
+  admin: ['dashboard', 'teknik-hizmetler', 'gorevler', 'mesai', 'ayarlar'],
   yonetici: ['teknik-hizmetler', 'gorevler', 'mesai', 'ayarlar'],
   operasyon: ['gorevler', 'mesai', 'teknik-hizmetler'],
   personel: ['gorevler', 'mesai'],
@@ -127,7 +125,7 @@ export interface DailyTask {
   
   // Relations
   category?: TaskCategory
-  brand?: { id: string; brand_name: string } | null
+  brand?: { id: string; name: string } | null
   user?: { id: string; full_name: string }
 }
 

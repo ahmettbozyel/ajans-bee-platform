@@ -17,7 +17,6 @@ import { SERVICE_STATUSES } from '@/lib/technical-service-types-new'
 interface Brand {
   id: string
   name: string
-  brand_name: string | null
 }
 
 interface Provider {
@@ -241,11 +240,11 @@ export function ServiceModal({ isOpen, onClose, onSave, editingService }: Servic
               </div>
             </div>
 
-            {/* Brand - Combobox */}
+            {/* Customer - Combobox */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-zinc-300">
                 <Building2 className="w-4 h-4 inline mr-1" />
-                Marka <span className="text-rose-500">*</span>
+                Müşteri <span className="text-rose-500">*</span>
               </Label>
               <Popover open={brandPopoverOpen} onOpenChange={setBrandPopoverOpen}>
                 <PopoverTrigger asChild>
@@ -254,24 +253,24 @@ export function ServiceModal({ isOpen, onClose, onSave, editingService }: Servic
                     role="combobox"
                     className="w-full justify-between bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700 hover:text-white"
                   >
-                    {selectedBrand ? (selectedBrand.brand_name || selectedBrand.name) : "Marka seç..."}
+                    {selectedBrand ? selectedBrand.name : "Müşteri seç..."}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent 
+                <PopoverContent
                   className="w-[var(--radix-popover-trigger-width)] p-0 border-zinc-700 shadow-2xl rounded-xl overflow-hidden"
                   align="start"
                   style={{ backgroundColor: '#18181b' }}
                 >
                   <Command style={{ backgroundColor: '#18181b' }}>
-                    <CommandInput placeholder="Marka ara..." className="h-11 border-b border-zinc-700 text-white placeholder:text-zinc-500" />
+                    <CommandInput placeholder="Müşteri ara..." className="h-11 border-b border-zinc-700 text-white placeholder:text-zinc-500" />
                     <CommandList className="max-h-64 overflow-auto" style={{ backgroundColor: '#18181b' }}>
-                      <CommandEmpty className="py-6 text-center text-sm text-zinc-500">Marka bulunamadı.</CommandEmpty>
+                      <CommandEmpty className="py-6 text-center text-sm text-zinc-500">Müşteri bulunamadı.</CommandEmpty>
                       <CommandGroup style={{ backgroundColor: '#18181b' }}>
                         {brands.map((brand) => (
                           <CommandItem
                             key={brand.id}
-                            value={brand.brand_name || brand.name}
+                            value={brand.name}
                             onSelect={() => {
                               setFormData({ ...formData, brand_id: brand.id })
                               setBrandPopoverOpen(false)
@@ -280,7 +279,7 @@ export function ServiceModal({ isOpen, onClose, onSave, editingService }: Servic
                           >
                             <Check className={cn("mr-2 h-4 w-4 text-indigo-400", formData.brand_id === brand.id ? "opacity-100" : "opacity-0")} />
                             <span className={cn(formData.brand_id === brand.id && "text-indigo-400 font-medium")}>
-                              {brand.brand_name || brand.name}
+                              {brand.name}
                             </span>
                           </CommandItem>
                         ))}

@@ -6,11 +6,9 @@ import Link from 'next/link'
 import { useAuth } from '@/lib/auth-context'
 import { createClient } from '@/lib/supabase/client'
 import { NotificationBell } from '@/components/notification-bell'
-import { 
-  LayoutDashboard, 
-  Building2,
+import {
+  LayoutDashboard,
   Server,
-  Sparkles,
   Settings,
   LogOut,
   Menu,
@@ -19,10 +17,8 @@ import {
   Search,
   ClipboardList,
   Clock,
-  FolderOpen,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { BeeBotChat } from '@/components/BeeBot'
 
 // ==========================================
 // AJANS BEE LOGO SVG
@@ -42,7 +38,6 @@ function AjansBeeLogoSVG({ className }: { className?: string }) {
 // ==========================================
 const navTabs = [
   { label: 'Dashboard', href: '/dashboard' },
-  { label: 'Markalar', href: '/musteriler' },
 ]
 
 // Erişim kontrolü
@@ -74,7 +69,7 @@ function Sidebar({
   isAdmin: boolean
   isYonetici: boolean
   isOperasyon: boolean
-  counts: { customers: number; services: number }
+  counts: { services: number }
   appUser: any
   onSignOut: () => void
 }) {
@@ -162,14 +157,6 @@ function Sidebar({
                   <span className="text-sm font-medium">Dashboard</span>
                 </Link>
 
-                <Link href="/musteriler" className={`menu-item ${isActive('/musteriler') || isActive('/customers') ? 'menu-active text-white' : 'text-zinc-400'}`}>
-                  <Building2 className="w-5 h-5" />
-                  <span className="text-sm font-medium">Markalar</span>
-                  {counts.customers > 0 && (
-                    <span className="ml-auto text-[11px] bg-violet-500/20 text-violet-400 px-2 py-0.5 rounded-full font-mono">{counts.customers}</span>
-                  )}
-                </Link>
-
                 <Link href="/teknik-hizmetler" className={`menu-item ${isActive('/teknik-hizmetler') ? 'menu-active text-white' : 'text-zinc-400'}`}>
                   <Server className="w-5 h-5" />
                   <span className="text-sm font-medium">Teknik Hizmetler</span>
@@ -178,18 +165,6 @@ function Sidebar({
                   )}
                 </Link>
 
-                <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 mt-5 text-zinc-500">Araçlar</p>
-                
-                <Link href="/icerik-uret" className={`menu-item ${isActive('/icerik-uret') ? 'menu-active text-white' : 'text-zinc-400'}`}>
-                  <Sparkles className="w-5 h-5" />
-                  <span className="text-sm font-medium">İçerik Üret</span>
-                  <span className="ml-auto badge badge-fuchsia font-mono">AI</span>
-                </Link>
-
-                <Link href="/gorseller" className={`menu-item ${isActive('/gorseller') ? 'menu-active text-white' : 'text-zinc-400'}`}>
-                  <FolderOpen className="w-5 h-5" />
-                  <span className="text-sm font-medium">Dosyalar</span>
-                </Link>
               </>
             )}
 
@@ -317,14 +292,11 @@ export default function DashboardLayout({
   const router = useRouter()
   const pathname = usePathname()
   const { appUser, loading: authLoading, isAdmin, signOut } = useAuth()
-  const [counts, setCounts] = useState({ customers: 0, services: 0 })
+  const [counts, setCounts] = useState({ services: 0 })
   const [sidebarOpen, setSidebarOpen] = useState(false)
   
   const supabase = createClient()
 
-  // Marka detay sayfası kontrolü
-  const isDetailPage = pathname.includes('/customers/') && pathname.split('/').length > 2
-  
   // Erişim kontrolü
   const hasAccess = (role: string, path: string): boolean => {
     if (role === 'admin') return true
@@ -350,12 +322,8 @@ export default function DashboardLayout({
     async function fetchData() {
       try {
         if (isAdmin || appUser?.role === 'yonetici' || appUser?.role === 'operasyon') {
-          const [customersRes, servicesRes] = await Promise.all([
-            supabase.from('customers').select('id', { count: 'exact', head: true }),
-            supabase.from('technical_services').select('id', { count: 'exact', head: true })
-          ])
+          const servicesRes = await supabase.from('app_technical_services').select('id', { count: 'exact', head: true })
           setCounts({
-            customers: customersRes.count || 0,
             services: servicesRes.count || 0
           })
         }
@@ -494,24 +462,6 @@ export default function DashboardLayout({
 
       {/* ========== MAIN CONTENT ========== */}
       <div className="lg:ml-64 pt-12 min-h-screen flex flex-col">
-        
-        {/* Page Header - Sadece liste sayfalarında göster */}
-        {!isDetailPage && (
-          <header className="sticky top-12 z-30 bg-topnav border-b border-white/5 px-4 sm:px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-lg sm:text-xl font-bold text-white">
-                  Hoş geldin, {getUserName()} 👋
-                </h1>
-                <p className="text-sm text-zinc-500 mt-0.5 hidden sm:block">
-                  {isAdmin ? 'Hemen içerik üretmeye başla' : 'Günlük işlerini kaydet'}
-                </p>
-              </div>
-            </div>
-          </header>
-        )}
-        
-        {/* Content */}
         <main className="flex-1 p-4 sm:p-6 bg-content">
           {children}
         </main>
@@ -520,28 +470,10 @@ export default function DashboardLayout({
       {/* ========== MOBILE BOTTOM NAV ========== */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-topnav border-t border-white/10 px-2 py-2 safe-area-pb">
         <div className="flex items-center justify-around">
-          {isAdmin && (
-            <>
-              <Link href="/dashboard" className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg ${isTabActive('/dashboard') ? 'text-indigo-400' : 'text-zinc-500'}`}>
-                <LayoutDashboard className="w-5 h-5" />
-                <span className="text-[10px] font-medium">Ana Sayfa</span>
-              </Link>
-              <Link href="/musteriler" className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg ${isTabActive('/musteriler') ? 'text-indigo-400' : 'text-zinc-500'}`}>
-                <Building2 className="w-5 h-5" />
-                <span className="text-[10px] font-medium">Markalar</span>
-              </Link>
-              <Link href="/icerik-uret" className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg ${isTabActive('/icerik-uret') ? 'text-fuchsia-400' : 'text-zinc-500'}`}>
-                <Sparkles className="w-5 h-5" />
-                <span className="text-[10px] font-medium">Üret</span>
-              </Link>
-            </>
-          )}
-          {!isAdmin && (
-            <Link href="/dashboard" className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg ${isTabActive('/dashboard') ? 'text-indigo-400' : 'text-zinc-500'}`}>
-              <LayoutDashboard className="w-5 h-5" />
-              <span className="text-[10px] font-medium">Dashboard</span>
-            </Link>
-          )}
+          <Link href="/dashboard" className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg ${isTabActive('/dashboard') ? 'text-indigo-400' : 'text-zinc-500'}`}>
+            <LayoutDashboard className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Dashboard</span>
+          </Link>
           <Link href="/gorevler" className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg ${isTabActive('/gorevler') ? 'text-indigo-400' : 'text-zinc-500'}`}>
             <ClipboardList className="w-5 h-5" />
             <span className="text-[10px] font-medium">Görevler</span>
@@ -555,9 +487,6 @@ export default function DashboardLayout({
       
       {/* Bottom nav için boşluk */}
       <div className="lg:hidden h-16" />
-
-      {/* BeeBot Chatbot */}
-      <BeeBotChat />
     </div>
   )
 }

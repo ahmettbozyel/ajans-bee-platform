@@ -26,7 +26,7 @@ export function TolerancesTab() {
     setLoading(true)
     try {
       const { data } = await (supabase as any)
-        .from('company_settings')
+        .from('app_company_settings')
         .select('value')
         .eq('key', 'tolerances')
         .single()
@@ -54,7 +54,7 @@ export function TolerancesTab() {
     setSaving(true)
     try {
       await (supabase as any)
-        .from('company_settings')
+        .from('app_company_settings')
         .update({ value: tolerances, updated_at: new Date().toISOString() })
         .eq('key', 'tolerances')
 

@@ -48,7 +48,8 @@ export function NotificationBell() {
         .limit(20)
 
       if (error) {
-        console.error('Bildirimler yüklenirken hata:', error)
+        // RLS veya tablo erişim hatası - sessizce devam et
+        // console.error('Bildirimler yüklenirken hata:', error)
         return
       }
 

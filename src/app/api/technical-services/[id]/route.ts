@@ -36,11 +36,11 @@ export async function GET(
     }
 
     const { data, error } = await supabase
-      .from('technical_services')
+      .from('app_technical_services')
       .select(`
         *,
-        provider:service_providers(id, name, base_price_usd, billing_cycle),
-        brand:customers(id, name, brand_name)
+        provider:app_service_providers(id, name, base_price_usd, billing_cycle),
+        brand:customers(id, name)
       `)
       .eq('id', id)
       .single()
@@ -89,13 +89,13 @@ export async function PATCH(
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any)
-      .from('technical_services')
+      .from('app_technical_services')
       .update(updateData)
       .eq('id', id)
       .select(`
         *,
-        provider:service_providers(id, name, base_price_usd, billing_cycle),
-        brand:customers(id, name, brand_name)
+        provider:app_service_providers(id, name, base_price_usd, billing_cycle),
+        brand:customers(id, name)
       `)
       .single()
 
@@ -130,7 +130,7 @@ export async function DELETE(
     }
 
     const { error } = await supabase
-      .from('technical_services')
+      .from('app_technical_services')
       .delete()
       .eq('id', id)
 

@@ -14,3 +14,6 @@ node_modules/
 out/
 *.DS_Store
 supabase/.temp/
+
+# Large files (Figma, etc.)
+docs/metronic_v9.4.0/

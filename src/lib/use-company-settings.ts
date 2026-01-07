@@ -71,11 +71,11 @@ export function useCompanySettings(): CompanySettings {
     try {
       // Fetch all settings in parallel
       const [daysRes, hoursRes, tolerancesRes, holidaysRes, hybridDaysRes, hybridOverridesRes] = await Promise.all([
-        (supabase as any).from('company_settings').select('value').eq('key', 'work_days').single(),
-        (supabase as any).from('company_settings').select('value').eq('key', 'work_hours').single(),
-        (supabase as any).from('company_settings').select('value').eq('key', 'tolerances').single(),
-        (supabase as any).from('holidays').select('*').order('date', { ascending: true }),
-        (supabase as any).from('company_settings').select('value').eq('key', 'hybrid_days').single(),
+        (supabase as any).from('app_company_settings').select('value').eq('key', 'work_days').single(),
+        (supabase as any).from('app_company_settings').select('value').eq('key', 'work_hours').single(),
+        (supabase as any).from('app_company_settings').select('value').eq('key', 'tolerances').single(),
+        (supabase as any).from('app_holidays').select('*').order('date', { ascending: true }),
+        (supabase as any).from('app_company_settings').select('value').eq('key', 'hybrid_days').single(),
         (supabase as any).from('hybrid_overrides').select('*').order('date', { ascending: false })
       ])
 
