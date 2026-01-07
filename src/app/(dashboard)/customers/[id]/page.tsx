@@ -187,6 +187,16 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
     setSaveError(null)
     setSaveSuccess(false)
 
+    // Safety timeout - force reset if stuck
+    const safetyTimeout = setTimeout(() => {
+      if (savingRef.current) {
+        console.warn('Save operation stuck, force resetting...')
+        savingRef.current = false
+        setSaving(false)
+        setSaveError('İşlem zaman aşımına uğradı. Tekrar deneyin.')
+      }
+    }, 20000) // 20 saniye
+
     // Create AbortController for timeout
     const controller = new AbortController()
     const timeoutId = setTimeout(() => {
@@ -195,9 +205,20 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
 
     try {
       console.log('Starting save operation...')
-      
+
       // Create fresh client for save operation
-      const freshSupabase = createClient()
+      const supabase = createClient()
+
+      // Pre-save session check
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (!session || sessionError) {
+        console.log('Session expired or error, reloading...')
+        setSaveError('Oturum süresi dolmuş. Sayfa yenileniyor...')
+        clearTimeout(safetyTimeout)
+        clearTimeout(timeoutId)
+        setTimeout(() => window.location.reload(), 1000)
+        return
+      }
 
       const customerData = {
         name: formData.name,
@@ -251,7 +272,7 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
       console.log('Sending update to Supabase...')
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (freshSupabase as any)
+      const { data, error } = await (supabase as any)
         .from('customers')
         .update(customerData)
         .eq('id', customer.id)
@@ -263,44 +284,82 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
 
       if (error) {
         console.error('Supabase error:', error)
-        
-        // Check for auth errors (token expired)
+
+        // Check for auth errors (token expired) - try session refresh first
         if (error.code === '401' || error.message?.includes('JWT') || error.message?.includes('token')) {
-          setSaveError('Oturum süreniz doldu. Sayfa yenileniyor...')
-          setTimeout(() => {
-            window.location.reload()
-          }, 1500)
-          return
+          console.log('Auth error detected, attempting session refresh...')
+
+          // Try to refresh session
+          const { data: { session: newSession } } = await supabase.auth.refreshSession()
+
+          if (newSession) {
+            console.log('Session refreshed, retrying save...')
+
+            // Retry save with new session
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: retryData, error: retryError } = await (supabase as any)
+              .from('customers')
+              .update(customerData)
+              .eq('id', customer.id)
+              .select()
+              .single()
+
+            if (retryError) {
+              console.error('Retry also failed:', retryError)
+              setSaveError('Oturum yenilendi ama kaydetme başarısız. Sayfayı yenileyin.')
+              clearTimeout(safetyTimeout)
+              return
+            }
+
+            console.log('Retry save successful!')
+            setCustomer(retryData)
+            setSaveSuccess(true)
+            router.refresh()
+            setTimeout(() => setSaveSuccess(false), 3000)
+            clearTimeout(safetyTimeout)
+            return
+          } else {
+            // Refresh failed, reload page
+            console.log('Session refresh failed, reloading...')
+            setSaveError('Oturum süreniz doldu. Sayfa yenileniyor...')
+            clearTimeout(safetyTimeout)
+            setTimeout(() => window.location.reload(), 1500)
+            return
+          }
         }
-        
+
         throw error
       }
 
       console.log('Save successful!')
       setCustomer(data)
       setSaveSuccess(true)
-      
+
       // CRITICAL: Clear Next.js Router Cache to ensure fresh data
       router.refresh()
-      
+
       // Hide success message after 3 seconds
       setTimeout(() => {
         setSaveSuccess(false)
       }, 3000)
-      
+
     } catch (err) {
       clearTimeout(timeoutId)
       console.error('Save failed:', err)
-      
+
       // Check if it's a timeout/abort error
       if (err instanceof Error && err.name === 'AbortError') {
         setSaveError('İstek zaman aşımına uğradı. Lütfen tekrar deneyin.')
+      } else if (err instanceof TypeError && err.message.includes('fetch')) {
+        // Network error check
+        setSaveError('Bağlantı hatası. İnternet bağlantınızı kontrol edin.')
       } else {
         const errorMessage = err instanceof Error ? err.message : 'Kaydetme başarısız oldu'
         setSaveError(errorMessage)
       }
     } finally {
       console.log('Save operation finished, resetting state...')
+      clearTimeout(safetyTimeout)
       savingRef.current = false
       setSaving(false)
     }
@@ -310,49 +369,122 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
   async function handleSaveContact(contactData: ContactFormData) {
     if (!customer) return
 
-    if (savingRef.current) return
+    if (savingRef.current) {
+      console.log('Contact save already in progress, skipping...')
+      return
+    }
 
     savingRef.current = true
     setSaving(true)
     setSaveError(null)
     setSaveSuccess(false)
 
+    // Safety timeout - force reset if stuck
+    const safetyTimeout = setTimeout(() => {
+      if (savingRef.current) {
+        console.warn('Contact save operation stuck, force resetting...')
+        savingRef.current = false
+        setSaving(false)
+        setSaveError('İşlem zaman aşımına uğradı. Tekrar deneyin.')
+      }
+    }, 20000) // 20 saniye
+
     try {
-      const freshSupabase = createClient()
+      const supabase = createClient()
+
+      // Pre-save session check
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (!session || sessionError) {
+        console.log('Session expired or error, reloading...')
+        setSaveError('Oturum süresi dolmuş. Sayfa yenileniyor...')
+        clearTimeout(safetyTimeout)
+        setTimeout(() => window.location.reload(), 1000)
+        return
+      }
+
+      const contactUpdateData = {
+        billing_contact_name: contactData.billing_contact_name,
+        billing_contact_email: contactData.billing_contact_email,
+        billing_contact_phone: contactData.billing_contact_phone,
+        updated_at: new Date().toISOString()
+      }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (freshSupabase as any)
+      const { data, error } = await (supabase as any)
         .from('customers')
-        .update({
-          billing_contact_name: contactData.billing_contact_name,
-          billing_contact_email: contactData.billing_contact_email,
-          billing_contact_phone: contactData.billing_contact_phone,
-          updated_at: new Date().toISOString()
-        })
+        .update(contactUpdateData)
         .eq('id', customer.id)
         .select()
         .single()
 
       if (error) {
-        // Check for auth errors
-        if (error.code === '401' || error.message?.includes('JWT')) {
-          setSaveError('Oturum süreniz doldu. Sayfa yenileniyor...')
-          setTimeout(() => window.location.reload(), 1500)
-          return
+        console.error('Supabase contact save error:', error)
+
+        // Check for auth errors - try session refresh first
+        if (error.code === '401' || error.message?.includes('JWT') || error.message?.includes('token')) {
+          console.log('Auth error detected, attempting session refresh...')
+
+          // Try to refresh session
+          const { data: { session: newSession } } = await supabase.auth.refreshSession()
+
+          if (newSession) {
+            console.log('Session refreshed, retrying contact save...')
+
+            // Retry save with new session
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: retryData, error: retryError } = await (supabase as any)
+              .from('customers')
+              .update(contactUpdateData)
+              .eq('id', customer.id)
+              .select()
+              .single()
+
+            if (retryError) {
+              console.error('Contact retry also failed:', retryError)
+              setSaveError('Oturum yenilendi ama kaydetme başarısız. Sayfayı yenileyin.')
+              clearTimeout(safetyTimeout)
+              return
+            }
+
+            console.log('Contact retry save successful!')
+            setCustomer(retryData)
+            setSaveSuccess(true)
+            router.refresh()
+            setTimeout(() => setSaveSuccess(false), 3000)
+            clearTimeout(safetyTimeout)
+            return
+          } else {
+            // Refresh failed, reload page
+            console.log('Session refresh failed, reloading...')
+            setSaveError('Oturum süreniz doldu. Sayfa yenileniyor...')
+            clearTimeout(safetyTimeout)
+            setTimeout(() => window.location.reload(), 1500)
+            return
+          }
         }
+
         throw error
       }
 
+      console.log('Contact save successful!')
       setCustomer(data)
       setSaveSuccess(true)
       router.refresh()
-      
+
       setTimeout(() => setSaveSuccess(false), 3000)
     } catch (err) {
       console.error('Contact save failed:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Kaydetme başarısız oldu'
-      setSaveError(errorMessage)
+
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        // Network error check
+        setSaveError('Bağlantı hatası. İnternet bağlantınızı kontrol edin.')
+      } else {
+        const errorMessage = err instanceof Error ? err.message : 'Kaydetme başarısız oldu'
+        setSaveError(errorMessage)
+      }
     } finally {
+      console.log('Contact save operation finished, resetting state...')
+      clearTimeout(safetyTimeout)
       savingRef.current = false
       setSaving(false)
     }
