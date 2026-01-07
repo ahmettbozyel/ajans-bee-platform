@@ -109,6 +109,7 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
   const savingRef = useRef(false)
   const [error, setError] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [saveSuccess, setSaveSuccess] = useState(false)
   const [fileCount, setFileCount] = useState(0)
 
   // Tab state - Default: Dashboard
@@ -171,7 +172,7 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
     fetchSectors()
   }, [fetchCustomer, fetchSectors])
 
-  // Save customer - with proper error handling
+  // Save customer - with timeout, error handling, and cache invalidation
   async function handleSaveCustomer(formData: CustomerFormData) {
     if (!customer) return
 
@@ -184,6 +185,13 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
     savingRef.current = true
     setSaving(true)
     setSaveError(null)
+    setSaveSuccess(false)
+
+    // Create AbortController for timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => {
+      controller.abort()
+    }, 15000) // 15 second timeout
 
     try {
       console.log('Starting save operation...')
@@ -250,19 +258,47 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
         .select()
         .single()
 
+      // Clear timeout since request completed
+      clearTimeout(timeoutId)
+
       if (error) {
         console.error('Supabase error:', error)
+        
+        // Check for auth errors (token expired)
+        if (error.code === '401' || error.message?.includes('JWT') || error.message?.includes('token')) {
+          setSaveError('Oturum süreniz doldu. Sayfa yenileniyor...')
+          setTimeout(() => {
+            window.location.reload()
+          }, 1500)
+          return
+        }
+        
         throw error
       }
 
       console.log('Save successful!')
       setCustomer(data)
+      setSaveSuccess(true)
+      
+      // CRITICAL: Clear Next.js Router Cache to ensure fresh data
+      router.refresh()
+      
+      // Hide success message after 3 seconds
+      setTimeout(() => {
+        setSaveSuccess(false)
+      }, 3000)
       
     } catch (err) {
+      clearTimeout(timeoutId)
       console.error('Save failed:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Kaydetme başarısız oldu'
-      setSaveError(errorMessage)
-      // Don't re-throw, we're handling the error here
+      
+      // Check if it's a timeout/abort error
+      if (err instanceof Error && err.name === 'AbortError') {
+        setSaveError('İstek zaman aşımına uğradı. Lütfen tekrar deneyin.')
+      } else {
+        const errorMessage = err instanceof Error ? err.message : 'Kaydetme başarısız oldu'
+        setSaveError(errorMessage)
+      }
     } finally {
       console.log('Save operation finished, resetting state...')
       savingRef.current = false
@@ -279,6 +315,7 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
     savingRef.current = true
     setSaving(true)
     setSaveError(null)
+    setSaveSuccess(false)
 
     try {
       const freshSupabase = createClient()
@@ -296,9 +333,21 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        // Check for auth errors
+        if (error.code === '401' || error.message?.includes('JWT')) {
+          setSaveError('Oturum süreniz doldu. Sayfa yenileniyor...')
+          setTimeout(() => window.location.reload(), 1500)
+          return
+        }
+        throw error
+      }
 
       setCustomer(data)
+      setSaveSuccess(true)
+      router.refresh()
+      
+      setTimeout(() => setSaveSuccess(false), 3000)
     } catch (err) {
       console.error('Contact save failed:', err)
       const errorMessage = err instanceof Error ? err.message : 'Kaydetme başarısız oldu'
@@ -861,6 +910,16 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
                         <p className="text-sm text-zinc-600 dark:text-zinc-400">{Math.round(completion * 0.25)}/25 alan dolu</p>
                       </div>
                     </div>
+                    
+                    {/* Success Message */}
+                    {saveSuccess && (
+                      <div className="mb-3 p-2 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-500/30">
+                        <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3" />
+                          Kaydedildi!
+                        </p>
+                      </div>
+                    )}
                     
                     {/* Error Message */}
                     {saveError && (
