@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react'
-import { User, AuthChangeEvent, Session } from '@supabase/supabase-js'
+import { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { AppUser, UserRole, canAccess, canEdit, getDefaultRoute, ModuleSlug } from './auth-types'
 
@@ -29,102 +29,120 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [appUser, setAppUser] = useState<AppUser | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const fetchAppUser = useCallback(async (userId: string): Promise<AppUser | null> => {
-    console.log('[Auth] fetchAppUser starting for:', userId)
-    const supabase = createClient()
-    try {
-      // 3 saniye timeout ile fetch
-      const timeoutPromise = new Promise<null>((resolve) => {
-        setTimeout(() => {
-          console.log('[Auth] fetchAppUser timeout!')
-          resolve(null)
-        }, 3000)
-      })
+  const supabase = createClient()
 
-      const fetchPromise = supabase
+  const fetchAppUser = useCallback(async (userId: string): Promise<AppUser | null> => {
+    try {
+      const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single()
-        .then(({ data, error }) => {
-          console.log('[Auth] fetchAppUser result:', data, error?.message)
-          if (error) {
-            console.error('[Auth] fetchAppUser error:', error.message)
-            return null
-          }
-          return data as AppUser
-        })
 
-      return await Promise.race([fetchPromise, timeoutPromise])
+      if (error) {
+        console.error('[Auth] fetchAppUser error:', error.message)
+        return null
+      }
+
+      return data as AppUser
     } catch (err) {
       console.error('[Auth] fetchAppUser exception:', err)
       return null
     }
-  }, [])
+  }, [supabase])
 
   const refreshUser = useCallback(async () => {
-    const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
       setAuthUser(user)
       const appUserData = await fetchAppUser(user.id)
       setAppUser(appUserData)
     }
-  }, [fetchAppUser])
+  }, [supabase, fetchAppUser])
 
-  // Basit auth initialization - sadece onAuthStateChange kullan
+  // Initialize auth - direkt getSession kullan, event beklemeden
   useEffect(() => {
     let isMounted = true
-    const supabase = createClient()
-    console.log('[Auth] Starting simple initialization...')
+    console.log('[Auth] Starting initialization...', new Date().toISOString())
 
-    // Auth state değişikliklerini dinle
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, session: Session | null) => {
-        console.log('[Auth] Event:', event, 'User:', session?.user?.email || 'none')
+    // Fallback timeout - 3 saniye içinde tamamlanmazsa loading'i kapat
+    const fallbackTimeout = setTimeout(() => {
+      if (isMounted) {
+        console.warn('[Auth] Fallback timeout triggered - forcing loading to false')
+        setLoading(false)
+      }
+    }, 3000)
+
+    const initAuth = async () => {
+      try {
+        console.log('[Auth] Calling getSession...')
+        // Direkt session'ı al - event bekleme
+        const { data: { session }, error } = await supabase.auth.getSession()
+
+        console.log('[Auth] getSession result:', session?.user?.email || 'no session', error?.message || 'no error')
 
         if (!isMounted) return
 
         if (session?.user) {
           setAuthUser(session.user)
-          // appUser yüklenene kadar bekle, sonra loading'i kapat
+          console.log('[Auth] Fetching appUser...')
           const appUserData = await fetchAppUser(session.user.id)
+          console.log('[Auth] appUser loaded:', appUserData?.email, 'role:', appUserData?.role)
           if (isMounted) {
             setAppUser(appUserData)
-            setLoading(false)
-            console.log('[Auth] appUser loaded:', appUserData?.role)
-          }
-        } else {
-          setAuthUser(null)
-          setAppUser(null)
-          if (isMounted) {
-            setLoading(false)
           }
         }
-      }
-    )
 
-    // Fallback: 5 saniye sonra loading'i kapat (event gelmezse)
-    const timeoutId = setTimeout(() => {
-      if (isMounted && loading) {
-        console.log('[Auth] Timeout - closing loading, no event received')
-        setLoading(false)
+        if (isMounted) {
+          clearTimeout(fallbackTimeout)
+          setLoading(false)
+          console.log('[Auth] Loading complete')
+        }
+      } catch (err) {
+        console.error('[Auth] Init error:', err)
+        if (isMounted) {
+          clearTimeout(fallbackTimeout)
+          setLoading(false)
+        }
       }
-    }, 5000)
+    }
+
+    initAuth()
+
+    // Auth değişikliklerini dinle (login/logout için)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[Auth] Event:', event, 'User:', session?.user?.email)
+
+      if (!isMounted) return
+
+      if (event === 'SIGNED_IN' && session?.user) {
+        setAuthUser(session.user)
+        const appUserData = await fetchAppUser(session.user.id)
+        if (isMounted) {
+          setAppUser(appUserData)
+          setLoading(false)
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setAuthUser(null)
+        setAppUser(null)
+        setLoading(false)
+      } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+        setAuthUser(session.user)
+      }
+    })
 
     return () => {
       isMounted = false
-      clearTimeout(timeoutId)
+      clearTimeout(fallbackTimeout)
       subscription.unsubscribe()
     }
-  }, [fetchAppUser])
+  }, [supabase, fetchAppUser])
 
   const signOut = useCallback(async () => {
-    const supabase = createClient()
     await supabase.auth.signOut()
     setAuthUser(null)
     setAppUser(null)
-  }, [])
+  }, [supabase])
 
   const role = appUser?.role ?? null
 

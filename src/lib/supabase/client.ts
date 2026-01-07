@@ -1,15 +1,15 @@
 import { createBrowserClient } from '@supabase/ssr'
 import type { Database } from '@/lib/types'
 
-// Singleton pattern - tek instance
-let client: ReturnType<typeof createBrowserClient<Database>> | null = null
+// Singleton pattern - tek bir client instance kullan
+let supabaseClient: ReturnType<typeof createBrowserClient<Database>> | null = null
 
 export function createClient() {
-  if (!client) {
-    client = createBrowserClient<Database>(
+  if (!supabaseClient) {
+    supabaseClient = createBrowserClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
   }
-  return client
+  return supabaseClient
 }
