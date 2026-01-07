@@ -1,8 +1,8 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react'
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo, useRef } from 'react'
+import { createBrowserClient } from '@supabase/ssr'
 import { User } from '@supabase/supabase-js'
-import { createClient } from '@/lib/supabase/client'
 import { AppUser, UserRole, canAccess, canEdit, getDefaultRoute, ModuleSlug } from './auth-types'
 
 interface AuthContextType {
@@ -28,8 +28,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authUser, setAuthUser] = useState<User | null>(null)
   const [appUser, setAppUser] = useState<AppUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const initialized = useRef(false)
 
-  const supabase = createClient()
+  const supabase = useMemo(() =>
+    createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    ),
+  [])
 
   const fetchAppUser = useCallback(async (userId: string): Promise<AppUser | null> => {
     try {
@@ -40,13 +46,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single()
 
       if (error) {
-        console.error('[Auth] fetchAppUser error:', error.message)
         return null
       }
 
       return data as AppUser
-    } catch (err) {
-      console.error('[Auth] fetchAppUser exception:', err)
+    } catch {
       return null
     }
   }, [supabase])
@@ -60,68 +64,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [supabase, fetchAppUser])
 
-  // Initialize auth - direkt getSession kullan, event beklemeden
   useEffect(() => {
+    if (initialized.current) return
+    initialized.current = true
+
     let isMounted = true
-    console.log('[Auth] Starting initialization...', new Date().toISOString())
+    let initialLoadDone = false
 
-    // Fallback timeout - 3 saniye içinde tamamlanmazsa loading'i kapat
-    const fallbackTimeout = setTimeout(() => {
+    const loadUser = async (user: User) => {
+      setAuthUser(user)
+
+      const appUserData = await fetchAppUser(user.id)
+
       if (isMounted) {
-        console.warn('[Auth] Fallback timeout triggered - forcing loading to false')
+        setAppUser(appUserData)
         setLoading(false)
-      }
-    }, 3000)
-
-    const initAuth = async () => {
-      try {
-        console.log('[Auth] Calling getSession...')
-        // Direkt session'ı al - event bekleme
-        const { data: { session }, error } = await supabase.auth.getSession()
-
-        console.log('[Auth] getSession result:', session?.user?.email || 'no session', error?.message || 'no error')
-
-        if (!isMounted) return
-
-        if (session?.user) {
-          setAuthUser(session.user)
-          console.log('[Auth] Fetching appUser...')
-          const appUserData = await fetchAppUser(session.user.id)
-          console.log('[Auth] appUser loaded:', appUserData?.email, 'role:', appUserData?.role)
-          if (isMounted) {
-            setAppUser(appUserData)
-          }
-        }
-
-        if (isMounted) {
-          clearTimeout(fallbackTimeout)
-          setLoading(false)
-          console.log('[Auth] Loading complete')
-        }
-      } catch (err) {
-        console.error('[Auth] Init error:', err)
-        if (isMounted) {
-          clearTimeout(fallbackTimeout)
-          setLoading(false)
-        }
       }
     }
 
-    initAuth()
-
-    // Auth değişikliklerini dinle (login/logout için)
+    // Listen for auth changes - INITIAL_SESSION is the key event
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[Auth] Event:', event, 'User:', session?.user?.email)
-
       if (!isMounted) return
 
-      if (event === 'SIGNED_IN' && session?.user) {
-        setAuthUser(session.user)
-        const appUserData = await fetchAppUser(session.user.id)
-        if (isMounted) {
-          setAppUser(appUserData)
+      if (event === 'INITIAL_SESSION') {
+        // This fires when session is loaded from storage - the reliable event
+        initialLoadDone = true
+        if (session?.user) {
+          await loadUser(session.user)
+        } else {
           setLoading(false)
         }
+      } else if (event === 'SIGNED_IN' && session?.user && initialLoadDone) {
+        // Only handle SIGNED_IN after initial load (for fresh logins)
+        await loadUser(session.user)
       } else if (event === 'SIGNED_OUT') {
         setAuthUser(null)
         setAppUser(null)
@@ -133,7 +108,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       isMounted = false
-      clearTimeout(fallbackTimeout)
       subscription.unsubscribe()
     }
   }, [supabase, fetchAppUser])
