@@ -50,12 +50,11 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // meta_last_sync güncelle
+    // updated_at güncelle (meta_last_sync alanı kaldırıldı)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error: updateError } = await (supabase as any)
       .from('customers')
       .update({
-        meta_last_sync: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
       .eq('id', customer_id)
