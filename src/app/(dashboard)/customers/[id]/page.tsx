@@ -108,6 +108,7 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
   const [saving, setSaving] = useState(false)
   const savingRef = useRef(false)
   const [error, setError] = useState<string | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [fileCount, setFileCount] = useState(0)
 
   // Tab state - Default: Dashboard
@@ -170,19 +171,23 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
     fetchSectors()
   }, [fetchCustomer, fetchSectors])
 
-  // Save customer
+  // Save customer - with proper error handling
   async function handleSaveCustomer(formData: CustomerFormData) {
     if (!customer) return
 
     // Use ref for race condition protection
     if (savingRef.current) {
+      console.log('Save already in progress, skipping...')
       return
     }
 
     savingRef.current = true
     setSaving(true)
+    setSaveError(null)
 
     try {
+      console.log('Starting save operation...')
+      
       // Create fresh client for save operation
       const freshSupabase = createClient()
 
@@ -226,8 +231,16 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
         brand_fonts: formData.brand_fonts || {},
         brand_assets: formData.brand_assets || {},
         integrations: formData.integrations || {},
+        // Previously missing fields
+        pain_points: formData.pain_points || [],
+        hook_sentences: formData.hook_sentences || [],
+        cta_standards: formData.cta_standards || [],
+        forbidden_words: formData.forbidden_words || [],
+        seasonal_calendar: formData.seasonal_calendar || [],
         updated_at: new Date().toISOString()
       }
+
+      console.log('Sending update to Supabase...')
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (freshSupabase as any)
@@ -238,13 +251,20 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
         .single()
 
       if (error) {
+        console.error('Supabase error:', error)
         throw error
       }
 
+      console.log('Save successful!')
       setCustomer(data)
+      
     } catch (err) {
-      throw err
+      console.error('Save failed:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Kaydetme başarısız oldu'
+      setSaveError(errorMessage)
+      // Don't re-throw, we're handling the error here
     } finally {
+      console.log('Save operation finished, resetting state...')
       savingRef.current = false
       setSaving(false)
     }
@@ -258,6 +278,7 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
 
     savingRef.current = true
     setSaving(true)
+    setSaveError(null)
 
     try {
       const freshSupabase = createClient()
@@ -279,7 +300,9 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
 
       setCustomer(data)
     } catch (err) {
-      throw err
+      console.error('Contact save failed:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Kaydetme başarısız oldu'
+      setSaveError(errorMessage)
     } finally {
       savingRef.current = false
       setSaving(false)
@@ -838,6 +861,14 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
                         <p className="text-sm text-zinc-600 dark:text-zinc-400">{Math.round(completion * 0.25)}/25 alan dolu</p>
                       </div>
                     </div>
+                    
+                    {/* Error Message */}
+                    {saveError && (
+                      <div className="mb-3 p-2 rounded-lg bg-rose-100 dark:bg-rose-500/20 border border-rose-200 dark:border-rose-500/30">
+                        <p className="text-xs text-rose-600 dark:text-rose-400">{saveError}</p>
+                      </div>
+                    )}
+                    
                     <Button 
                       onClick={() => {
                         const form = document.querySelector('form')
