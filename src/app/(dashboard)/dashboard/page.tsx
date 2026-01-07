@@ -226,7 +226,7 @@ export default function DashboardPage() {
           .eq('work_date', todayStr)
           .order('created_at', { ascending: false })
 
-        setTodayTasks(tasksData || [])
+        setTodayTasks((tasksData || []) as DailyTask[])
 
         // Weekly attendance for chart
         const weekAgo = new Date()

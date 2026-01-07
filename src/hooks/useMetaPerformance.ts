@@ -86,14 +86,15 @@ export function useMetaPerformance(customerId: string): UseMetaPerformanceReturn
 
     try {
       // Load connections
-      const { data: connectionsData } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: connectionsData } = await (supabase as any)
         .from('social_connections')
         .select('*')
         .eq('customer_id', customerId)
         .eq('is_active', true)
 
       if (connectionsData) {
-        setConnections(connectionsData)
+        setConnections(connectionsData as SocialConnection[])
       }
 
       // Load ads data

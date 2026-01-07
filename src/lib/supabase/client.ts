@@ -1,5 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr'
-import type { Database } from '@/lib/types'
+import type { Database } from '@/types/database.types'
 
 // Singleton instance - prevents memory leak and infinite re-renders
 let client: ReturnType<typeof createBrowserClient<Database>> | null = null

@@ -293,7 +293,7 @@ export type Database = {
           notes: string | null
           user_id: string
           // Karar #13 - Müşteri tipi
-          customer_type: 'retainer' | 'project' | null
+          customer_type: 'retainer' | 'project' | 'passive' | 'passive' | null
           // Karar #14 - Müşteri durumu
           status: 'active' | 'inactive' | null
           // Faz 1 alanları
@@ -359,7 +359,7 @@ export type Database = {
           target_audience?: string | null
           notes?: string | null
           user_id: string
-          customer_type?: 'retainer' | 'project' | null
+          customer_type?: 'retainer' | 'project' | 'passive' | null
           status?: 'active' | 'inactive' | null
           website_url?: string | null
           sub_sector?: string | null
@@ -414,7 +414,7 @@ export type Database = {
           target_audience?: string | null
           notes?: string | null
           user_id?: string
-          customer_type?: 'retainer' | 'project' | null
+          customer_type?: 'retainer' | 'project' | 'passive' | null
           status?: 'active' | 'inactive' | null
           website_url?: string | null
           sub_sector?: string | null
@@ -628,7 +628,7 @@ export type Database = {
       platform_type: 'instagram' | 'facebook' | 'twitter' | 'linkedin' | 'tiktok'
       content_type: 'post' | 'story' | 'reel' | 'carousel'
       post_status: 'draft' | 'approved' | 'published'
-      customer_type: 'retainer' | 'project'
+      customer_type: 'retainer' | 'project' | 'passive'
       customer_status: 'active' | 'inactive'
       service_type: 'hosting' | 'domain' | 'ssl' | 'email'
       payment_status: 'pending' | 'paid' | 'overdue'

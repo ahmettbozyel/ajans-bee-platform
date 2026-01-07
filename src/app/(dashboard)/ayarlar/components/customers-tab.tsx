@@ -4,18 +4,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
 import { Plus, Pencil, Trash2, Loader2, X, Search, Building2, Eye, EyeOff } from 'lucide-react'
+import type { Database } from '@/types/database.types'
 
-type CustomerType = 'retainer' | 'project' | 'passive'
-
-interface Customer {
-  id: string
-  name: string
-  email: string | null
-  phone: string | null
-  notes: string | null
-  customer_type: CustomerType | null
-  created_at: string
-}
+type Customer = Database['public']['Tables']['customers']['Row']
+type CustomerType = Database['public']['Enums']['customer_type']
 
 interface FormData {
   name: string
@@ -64,7 +56,7 @@ export function CustomersTab() {
     setLoading(true)
     const { data, error } = await supabase
       .from('customers')
-      .select('id, name, email, phone, notes, customer_type, created_at')
+      .select('*')
       .order('name', { ascending: true })
 
     if (!error && data) {
@@ -125,7 +117,8 @@ export function CustomersTab() {
             email: formData.email.trim() || null,
             phone: formData.phone.trim() || null,
             notes: formData.notes.trim() || null,
-            customer_type: formData.customer_type
+            customer_type: formData.customer_type,
+            user_id: appUser?.id || ''
           })
       }
       closeModal()

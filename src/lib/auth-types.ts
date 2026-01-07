@@ -146,35 +146,9 @@ export type AttendanceStatus = 'normal' | 'late' | 'early_leave' | 'absent' | 'l
 export type LocationType = 'office' | 'home' | 'other' | 'unknown'
 export type RecordType = 'normal' | 'leave' | 'sick' | 'remote' | 'holiday'
 
-// Mesai
-export interface Attendance {
-  id: string
-  user_id: string
-  date: string
-  check_in: string | null
-  check_out: string | null
-  notes: string | null
-  created_at: string
-  updated_at: string
-  // Konum bilgileri
-  check_in_lat?: number | null
-  check_in_lng?: number | null
-  check_out_lat?: number | null
-  check_out_lng?: number | null
-  check_in_location_type?: LocationType | null
-  check_out_location_type?: LocationType | null
-  // Durum ve süreler
-  status?: AttendanceStatus | null
-  late_minutes?: number | null
-  overtime_minutes?: number | null
-  early_leave_minutes?: number | null
-  // Kayıt tipi ve admin notları
-  record_type?: RecordType | null
-  admin_notes?: string | null
-  // Açıklamalar
-  late_reason?: string | null
-  overtime_reason?: string | null
-}
+// Mesai - Database tipinden alıyoruz
+import type { Database } from '@/types/database.types'
+export type Attendance = Database['public']['Tables']['app_attendance']['Row']
 
 // Personel avatar renkleri
 export const AVATAR_COLORS: Record<string, string> = {
